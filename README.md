@@ -23,10 +23,12 @@ Basic commands:
 
 ## Table
 
+**Create a table**
 - `CREATE TABLE table_name();`
 - `CREATE TABLE table_name(column_name DATATYPE CONSTRAINTS);` create table with columns
 - `CREATE TABLE sounds(sound_id SERIAL PRIMARY KEY);`
 
+**Alter a table**
 - `ALTER TABLE table_name ADD COLUMN column_name DATATYPE;`
 - `ALTER TABLE characters ADD COLUMN character_id SERIAL;`
 - `ALTER TABLE characters ADD COLUMN name VARCHAR(30) NOT NULL;` max length = 30
