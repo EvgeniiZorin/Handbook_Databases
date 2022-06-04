@@ -2,6 +2,10 @@
 
 ## Most basic information
 
+**Types of databases**:
+- SQL (relational databases): MySQL, PostreSQL, SQLite, Microsoft SQL Server, MariaDB, Oracle; 
+- NoSQL (not only SQL; can also structure in non-structured data): MongoDB, Redis, Firebase, DynamoDB, Cassandra; 
+
 Datatypes: 
 - `DATE`
 - `INT`
@@ -57,12 +61,13 @@ Basic commands:
 - `INSERT INTO more_info(birthday, height, weight, character_id) VALUES('1981-07-09', 155, 64.5, 1);` DATE: 'YYYY-MM-DD'
 - `INSERT INTO more_info(birthday, height, weight, character_id) VALUES('1989-07-31', NULL, NULL, 6);`
 
+**Update rows**
+- `UPDATE tablename SET column=3 WHERE row="RowName"`
 
 ## Filter
-- `SELECT columns FROM table_name;`
+- `SELECT column FROM table_name;`
 - `SELECT * FROM table_name;` view table_name
 - `SELECT * FROM characters ORDER BY character_id;` view the whole table ordered by 'character_id'
-- `SELECT character_id, name FROM characters;` view two columns
 - `SELECT character_id, name FROM characters WHERE name='Toad';` only view the rows of 'Toad'
 - `SELECT name, population, area FROM World WHERE area >= 3000000 OR population >= 25000000;`
 - `SELECT name FROM Customer WHERE referee_id != 2 OR referee_id IS null;`
