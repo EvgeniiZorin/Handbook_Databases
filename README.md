@@ -81,6 +81,11 @@ INSERT INTO tablename (column1, column2, column2) VALUES ('Value1', 52, DATE '19
 - `UPDATE tablename SET column=3 WHERE row="RowName"`
 
 ## Filter
+
+```sql
+SELECT column_name FROM tableName
+```
+
 - `SELECT column FROM table_name;`
 - `SELECT * FROM table_name;` view table_name
 - `SELECT * FROM characters ORDER BY character_id;` view the whole table ordered by 'character_id'
