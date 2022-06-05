@@ -85,23 +85,34 @@ INSERT INTO tablename (column1, column2, column2) VALUES ('Value1', 52, DATE '19
 ```sql
 SELECT column1 FROM table1 WHERE column2='Value' AND column3='Value2' ORDER BY column_name LIMIT 10 OFFSET 3;
 ```
-ORDER BY: ASC / DESC
-OFFSET: skip n rows
-LIMIT: show n first rows
 
-- `SELECT column FROM table_name;`
-- `SELECT * FROM table_name;` view table_name
-- `SELECT * FROM characters ORDER BY character_id DESC;` view the whole table ordered by 'character_id'; DESC or ASC
-- `SELECT character_id, name FROM characters WHERE name='Toad';` only view the rows of 'Toad'
-- `SELECT name, population, area FROM World WHERE area >= 3000000 OR population >= 25000000;`
-- `SELECT name FROM Customer WHERE referee_id != 2 OR referee_id IS null;`
-- `SELECT DISTINCT column FROM table;` - only print unique values from that column; 
-- `SELECT * FROM person WHERE gender='Female' AND (country_of_birth='Poland' OR country_of_birth='China') ORDER BY first_name;`
+**SELECT**:
+- `SELECT DISTINCT column1`: only print unique values from the column
+- `SELECT column1, column2` select multiple columns
 
-WHERE:
+**WHERE**:
+- `WHERE column1 != 2 OR column2 IS null;`
 - `WHERE column1 IN ('Value1', 'Value2', 'Value3');`
 - `WHERE date BETWEEN DATE '1999-01-01' AND '2015-01-01';`
 - `WHERE email LIKE '%.com'; `
+
+**ORDER BY**:
+-  `ORDER BY column1 ASC`
+-  `ORDER BY column1 DESC`
+
+**GROUP BY**:
+- `GROUP BY column1`
+- `GROUP BY column1 HAVING COUNT(*) > 5` only group those values whose count is > 5
+
+**OFFSET**: skip n rows
+**LIMIT**: show n first rows
+
+Examples: 
+- `SELECT * FROM table1;` view table1
+- `SELECT * FROM characters ORDER BY character_id DESC;` view the whole table ordered by 'character_id'; DESC or ASC
+- `SELECT * FROM person WHERE gender='Female' AND (country_of_birth='Poland' OR country_of_birth='China') ORDER BY first_name;`
+- `SELECT column1, COUNT(*) FROM table GROUP BY column1;` print count of each value in column1
+
 
 ## Comparison operators
 
