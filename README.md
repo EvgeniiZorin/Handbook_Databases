@@ -114,6 +114,7 @@ WHERE:
 ## REGEX
 
 | Sign | Meaning |
+| --- | --- |
 | `%` | any character, any number of times |
 | `_` | exactly 1 character |
 
