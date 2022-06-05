@@ -83,9 +83,11 @@ INSERT INTO tablename (column1, column2, column2) VALUES ('Value1', 52, DATE '19
 ## Filter
 
 ```sql
-SELECT column1 FROM table1 WHERE column2='Value' AND column3='Value2' ORDER BY column_name;
+SELECT column1 FROM table1 WHERE column2='Value' AND column3='Value2' ORDER BY column_name LIMIT 10 OFFSET 3;
 ```
 ORDER BY: ASC / DESC
+OFFSET: skip n rows
+LIMIT: show n first rows
 
 - `SELECT column FROM table_name;`
 - `SELECT * FROM table_name;` view table_name
@@ -96,8 +98,23 @@ ORDER BY: ASC / DESC
 - `SELECT DISTINCT column FROM table;` - only print unique values from that column; 
 - `SELECT * FROM person WHERE gender='Female' AND (country_of_birth='Poland' OR country_of_birth='China') ORDER BY first_name;`
 
+WHERE:
+- `WHERE column1 IN ('Value1', 'Value2', 'Value3');`
+- `WHERE date BETWEEN DATE '1999-01-01' AND '2015-01-01';`
+- `WHERE email LIKE '%.com'; `
+
 ## Comparison operators
 
 | Operator | Meaning |
 | --- | -- |
-| `<`, `<=`, `>`, `>=` | |
+| `=`, `<`, `<=`, `>`, `>=` | |
+| `=` | equals |
+| `<>` | not equal |
+
+## REGEX
+
+| Sign | Meaning |
+| `%` | any character, any number of times |
+| `_` | exactly 1 character |
+
+
