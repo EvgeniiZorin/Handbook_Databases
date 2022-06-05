@@ -83,13 +83,21 @@ INSERT INTO tablename (column1, column2, column2) VALUES ('Value1', 52, DATE '19
 ## Filter
 
 ```sql
-SELECT column_name FROM tableName;
+SELECT column1 FROM table1 WHERE column2='Value' AND column3='Value2' ORDER BY column_name;
 ```
+ORDER BY: ASC / DESC
 
 - `SELECT column FROM table_name;`
 - `SELECT * FROM table_name;` view table_name
-- `SELECT * FROM characters ORDER BY character_id;` view the whole table ordered by 'character_id'
+- `SELECT * FROM characters ORDER BY character_id DESC;` view the whole table ordered by 'character_id'; DESC or ASC
 - `SELECT character_id, name FROM characters WHERE name='Toad';` only view the rows of 'Toad'
 - `SELECT name, population, area FROM World WHERE area >= 3000000 OR population >= 25000000;`
 - `SELECT name FROM Customer WHERE referee_id != 2 OR referee_id IS null;`
+- `SELECT DISTINCT column FROM table;` - only print unique values from that column; 
+- `SELECT * FROM person WHERE gender='Female' AND (country_of_birth='Poland' OR country_of_birth='China') ORDER BY first_name;`
 
+## Comparison operators
+
+| Operator | Meaning |
+| --- | -- |
+| `<`, `<=`, `>`, `>=` | |
