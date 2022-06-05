@@ -34,7 +34,7 @@ Basic commands:
 CREATE TABLE tablename(columnName DATATYPE CONSTRAINTS);
 ```
 - `CREATE TABLE table_name();`
-- `CREATE TABLE table_name(column_name DATATYPE CONSTRAINTS);` create table with columns
+- `CREATE TABLE table1(id INT, firstName VARCHAR(50), lastName VARCHAR(50));
 - `CREATE TABLE sounds(sound_id SERIAL PRIMARY KEY);`
 
 ## Alter a table
