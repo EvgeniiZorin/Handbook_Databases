@@ -30,7 +30,7 @@ Basic commands:
 
 
 ## Create a table**
-```
+```sql
 CREATE TABLE tablename(columnName DATATYPE CONSTRAINTS);
 ```
 - `CREATE TABLE table_name();`
