@@ -4,6 +4,7 @@
 
 **Types of databases**:
 - SQL (relational databases): MySQL, PostreSQL, SQLite, Microsoft SQL Server, MariaDB, Oracle; 
+  - *In a relational database, there are relationships between tables.* 
 - NoSQL (not only SQL; can also structure in non-structured data): MongoDB, Redis, Firebase, DynamoDB, Cassandra; 
 
 Datatypes: 
