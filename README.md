@@ -83,7 +83,7 @@ INSERT INTO tablename (column1, column2, column2) VALUES ('Value1', 52, DATE '19
 ## Filter
 
 ```sql
-SELECT column_name FROM tableName
+SELECT column_name FROM tableName;
 ```
 
 - `SELECT column FROM table_name;`
