@@ -30,7 +30,9 @@ Basic commands:
 
 
 ## Create a table**
-```CREATE TABLE tablename(columnName DATATYPE CONSTRAINTS);```
+```
+CREATE TABLE tablename(columnName DATATYPE CONSTRAINTS);
+```
 - `CREATE TABLE table_name();`
 - `CREATE TABLE table_name(column_name DATATYPE CONSTRAINTS);` create table with columns
 - `CREATE TABLE sounds(sound_id SERIAL PRIMARY KEY);`
