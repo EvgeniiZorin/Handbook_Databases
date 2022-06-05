@@ -20,6 +20,7 @@ Basic commands:
 | `\l` | list databases |
 | `\c database_name` | connect to a database |
 | `\d` | check which tables are present |
+| `\dt` | show tables ONLY, without `id_seq` |
 | `\d second_table` | check columns and details of a table in a database |
 
 ## Database
@@ -33,9 +34,16 @@ Basic commands:
 ```sql
 CREATE TABLE tableName(columnName DATATYPE CONSTRAINTS);
 ```
+Constraints: 
+- `NOT NULL`
+- `PRIMARY KEY`
+- `BIGSERIAL` - integer that auto-increments; 
+
+Examples: 
 - `CREATE TABLE table_name();`
 - `CREATE TABLE table1(id INT, firstName VARCHAR(50), lastName VARCHAR(50));
 - `CREATE TABLE sounds(sound_id SERIAL PRIMARY KEY);`
+- `CREATE TABLE table1 (id BIGSERIAL NOT NULL PRIMARY KEY, first_name VARCHAR(50) NOT NULL, gender VARCHAR(7) NOT NULL, date_of_birth DATE NOT NULL, email VARCHAR(150) );`
 
 ## Alter a table
 - `DROP TABLE second_table;` remove a table
@@ -59,6 +67,10 @@ CREATE TABLE tableName(columnName DATATYPE CONSTRAINTS);
 
 
 **Add rows**
+```sql
+INSERT INTO tablename (column1, column2, column2) VALUES ('Value1', 52, DATE '1995-05-04');
+```
+
 - `INSERT INTO second_table(id, username) VALUES(1, 'Samus');` insert a row into our table
 - `INSERT INTO characters(name, homeland, favorite_color) VALUES('Mario', 'Mushroom Kingdom', 'Red');`
 - `INSERT INTO characters(name, homeland, favorite_color) VALUES('Toadstool', 'Mushroom Kingdom', 'Red'), ('Bowser', 'Mushroom Kingdom', 'Green');` insert two rows at once
