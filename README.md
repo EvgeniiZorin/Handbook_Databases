@@ -31,7 +31,7 @@ Basic commands:
 
 ## Create a table**
 ```sql
-CREATE TABLE tablename(columnName DATATYPE CONSTRAINTS);
+CREATE TABLE tableName(columnName DATATYPE CONSTRAINTS);
 ```
 - `CREATE TABLE table_name();`
 - `CREATE TABLE table1(id INT, firstName VARCHAR(50), lastName VARCHAR(50));
