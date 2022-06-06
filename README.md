@@ -17,6 +17,9 @@ Datatypes:
 Basic commands: 
 | Command | Function |
 | --- | --- |
+| `\! cd` | list current dir|
+| `\! dir` | list files in the current dir |
+| `\?` | print methods |
 | `\l` | list databases |
 | `\c database_name` | connect to a database |
 | `\d` | check which tables are present |
