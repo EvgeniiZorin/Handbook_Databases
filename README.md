@@ -141,5 +141,17 @@ Examples:
 
 ---
 
-# 
+## Arithmetic operations
+
+```sql
+SELECT 10 + 2;
+```
+| Operator | Meaning |
+| --- | --- |
+| `-`, `+`, `*`, `/` | |
+| `^` | power |
+| `%` | modulo |
+
+Examples: 
+- `SELECT column1 * 10`
 
