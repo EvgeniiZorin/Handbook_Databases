@@ -19,6 +19,7 @@ Basic commands:
 | --- | --- |
 | `\! cd` | list current dir|
 | `\! dir` | list files in the current dir |
+| `\i file.sql` | import file |
 | `\?` | print methods |
 | `\l` | list databases |
 | `\c database_name` | connect to a database |
@@ -92,6 +93,11 @@ SELECT column1 FROM table1 WHERE column2='Value' AND column3='Value2' ORDER BY c
 **SELECT**:
 - `SELECT DISTINCT column1`: only print unique values from the column
 - `SELECT column1, column2` select multiple columns
+- `SELECT COUNT(*)` count the total number of rows
+- `SELECT MAX(column1)` print the max value of column1
+- `SELECT AVG(column1)` 
+- `SELECT ROUND(AVG(column1))`
+- `SELECT SUM(column1)` sum all values in a column
 
 **WHERE**:
 - `WHERE column1 != 2 OR column2 IS null;`
@@ -115,6 +121,7 @@ Examples:
 - `SELECT * FROM characters ORDER BY character_id DESC;` view the whole table ordered by 'character_id'; DESC or ASC
 - `SELECT * FROM person WHERE gender='Female' AND (country_of_birth='Poland' OR country_of_birth='China') ORDER BY first_name;`
 - `SELECT column1, COUNT(*) FROM table GROUP BY column1;` print count of each value in column1
+- `SELECT make, SUM(price) FROM car GROUP BY make;`
 
 
 ## Comparison operators
@@ -132,4 +139,7 @@ Examples:
 | `%` | any character, any number of times |
 | `_` | exactly 1 character |
 
+---
+
+# 
 
