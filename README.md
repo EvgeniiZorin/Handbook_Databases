@@ -3,19 +3,13 @@
 
 > Evgenii Zorin
 
-## Most basic information
+
+# Most basic information
 
 **Types of databases**:
 - SQL (relational databases): MySQL, PostreSQL, SQLite, Microsoft SQL Server, MariaDB, Oracle; 
   - *In a relational database, there are relationships between tables.* 
 - NoSQL (not only SQL; can also structure in non-structured data): MongoDB, Redis, Firebase, DynamoDB, Cassandra; 
-
-Datatypes: 
-- `DATE`
-- `INT`
-- `SERIAL`
-- `VARCHAR(30)` - short string of characters of specified length
-- `NUMERIC(4, 1)`
 
 Basic commands: 
 | Command | Function |
@@ -30,21 +24,37 @@ Basic commands:
 | `\dt` | show tables ONLY, without `id_seq` |
 | `\d second_table` | check columns and details of a table in a database |
 
-## Database
+# Database
 
-- `CREATE DATABASE database_name;`
-- `DROP DATABASE second_database;` delete a database
-- `ALTER DATABASE first_database RENAME TO mario_database;` rename a database
-
-
-## Create a table**
 ```sql
-CREATE TABLE tableName(columnName DATATYPE CONSTRAINTS);
+# To create a new database, simply type: 
+CREATE DATABASE database1;
 ```
+
+- `ALTER DATABASE first_database RENAME TO mario_database;` rename a database
+- `DROP DATABASE second_database;` delete a database
+
+
+# Table
+
+```sql
+# Create a new table
+CREATE TABLE table1(column1 DATATYPE CONSTRAINTS, column2 DATATYPE CONSTRAINTS);
+```
+
 Constraints: 
-- `NOT NULL`
-- `PRIMARY KEY`
-- `BIGSERIAL` - integer that auto-increments; 
+| Constraint | Meaning |
+| --- | --- |
+| `NOT NULL` | Values in this column have to be present; cannot be NULL |
+| `PRIMARY KEY` | Makes a specified column a PRIMARY KEY column |
+| `BIGSERIAL` | Integer that auto-increments |
+
+Datatypes: 
+- `DATE`
+- `INT`
+- `SERIAL`
+- `VARCHAR(30)` - short string of characters of specified length
+- `NUMERIC(4, 1)`
 
 Examples: 
 - `CREATE TABLE table_name();`
@@ -52,7 +62,7 @@ Examples:
 - `CREATE TABLE sounds(sound_id SERIAL PRIMARY KEY);`
 - `CREATE TABLE table1 (id BIGSERIAL NOT NULL PRIMARY KEY, first_name VARCHAR(50) NOT NULL, gender VARCHAR(7) NOT NULL, date_of_birth DATE NOT NULL, email VARCHAR(150) );`
 
-## Alter a table
+# Alter a table
 - `DROP TABLE second_table;` remove a table
 - `ALTER TABLE table_name ADD COLUMN column_name DATATYPE;`
 - `ALTER TABLE characters ADD COLUMN character_id SERIAL;`
@@ -87,7 +97,7 @@ INSERT INTO tablename (column1, column2, column2) VALUES ('Value1', 52, DATE '19
 **Update rows**
 - `UPDATE tablename SET column=3 WHERE row="RowName"`
 
-## Filter
+# Filter
 
 ```sql
 SELECT column1 FROM table1 WHERE column2='Value' AND column3='Value2' ORDER BY column_name LIMIT 10 OFFSET 3;
@@ -127,7 +137,7 @@ Examples:
 - `SELECT make, SUM(price) FROM car GROUP BY make;`
 
 
-## Comparison operators
+# Comparison operators
 
 | Operator | Meaning |
 | --- | -- |
@@ -135,7 +145,7 @@ Examples:
 | `=` | equals |
 | `<>` | not equal |
 
-## REGEX
+# REGEX
 
 | Sign | Meaning |
 | --- | --- |
@@ -144,7 +154,7 @@ Examples:
 
 ---
 
-## Arithmetic operations
+# Arithmetic operations
 
 ```sql
 SELECT 10 + 2;
