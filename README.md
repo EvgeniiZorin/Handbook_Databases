@@ -24,6 +24,8 @@ Basic commands:
 | `\dt` | show tables ONLY, without `id_seq` |
 | `\d second_table` | check columns and details of a table in a database |
 
+---
+
 # Database
 
 ```sql
@@ -38,79 +40,116 @@ CREATE DATABASE database1;
 # Table
 
 ```sql
-# Create a new table
+# Create / delete a new table
 CREATE TABLE table1(column1 DATATYPE CONSTRAINTS, column2 DATATYPE CONSTRAINTS);
+DROP TABLE second_table; 
 ```
 
-Constraints: 
+**Constraints**: 
 | Constraint | Meaning |
 | --- | --- |
 | `NOT NULL` | Values in this column have to be present; cannot be NULL |
 | `PRIMARY KEY` | Makes a specified column a PRIMARY KEY column |
 | `BIGSERIAL` | Integer that auto-increments |
 
-Datatypes: 
-- `DATE`
-- `INT`
-- `SERIAL`
-- `VARCHAR(30)` - short string of characters of specified length
-- `NUMERIC(4, 1)`
+**Datatypes**: 
+| Datatype | Description |
+| --- | --- |
+| `DATE` | YYYY-MM-DD |
+| `INT` | |
+| `SERIAL`, `BIGSERIAL` | Auto-incrementing (both?) |
+| `VARCHAR(30)` | String of a specified length |
+| `NUMERIC(4, 1)` | |
 
 Examples: 
-- `CREATE TABLE table_name();`
-- `CREATE TABLE table1(id INT, firstName VARCHAR(50), lastName VARCHAR(50));
-- `CREATE TABLE sounds(sound_id SERIAL PRIMARY KEY);`
-- `CREATE TABLE table1 (id BIGSERIAL NOT NULL PRIMARY KEY, first_name VARCHAR(50) NOT NULL, gender VARCHAR(7) NOT NULL, date_of_birth DATE NOT NULL, email VARCHAR(150) );`
-
-# Alter a table
-- `DROP TABLE second_table;` remove a table
-- `ALTER TABLE table_name ADD COLUMN column_name DATATYPE;`
-- `ALTER TABLE characters ADD COLUMN character_id SERIAL;`
-- `ALTER TABLE characters ADD COLUMN name VARCHAR(30) NOT NULL;` max length = 30
-- `ALTER TABLE sounds ADD COLUMN character_id INT NOT NULL REFERENCES characters(character_id);`
-- `ALTER TABLE second_table DROP COLUMN age;` delete a column
-- `ALTER TABLE second_table RENAME COLUMN name TO username;` rename a column
-- `DELETE FROM second_table WHERE username='Luigi';` from a table, delete row where username='Luigi'
-- `ALTER TABLE second_table DROP COLUMN username;`
-- `ALTER TABLE characters ADD PRIMARY KEY(name);` set column to primary key (unique identifier)
-- `ALTER TABLE characters DROP CONSTRAINT characters_pkey;` drop constraint to primary key
-- `ALTER TABLE table_name ADD COLUMN column_name DATATYPE REFERENCES referenced_table_name(referenced_column_name);` to set a foreign key that references a column from another table
-- `ALTER TABLE table_name ADD UNIQUE(column_name);` add UNIQUE constraint to the foreign key
-- `ALTER TABLE table_name ALTER COLUMN column_name SET NOT NULL;` Add NOT NULL constraint to foreign key column, so that there will be no rows for nobody
-- `ALTER TABLE more_info RENAME COLUMN height TO height_in_cm;` rename column in a table
-- `ALTER TABLE table_name ADD FOREIGN KEY(column_name) REFERENCES referenced_table(referenced_column);` set an existing column as a foreign key
-- `ALTER TABLE character_actions ADD FOREIGN KEY(character_id) REFERENCES characters(character_id);`
-- `ALTER TABLE table_name ADD PRIMARY KEY(column1, column2);` create composite primary key (primary key from two columns)
-
-
-**Add rows**
 ```sql
-INSERT INTO tablename (column1, column2, column2) VALUES ('Value1', 52, DATE '1995-05-04');
+CREATE TABLE table1(); # Create an empty table
+CREATE TABLE table1(id SERIAL PRIMARY KEY, first_name VARCHAR(50) NOT NULL, gender VARCHAR(7) NOT NULL, date_birth DATE NOT NULL);
+CREATE TABLE table1(id BIGSERIAL NOT NULL PRIMARY KEY);
 ```
 
-- `INSERT INTO second_table(id, username) VALUES(1, 'Samus');` insert a row into our table
-- `INSERT INTO characters(name, homeland, favorite_color) VALUES('Mario', 'Mushroom Kingdom', 'Red');`
-- `INSERT INTO characters(name, homeland, favorite_color) VALUES('Toadstool', 'Mushroom Kingdom', 'Red'), ('Bowser', 'Mushroom Kingdom', 'Green');` insert two rows at once
-- `INSERT INTO more_info(birthday, height, weight, character_id) VALUES('1981-07-09', 155, 64.5, 1);` DATE: 'YYYY-MM-DD'
-- `INSERT INTO more_info(birthday, height, weight, character_id) VALUES('1989-07-31', NULL, NULL, 6);`
+---
 
-**Update rows**
-- `UPDATE tablename SET column=3 WHERE row="RowName"`
+# Edit columns
+```sql
+ALTER TABLE table1 ADD COLUMN column1 DATATYPE CONSTRAINTS REFERENCES table2(column1);
+ALTER TABLE table1 DROP COLUMN column1;
+
+ALTER TABLE table1 RENAME COLUMN column1 TO column2 # Rename a column
+```
+
+Examples: 
+```sql
+ALTER TABLE table1 ADD COLUMN name VARCHAR(30) NOT NULL;
+```
+
+# Edit rows
+```sql
+INSERT INTO table1 (column1, column2, column3) VALUES ('Value1', 52, DATE '1995-05-04'); # Insert a row
+INSERT INTO table1 (column1, column2, column3) VALUES (...), (...) # Insert two rows
+
+UPDATE table1 SET column1=5, column2=10 WHERE row="Rowname"; # Update an entry based on IF-condition
+
+
+DELETE FROM table1; # Delete all records
+DELETE FROM table1 WHERE column1='Value'; # Delete a row in which column has the specified value
+
+```
+
+---
+
+# Constraints
+
+
+```sql
+ALTER TABLE table_name ADD COLUMN column_name DATATYPE REFERENCES referenced_table_name(referenced_column_name); # to set a foreign key that references a column from another table
+ALTER TABLE table_name ALTER COLUMN column_name SET NOT NULL; # Add NOT NULL constraint to foreign key column, so that there will be no rows for nobody
+ALTER TABLE table_name ADD FOREIGN KEY(column_name) REFERENCES referenced_table(referenced_column); # set an existing column as a foreign key
+ALTER TABLE character_actions ADD FOREIGN KEY(character_id) REFERENCES characters(character_id); 
+```
+
+UNIQUE - makes sure that only unique values can be added in a column
+```sql
+ALTER TABLE table1 ADD CONSTRAINT constraint_name_here UNIQUE (column1) # Custom constraint name
+# or
+ALTER TABLE table1 ADD UNIQUE (column1) # Constraint name defined by psql
+```
+
+CHECK - a column can only accept specific values
+```sql
+ALTER TABLE table1 ADD CONSTRAINT constraint_name CHECK (column1='Male' OR column1='Female');
+```
+
+# Primary key
+
+If there are entries with the same details, can uniquely identify them by primary key, e.g. their id. 
+
+```sql
+ALTER TABLE table1 ADD PRIMARY KEY (column1); # Add primary key constraint to a column
+ALTER TABLE table_name ADD PRIMARY KEY(column1, column2); # create composite primary key (primary key from two columns)
+
+ALTER TABLE table1 DROP CONSTRAINT person_pkey # Drop primary key constraint
+```
+
+---
 
 # Filter
 
 ```sql
-SELECT column1 FROM table1 WHERE column2='Value' AND column3='Value2' ORDER BY column_name LIMIT 10 OFFSET 3;
+SELECT column1, column2 FROM table1 WHERE column2='Value' AND column3='Value2' ORDER BY column_name LIMIT 10 OFFSET 3;
+
+# COALESCE - print a value for NULL values
+SELECT COALESCE(column1, 'Entry not found') FROM table1;   
 ```
 
 **SELECT**:
 - `SELECT DISTINCT column1`: only print unique values from the column
-- `SELECT column1, column2` select multiple columns
 - `SELECT COUNT(*)` count the total number of rows
 - `SELECT MAX(column1)` print the max value of column1
 - `SELECT AVG(column1)` 
 - `SELECT ROUND(AVG(column1))`
 - `SELECT SUM(column1)` sum all values in a column
+- `SELECT column1 AS "Column title"`
 
 **WHERE**:
 - `WHERE column1 != 2 OR column2 IS null;`
@@ -137,6 +176,9 @@ Examples:
 - `SELECT make, SUM(price) FROM car GROUP BY make;`
 
 
+
+
+
 # Comparison operators
 
 | Operator | Meaning |
@@ -158,6 +200,7 @@ Examples:
 
 ```sql
 SELECT 10 + 2;
+ROUND(column1, decimalplaces); 
 ```
 | Operator | Meaning |
 | --- | --- |
@@ -168,3 +211,29 @@ SELECT 10 + 2;
 Examples: 
 - `SELECT column1 * 10`
 
+
+# Dates and timestamps
+
+```sql
+SELECT NOW(); # Gives YYYY-MM-DD HH:MM:SS.MSMS
+SELECT AGE(NOW(), date_of_birth); # Get years of a person from his birthday
+```
+
+INTERVAL: `YEARS`, `MONTHS`, `DAYS`
+
+```sql
+NOW() - INTERVAL '1 YEAR'; # Time a year ago
+```
+
+Typecasting: `::DATE`, `::TIME`
+```sql
+SELECT NOW()::DATE # YYYY-MM-DD
+SELECT NOW()::TIME # HH:MM:SS.MSMS
+(NOW()::DATE + INTERVAL '10 MONTHS')::DATE
+```
+
+Extracting fields: `DAY`, `DOW`, `YEAR`, `CENTURY`
+```sql
+SELECT EXTRACT (YEAR FROM NOW());
+
+```
