@@ -57,7 +57,8 @@ DROP TABLE second_table;
 | --- | --- |
 | `DATE` | YYYY-MM-DD |
 | `INT` | |
-| `SERIAL`, `BIGSERIAL` | Auto-incrementing (both?) |
+| `SERIAL` | Auto-increments? |
+| `BIGSERIAL` | Auto-increments a number |
 | `VARCHAR(30)` | String of a specified length |
 | `NUMERIC(4, 1)` | |
 
@@ -76,6 +77,9 @@ ALTER TABLE table1 ADD COLUMN column1 DATATYPE CONSTRAINTS REFERENCES table2(col
 ALTER TABLE table1 DROP COLUMN column1;
 
 ALTER TABLE table1 RENAME COLUMN column1 TO column2 # Rename a column
+
+# Restart the auto-incrementing values
+ALTER SEQUENCE person_id_seq RESTART WITH 10; # or 1
 ```
 
 Examples: 
@@ -100,12 +104,8 @@ DELETE FROM table1 WHERE column1='Value'; # Delete a row in which column has the
 
 # Constraints
 
-
 ```sql
-ALTER TABLE table_name ADD COLUMN column_name DATATYPE REFERENCES referenced_table_name(referenced_column_name); # to set a foreign key that references a column from another table
-ALTER TABLE table_name ALTER COLUMN column_name SET NOT NULL; # Add NOT NULL constraint to foreign key column, so that there will be no rows for nobody
-ALTER TABLE table_name ADD FOREIGN KEY(column_name) REFERENCES referenced_table(referenced_column); # set an existing column as a foreign key
-ALTER TABLE character_actions ADD FOREIGN KEY(character_id) REFERENCES characters(character_id); 
+ALTER TABLE table_name ALTER COLUMN column_name SET NOT NULL; # Add NOT NULL constraint to foreign key column, so that there will be no rows for nobody 
 ```
 
 UNIQUE - makes sure that only unique values can be added in a column
@@ -118,6 +118,21 @@ ALTER TABLE table1 ADD UNIQUE (column1) # Constraint name defined by psql
 CHECK - a column can only accept specific values
 ```sql
 ALTER TABLE table1 ADD CONSTRAINT constraint_name CHECK (column1='Male' OR column1='Female');
+```
+
+CONFLICT (CONSTRAINT) MANAGEMENT
+```sql
+ON CONFLICT (column1) DO NOTHING;
+INSERT INTO ... VALUES ... ON CONFLICT (column1) DO UPDATE SET column1 = EXCLUDED.column1; # If an entry exists, it will update with the value you give it
+```
+
+FOREIGN KEYS - can connect tables based on foreign keys
+```sql
+CREATE TABLE table1(column1 DATATYPE REFERENCES table2(column_of_table2);
+
+ALTER TABLE table_name ADD COLUMN column_name DATATYPE REFERENCES referenced_table_name(referenced_column_name); # to set a foreign key that references a column from another table
+ALTER TABLE table_name ADD FOREIGN KEY(column_name) REFERENCES referenced_table(referenced_column); # set an existing column as a foreign key
+ALTER TABLE character_actions ADD FOREIGN KEY(character_id) REFERENCES characters(character_id);
 ```
 
 # Primary key
@@ -236,4 +251,31 @@ Extracting fields: `DAY`, `DOW`, `YEAR`, `CENTURY`
 ```sql
 SELECT EXTRACT (YEAR FROM NOW());
 
+```
+
+# Inner joins
+
+Combine two tables by a column with the same values. Join only gives rows that have foreign key in both tables. 
+
+`\x` - toggle expanded display. 
+
+```sql
+SELECT * FROM table1 JOIN table2 ON table1.table1_id = table2.id; 
+SELECT table1.column1, table2.column FROM table1 JOIN table2 ON table1.table1_id = table2.id; # Or if you want to join selected columns only
+```
+
+# Left join
+
+Table 1 + stuff from table 2, where table 1 entry can lack stuff from table 2. 
+
+The same notation, just write `LEFT JOIN` instead of `JOIN`
+
+```sql
+SELECT * FROM person LEFT JOIN car ON car.id = person.car_id WHERE car.* IS NULL; # Only show entries that don't have a car
+```
+
+# Export query to CSV
+
+```sql
+\copy (SELECT ...) TO '/Users/Desktop/file.csv' DELIMITER ',' CSV HEADER;
 ```
