@@ -60,7 +60,7 @@ DROP TABLE second_table;
 | `SERIAL` | Auto-increments? |
 | `BIGSERIAL` | Auto-increments a number |
 | `VARCHAR(30)` | String of a specified length |
-| `NUMERIC(4, 1)` | |
+| `NUMERIC(4, 1)` | Float with number of decimals (1) |
 
 Examples: 
 ```sql
@@ -74,6 +74,8 @@ CREATE TABLE table1(id BIGSERIAL NOT NULL PRIMARY KEY);
 # Edit columns
 ```sql
 ALTER TABLE table1 ADD COLUMN column1 DATATYPE CONSTRAINTS REFERENCES table2(column1);
+ALTER TABLE table 1 ADD COLUMN column1 DATATYPE CONSTRAINTS, ADD COLUMN column2 DATATYPE CONSTRAINTS;
+
 ALTER TABLE table1 DROP COLUMN column1;
 
 ALTER TABLE table1 RENAME COLUMN column1 TO column2 # Rename a column
