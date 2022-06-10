@@ -78,6 +78,8 @@ ALTER TABLE table1 DROP COLUMN column1;
 
 ALTER TABLE table1 RENAME COLUMN column1 TO column2 # Rename a column
 
+ALTER TABLE characters ALTER COLUMN date_of_birth SET DATA TYPE VARCHAR(10); # Change datatype of a column. SET DATA TYPE = TYPE
+
 # Restart the auto-incrementing values
 ALTER SEQUENCE person_id_seq RESTART WITH 10; # or 1
 ```
