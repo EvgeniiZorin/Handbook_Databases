@@ -50,6 +50,7 @@ DROP TABLE second_table;
 | --- | --- |
 | `NOT NULL` | Values in this column have to be present; cannot be NULL |
 | `PRIMARY KEY` | Makes a specified column a PRIMARY KEY column |
+| `REFERENCES table(column)` | Make a foreign key referencing another table |
 | `BIGSERIAL` | Integer that auto-increments |
 
 **Datatypes**: 
