@@ -76,6 +76,9 @@ CREATE TABLE table1(id BIGSERIAL NOT NULL PRIMARY KEY);
 ```sql
 ALTER TABLE table1 ADD COLUMN column1 DATATYPE CONSTRAINTS REFERENCES table2(column1);
 ALTER TABLE table 1 ADD COLUMN column1 DATATYPE CONSTRAINTS, ADD COLUMN column2 DATATYPE CONSTRAINTS;
+# Add a column by concatenating two other columns (NOTE: this is not the most optimal solution, but it's the one that works for me):
+ALTER TABLE table1 ADD COLUMN full_name VARCHAR(30); 
+UPDATE table1 SET full_name = first_name || ' ' || last_name;
 
 ALTER TABLE table1 DROP COLUMN column1;
 
@@ -85,6 +88,9 @@ ALTER TABLE characters ALTER COLUMN date_of_birth SET DATA TYPE VARCHAR(10); # C
 
 # Restart the auto-incrementing values
 ALTER SEQUENCE person_id_seq RESTART WITH 10; # or 1
+
+# Drop a constraint for a column
+ALTER TABLE table1 DROP CONSTRAINT constraint_name;
 ```
 
 Examples: 
