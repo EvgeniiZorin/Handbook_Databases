@@ -55,6 +55,7 @@ DROP TABLE second_table;
 | `PRIMARY KEY` | Makes a specified column a PRIMARY KEY column |
 | `REFERENCES table(column)` | Make a foreign key referencing another table |
 | `BIGSERIAL` | Integer that auto-increments |
+| `BOOLEAN ` | True / False, 'Yes' / 'No' |
 
 **Datatypes**: 
 | Datatype | Description |
