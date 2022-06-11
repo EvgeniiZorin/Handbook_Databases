@@ -42,6 +42,9 @@ CREATE DATABASE database1;
 ```sql
 # Create / delete a new table
 CREATE TABLE table1(column1 DATATYPE CONSTRAINTS, column2 DATATYPE CONSTRAINTS);
+
+ALTER TABLE table1 RENAME TO table2;
+
 DROP TABLE second_table; 
 ```
 
