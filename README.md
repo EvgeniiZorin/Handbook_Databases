@@ -94,7 +94,8 @@ ALTER TABLE characters ALTER COLUMN date_of_birth SET DATA TYPE VARCHAR(10); # C
 ALTER SEQUENCE person_id_seq RESTART WITH 10; # or 1
 
 # Drop a constraint for a column
-ALTER TABLE table1 DROP CONSTRAINT constraint_name;
+ALTER TABLE table1 DROP CONSTRAINT constraint_name; # Drop a named constraint
+ALTER TABLE table1 ALTER COLUMN column1 DROP NOT NULL; # Drop not null constraint
 ```
 
 Examples: 
