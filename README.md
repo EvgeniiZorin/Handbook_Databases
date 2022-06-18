@@ -131,6 +131,14 @@ DELETE FROM table1 WHERE column1='Value'; # Delete a row in which column has the
 
 ```
 
+## Update rows
+
+```sql
+# Update values in a column - swap 'f' and 'm' values
+UPDATE Salary SET sex = CASE WHEN sex = 'm' THEN 'f' ELSE 'm' END;
+
+```
+
 ---
 
 # Constraints
@@ -221,6 +229,12 @@ Examples:
 - `SELECT column1, COUNT(*) FROM table GROUP BY column1;` print count of each value in column1
 - `SELECT make, SUM(price) FROM car GROUP BY make;`
 
+## Sub-query
+
+Use IDs from one table to use in querying another table
+```sql
+SELECT column1 as 'Column 1' FROM table1 WHERE table1.id NOT IN (SELECT customer_id FROM table2);
+```
 
 
 
@@ -232,6 +246,17 @@ Examples:
 | `=`, `<`, `<=`, `>`, `>=` | |
 | `=` | equals |
 | `<>` | not equal |
+
+## IF conditions
+
+```sql
+# From table 'Employee', calculate bonus for each employee_id. 
+# Bonus = 100% salary (if ID is odd and employee name doesn't start with 'M'), else bonus = 0. 
+## Solution 1
+SELECT employee_id, CASE WHEN employee_id % 2 = 1 AND name NOT LIKE 'M%' THEN salary ELSE 0 END AS bonus FROM Employees;
+## Solution 2
+SELECT employee_id, if(employee_id % 2 = 1 AND name NOT LIKE 'M%', salary, 0) AS bonus FROM Employees;
+```
 
 # REGEX
 
