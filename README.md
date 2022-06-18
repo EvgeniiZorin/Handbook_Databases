@@ -5,6 +5,20 @@
 
 # Contents
 - [Essentials](#Essentials)
+- [Database](#Database)
+- [Table](#Table)
+- [Edit columns](#Edit-columns)
+- [Edit rows](#Edit-rows)
+- [Constraints](#Constraints)
+- [Primary key](#Primary-key)
+- [Filter](#Filter)
+- [Comparison operators](#Comparison-operators)
+- [REGEX](#REGEX)
+- [Arithmetic operations](#Arithmetic-operations)
+- [Dates](#Dates)
+- [Inner joins](#Inner-joins)
+- [Left joins](#Left-joins)
+- [Export query to CSV](#Export-query-to-CSV)
 
 # Essentials
 
@@ -245,7 +259,7 @@ Examples:
 - `SELECT column1 * 10`
 
 
-# Dates and timestamps
+# Dates
 
 ```sql
 SELECT NOW(); # Gives YYYY-MM-DD HH:MM:SS.MSMS
