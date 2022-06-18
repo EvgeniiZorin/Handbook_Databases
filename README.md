@@ -16,8 +16,7 @@
 - [REGEX](#REGEX)
 - [Arithmetic operations](#Arithmetic-operations)
 - [Dates](#Dates)
-- [Inner joins](#Inner-joins)
-- [Left joins](#Left-joins)
+- [Join tables](#Join-tables)
 - [Export query to CSV](#Export-query-to-CSV)
 
 # Essentials
@@ -285,7 +284,17 @@ SELECT EXTRACT (YEAR FROM NOW());
 
 ```
 
-# Inner joins
+# Join tables
+
+## Full join
+
+Combine values from two tables, including those with NULL values. 
+
+```sql
+SELECT * FROM table1 FULL JOIN table2 ON table1.id = table2.char_id; 
+```
+
+## Inner joins
 
 Combine two tables by a column with the same values. Join only gives rows that have foreign key in both tables. 
 
@@ -296,7 +305,7 @@ SELECT * FROM table1 JOIN table2 ON table1.table1_id = table2.id;
 SELECT table1.column1, table2.column FROM table1 JOIN table2 ON table1.table1_id = table2.id; # Or if you want to join selected columns only
 ```
 
-# Left join
+## Left join
 
 Table 1 + stuff from table 2, where table 1 entry can lack stuff from table 2. 
 
