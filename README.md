@@ -3,8 +3,10 @@
 
 > Evgenii Zorin
 
+# Contents
+- [Essentials](#Essentials)
 
-# Most basic information
+# Essentials
 
 **Types of databases**:
 - SQL (relational databases): MySQL, PostreSQL, SQLite, Microsoft SQL Server, MariaDB, Oracle; 
