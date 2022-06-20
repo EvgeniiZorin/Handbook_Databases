@@ -116,6 +116,9 @@ ALTER SEQUENCE person_id_seq RESTART WITH 10; # or 1
 # Drop a constraint for a column
 ALTER TABLE table1 DROP CONSTRAINT constraint_name; # Drop a named constraint
 ALTER TABLE table1 ALTER COLUMN column1 DROP NOT NULL; # Drop not null constraint
+
+# Add foreign key
+ALTER TABLE <table_name> ADD FOREIGN KEY(<column_name>) REFERENCES <referenced_table_name>(<referenced_column_name>);
 ```
 
 Examples: 
