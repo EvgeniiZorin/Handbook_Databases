@@ -193,6 +193,13 @@ ALTER TABLE table_name ADD PRIMARY KEY(column1, column2); # create composite pri
 ALTER TABLE table1 DROP CONSTRAINT person_pkey # Drop primary key constraint
 ```
 
+## Composite primary key 
+
+Uses more than one column as a unique pair. 
+
+```sql
+ALTER TABLE <table_name> ADD PRIMARY KEY(<column_name>, <column_name>);
+```
 ---
 
 # Filter
