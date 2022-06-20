@@ -84,7 +84,7 @@ DROP TABLE second_table;
 | `INT` | |
 | `SERIAL` | Auto-increments? |
 | `BIGSERIAL` | Auto-increments a number |
-| `VARCHAR(30)` | String of a specified length |
+| `VARCHAR(30)` | String (max length) |
 | `NUMERIC(4, 1)` | Float with number of decimals (1) |
 
 Examples: 
