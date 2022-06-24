@@ -205,7 +205,8 @@ ALTER TABLE <table_name> ADD PRIMARY KEY(<column_name>, <column_name>);
 # Filter
 
 ```sql
-SELECT column1, column2 FROM table1 WHERE column2='Value' AND column3='Value2' ORDER BY column_name LIMIT 10 OFFSET 3;
+SELECT column1, column2 FROM table1 WHERE column2='Value' AND (column3='Value2' OR column3='value3')
+ORDER BY column_name LIMIT 10 OFFSET 3;
 
 # COALESCE - print a value for NULL values
 SELECT COALESCE(column1, 'Entry not found') FROM table1;   
