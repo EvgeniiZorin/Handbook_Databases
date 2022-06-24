@@ -226,6 +226,9 @@ SELECT COALESCE(column1, 'Entry not found') FROM table1;
 - `WHERE column1 IN ('Value1', 'Value2', 'Value3');`
 - `WHERE date BETWEEN DATE '1999-01-01' AND '2015-01-01';`
 - `WHERE email LIKE '%.com'; `
+- `WHERE course NOT LIKE '_lgorithms';
+- `ILIKE`, `NOT ILIKE` - case-insensitive
+
 
 **ORDER BY**:
 -  `ORDER BY column1 ASC`
@@ -277,10 +280,18 @@ SELECT employee_id, if(employee_id % 2 = 1 AND name NOT LIKE 'M%', salary, 0) AS
 
 # REGEX
 
+```sql
+select * from courses where course like '_lgorithms';
+```
+
 | Sign | Meaning |
 | --- | --- |
 | `%` | any character, any number of times |
 | `_` | exactly 1 character |
+
+- `LIKE 'W%'` names starting with 'W'
+- `LIKE '_e%'` second letter is 'e'
+- `LIKE '% %'` values with a space in them
 
 ---
 
