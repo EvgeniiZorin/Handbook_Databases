@@ -367,6 +367,7 @@ Combine two tables by a column with the same values. Join only gives rows that h
 `\x` - toggle expanded display. 
 
 ```sql
+SELECT * FROM students INNER JOIN majors ON students.major_id = majors.major_id;
 SELECT * FROM table1 JOIN table2 ON table1.table1_id = table2.id; 
 SELECT table1.column1, table2.column FROM table1 JOIN table2 ON table1.table1_id = table2.id; # Or if you want to join selected columns only
 ```
