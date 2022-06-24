@@ -243,6 +243,7 @@ Examples:
 - `SELECT * FROM person WHERE gender='Female' AND (country_of_birth='Poland' OR country_of_birth='China') ORDER BY first_name;`
 - `SELECT column1, COUNT(*) FROM table GROUP BY column1;` print count of each value in column1
 - `SELECT make, SUM(price) FROM car GROUP BY make;`
+- `WHERE column1 < 'M'` selects rows with column1 values before 'M' alphabetically
 
 ## Sub-query
 
