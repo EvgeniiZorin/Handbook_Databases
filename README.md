@@ -213,7 +213,7 @@ SELECT COALESCE(column1, 'Entry not found') FROM table1;
 ```
 
 **SELECT**:
-- `SELECT DISTINCT column1`: only print unique values from the column
+- `SELECT DISTINCT(column1)`: only print unique values from the column
 - `SELECT COUNT(*)` count the total number of rows
 - `SELECT MAX(column1)` print the max value of column1
 - `SELECT AVG(column1)` 
@@ -237,6 +237,10 @@ SELECT COALESCE(column1, 'Entry not found') FROM table1;
 **GROUP BY**:
 - `GROUP BY column1`
 - `GROUP BY column1 HAVING COUNT(*) > 5` only group those values whose count is > 5
+- `select major_id, count(*) from students group by major_id;` count unique values in column 'major_id'
+- `select major_id, min(gpa) from students group by major_id;` view min value in each group within column major_id
+
+
 
 **OFFSET**: skip n rows
 **LIMIT**: show n first rows
@@ -306,9 +310,18 @@ ROUND(column1, decimalplaces);
 | `-`, `+`, `*`, `/` | |
 | `^` | power |
 | `%` | modulo |
+| `MIN(column1)` | minimum value of a column |
+| `SUM(column1)` | sum of all values in a column |
+| `AVG(column1)` | average of a column's values |
+| `CEIL(5.9)`, `FLOOR(5.1)` | round up a value |
+| `ROUND(<number_to_round>, <decimals_places>)` | round a value to the nearest whole number |
+| `COUNT(*)` | count number of rows |
+
+
 
 Examples: 
 - `SELECT column1 * 10`
+- `SELECT MAX(column1)`
 
 
 # Dates
@@ -360,7 +373,8 @@ SELECT table1.column1, table2.column FROM table1 JOIN table2 ON table1.table1_id
 
 ## Left join
 
-Table 1 + stuff from table 2, where table 1 entry can lack stuff from table 2. 
+Table 1 + stuff from table 2, where table 1 entry can lack stuff from table 2.    
+Left join gets all rows from the left table, but from the right table - only rows that are linked to those of the table on the left. 
 
 The same notation, just write `LEFT JOIN` instead of `JOIN`
 
