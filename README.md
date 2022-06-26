@@ -65,6 +65,8 @@ CREATE TABLE table1(column1 DATATYPE CONSTRAINTS, column2 DATATYPE CONSTRAINTS);
 
 ALTER TABLE table1 RENAME TO table2;
 
+TRUNCATE table1, table2 # Deletes all the data inside the specified tables, but not the tables themselves
+
 DROP TABLE second_table; 
 ```
 
