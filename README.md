@@ -362,6 +362,10 @@ Combine values from two tables, including those with NULL values.
 ```sql
 SELECT * FROM table1 FULL JOIN table2 ON table1.id = table2.char_id; 
 ```
+Or, if the column has the same name:
+```sql
+SELECT * FROM table1 JOIN table2 USING (id_name)
+```
 
 ## Inner joins
 
