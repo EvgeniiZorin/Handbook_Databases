@@ -100,9 +100,9 @@ CREATE TABLE table1(id BIGSERIAL NOT NULL PRIMARY KEY);
 ---
 
 # Edit columns
+
 ```sql
-ALTER TABLE table1 ADD COLUMN column1 DATATYPE CONSTRAINTS REFERENCES table2(column1);
-ALTER TABLE table 1 ADD COLUMN column1 DATATYPE CONSTRAINTS, ADD COLUMN column2 DATATYPE CONSTRAINTS;
+ALTER TABLE table1 ADD COLUMN column1 DATATYPE CONSTRAINTS DEFAULT 'default', ADD COLUMN column2 DATATYPE CONSTRAINTS REFERENCES table2(column1);
 # Add a column by concatenating two other columns (NOTE: this is not the most optimal solution, but it's the one that works for me):
 ALTER TABLE table1 ADD COLUMN full_name VARCHAR(30); 
 UPDATE table1 SET full_name = first_name || ' ' || last_name;
