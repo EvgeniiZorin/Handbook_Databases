@@ -230,7 +230,8 @@ SELECT COALESCE(column1, 'Entry not found') FROM table1;
 - `WHERE column1 != 2 OR column2 IS null;`
 - `WHERE column1 IN ('Value1', 'Value2', 'Value3');`
 - `WHERE date BETWEEN DATE '1999-01-01' AND '2015-01-01';`
-- `WHERE email LIKE '%.com'; `
+- Value starts with "a": `WHERE email LIKE '%a'`
+- Value ends with ".com": `WHERE email LIKE '%.com'; `
 - `WHERE course NOT LIKE '_lgorithms';
 - `ILIKE`, `NOT ILIKE` - case-insensitive
 
