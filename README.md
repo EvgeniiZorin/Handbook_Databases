@@ -229,8 +229,9 @@ SELECT COALESCE(column1, 'Entry not found') FROM table1;
 **WHERE**:
 - `WHERE column1 != 2 OR column2 IS null;`
 - `WHERE column1 IN ('Value1', 'Value2', 'Value3');`
-- `WHERE date BETWEEN DATE '1999-01-01' AND '2015-01-01';`
-- Value starts with "a": `WHERE email LIKE '%a'`
+- Values between two dates: `WHERE date BETWEEN DATE '1999-01-01' AND '2015-01-01';`
+- Values alphabetically between two strings: `WHERE column BETWEEN 'Alpha' AND 'Beta'`
+- Value starts with "a": `WHERE email LIKE 'a%'`
 - Value ends with ".com": `WHERE email LIKE '%.com'; `
 - `WHERE course NOT LIKE '_lgorithms';
 - `ILIKE`, `NOT ILIKE` - case-insensitive
