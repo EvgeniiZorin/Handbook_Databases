@@ -398,4 +398,6 @@ SELECT * FROM person LEFT JOIN car ON car.id = person.car_id WHERE car.* IS NULL
 
 ```sql
 \copy (SELECT ...) TO '/Users/Desktop/file.csv' DELIMITER ',' CSV HEADER;
+# Example
+\copy (SELECT * FROM table1 WHERE first_name='Evgenii') TO '/Users/evgen/Desktop/query2.csv' DELIMITER ',' CSV HEADER;
 ```
