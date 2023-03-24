@@ -382,7 +382,7 @@ There are two main categories of joins:
 
 Combine two tables by a column with the same values. Join only gives rows that have foreign key in both tables. 
 
-<img src="Media/inner_join.png" alt="inner joins" width="400">
+<img src="Media/inner_join.png" alt="inner joins" width="300">
 
 General form:
 ```sql
@@ -401,11 +401,11 @@ SELECT table1.column1, table2.column FROM table1 JOIN table2 ON table1.table1_id
 
 ## Left (outer) join
 
-Will keep the unrelated data from the left (the first) table.
-
-Left join gets all rows from the left table, but from the right table - only rows that are linked to those of the table on the left. 
+Will keep the unrelated data from the left (the first) table. Left join gets all rows from the left table, but from the right table - only rows that are linked to those of the table on the left. 
 
 The same notation, just write `LEFT JOIN` instead of `JOIN`
+
+<img src="Media/left_outer_join.png" alt="left (outer) join" width="300">
 
 General form:
 ```sql
@@ -422,6 +422,8 @@ SELECT * FROM person LEFT JOIN car ON car.id = person.car_id WHERE car.* IS NULL
 
 Will keep the data in the second table that is not related to the first table.
 
+<img src="Media/right_outer_join.png" alt="right (outer) join" width="300">
+
 General form:
 ```sql
 SELECT columns FROM table1
@@ -432,6 +434,8 @@ ON relation;
 ## Full (outer) join
 
 Combine values from two tables, including those with NULL values. 
+
+<img src="Media/full_outer_join.png" alt="full (outer) join" width="300">
 
 General form:
 ```sql
