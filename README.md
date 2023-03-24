@@ -61,18 +61,25 @@ DROP DATABASE second_database;
 
 General form
 ```sql
-CREATE TABLE table1(column1 DATATYPE CONSTRAINTS, column2 DATATYPE CONSTRAINTS);
+CREATE TABLE table1(
+column1 DATATYPE CONSTRAINTS, 
+column2 DATATYPE CONSTRAINTS);
 ```
 More commands
 ```sql
-# Create / delete a new table
+# Create a new table
 CREATE TABLE IF NOT EXISTS tablename;
+# Create an empty table
+CREATE TABLE table1();
+# Some examples
+CREATE TABLE table1(id SERIAL PRIMARY KEY, first_name VARCHAR(50) NOT NULL, gender VARCHAR(7) NOT NULL, date_birth DATE NOT NULL);
+CREATE TABLE table1(id BIGSERIAL NOT NULL PRIMARY KEY);
+
 # Rename a table
 ALTER TABLE table1 RENAME TO table2;
 
 # Delete all the data inside the tables, but not the tables themselves
 TRUNCATE table1, table2; 
-
 DROP TABLE second_table; 
 DROP TABLE IF EXISTS tablename;
 ```
@@ -99,12 +106,6 @@ DROP TABLE IF EXISTS tablename;
 
 
 
-Examples: 
-```sql
-CREATE TABLE table1(); # Create an empty table
-CREATE TABLE table1(id SERIAL PRIMARY KEY, first_name VARCHAR(50) NOT NULL, gender VARCHAR(7) NOT NULL, date_birth DATE NOT NULL);
-CREATE TABLE table1(id BIGSERIAL NOT NULL PRIMARY KEY);
-```
 
 ---
 
@@ -118,43 +119,44 @@ ADD COLUMN column2 DATATYPE CONSTRAINTS REFERENCES table2(column1);
 ```
 More commands:
 ```sql
-# Add a column by concatenating two other columns (NOTE: this is not the most optimal solution, but it's the one that works for me):
-ALTER TABLE table1 ADD COLUMN full_name VARCHAR(30); 
-UPDATE table1 SET full_name = first_name || ' ' || last_name;
+# Add a column
+ALTER TABLE table1 ADD COLUMN name VARCHAR(30) NOT NULL;
 
-ALTER TABLE table1 DROP COLUMN column1;
-
-ALTER TABLE table1 RENAME COLUMN column1 TO column2 # Rename a column
-
-ALTER TABLE characters ALTER COLUMN date_of_birth SET DATA TYPE VARCHAR(10); # Change datatype of a column. SET DATA TYPE = TYPE
-
+# Rename a column
+ALTER TABLE table1 RENAME COLUMN column1 TO column2
+# Change datatype of a column
+ALTER TABLE characters ALTER COLUMN date_of_birth SET DATA TYPE VARCHAR(10); # Change datatype of a column
 # Restart the auto-incrementing values
 ALTER SEQUENCE person_id_seq RESTART WITH 10; # or 1
+# Add foreign key
+ALTER TABLE <table_name> ADD FOREIGN KEY(<column_name>) REFERENCES <referenced_table_name>(<referenced_column_name>);
 
+# Delete a column
+ALTER TABLE table1 DROP COLUMN column1;
 # Drop a constraint for a column
 ALTER TABLE table1 DROP CONSTRAINT constraint_name; # Drop a named constraint
 ALTER TABLE table1 ALTER COLUMN column1 DROP NOT NULL; # Drop not null constraint
 
-# Add foreign key
-ALTER TABLE <table_name> ADD FOREIGN KEY(<column_name>) REFERENCES <referenced_table_name>(<referenced_column_name>);
-```
 
-Examples: 
-```sql
-ALTER TABLE table1 ADD COLUMN name VARCHAR(30) NOT NULL;
+# Add a column by concatenating two other columns (NOTE: this is not the most optimal solution, but it's the one that works for me):
+ALTER TABLE table1 ADD COLUMN full_name VARCHAR(30); 
+UPDATE table1 SET full_name = first_name || ' ' || last_name;
 ```
 
 # Edit rows
 ```sql
-INSERT INTO table1 (column1, column2, column3) VALUES ('Value1', 52, DATE '1995-05-04'); # Insert a row
-INSERT INTO table1 (column1, column2, column3) VALUES (...), (...) # Insert two rows
+# Insert a row
+INSERT INTO table1 (column1, column2, column3) VALUES ('Value1', 52, DATE '1995-05-04');
+# Insert two rows
+INSERT INTO table1 (column1, column2, column3) VALUES (...), (...);
 
-UPDATE table1 SET column1=5, column2=10 WHERE row="Rowname"; # Update an entry based on IF-condition
+# Update an entry based on IF-condition
+UPDATE table1 SET column1=5, column2=10 WHERE row="Rowname";
 
-
-DELETE FROM table1; # Delete all records
-DELETE FROM table1 WHERE column1='Value'; # Delete a row in which column has the specified value
-
+# Delete all records
+DELETE FROM table1; 
+# Delete a row in which column has the specified value
+DELETE FROM table1 WHERE column1='Value'; 
 ```
 
 ## Update rows
@@ -372,21 +374,20 @@ SELECT EXTRACT (YEAR FROM NOW());
 
 # Join tables
 
-## Full join
-
-Combine values from two tables, including those with NULL values. 
-
-```sql
-SELECT * FROM table1 FULL JOIN table2 ON table1.id = table2.char_id; 
-```
-Or, if the column has the same name:
-```sql
-SELECT * FROM table1 JOIN table2 USING (id_name)
-```
+There are two main categories of joins:
+- **INNER JOIN**: will only retain the data from the two tables that is related to each other (that is present in both tables, like an overlap of the Venn diagram);
+- **OUTER JOIN**: will additionally retain the data that is not related from one table to the other; iow, combines values from the two tables, even those with NULL values.
 
 ## Inner joins
 
 Combine two tables by a column with the same values. Join only gives rows that have foreign key in both tables. 
+
+General form:
+```sql
+SELECT * FROM table1
+JOIN table2 ON relation;
+```
+More examples:
 
 `\x` - toggle expanded display. 
 
@@ -396,15 +397,54 @@ SELECT * FROM table1 JOIN table2 ON table1.table1_id = table2.id;
 SELECT table1.column1, table2.column FROM table1 JOIN table2 ON table1.table1_id = table2.id; # Or if you want to join selected columns only
 ```
 
-## Left join
+## Left (outer) join
 
-Table 1 + stuff from table 2, where table 1 entry can lack stuff from table 2.    
+Will keep the unrelated data from the left (the first) table.
+
 Left join gets all rows from the left table, but from the right table - only rows that are linked to those of the table on the left. 
 
 The same notation, just write `LEFT JOIN` instead of `JOIN`
 
+General form:
 ```sql
-SELECT * FROM person LEFT JOIN car ON car.id = person.car_id WHERE car.* IS NULL; # Only show entries that don't have a car
+SELECT columns FROM table1
+LEFT JOIN table2
+ON relation;
+```
+More examples:
+```sql
+# Only show entries that don't have a car
+SELECT * FROM person LEFT JOIN car ON car.id = person.car_id WHERE car.* IS NULL;
+```
+## Right (outer) join
+
+Will keep the data in the second table that is not related to the first table.
+
+General form:
+```sql
+SELECT columns FROM table1
+RIGHT JOIN table2
+ON relation;
+```
+
+## Full (outer) join
+
+Combine values from two tables, including those with NULL values. 
+
+General form:
+```sql
+SELECT columns FROM table1
+FULL JOIN table2
+ON relation;
+```
+
+More examples:
+```sql
+SELECT * FROM table1 FULL JOIN table2 ON table1.id = table2.char_id; 
+```
+Or, if the column has the same name:
+```sql
+SELECT * FROM table1 JOIN table2 USING (id_name)
 ```
 
 # Export query to CSV
