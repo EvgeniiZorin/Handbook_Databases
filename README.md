@@ -515,17 +515,19 @@ Run a procedure
 CALL proc_1();
 ```
 
-E.g. a procedure for inserting a new name
+E.g. a procedure for inserting a new entry
 ```sql
 # Create procedure
-CREATE PROCEDURE proc_insertRecord (var1 VARCHAR(30)) 
-LANGUAGE SQL 
+CREATE PROCEDURE proc_insertrecord 
+(var1 VARCHAR(30), var2 VARCHAR(30), var3 INT) 
+LANGUAGE SQL
 AS $$ 
 INSERT INTO table1 (first_name, gender, age) 
-VALUES (var1, 'Female', 69); 
+VALUES (var1, var2, var3); 
 $$;
+
 # Run procedure
-CALL proc_insertrecord('Isabel');
+CALL proc_insertRecord ('Isabel2', 'weird', 10);
 ```
 
 Delete a procedure
