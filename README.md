@@ -225,7 +225,6 @@ ALTER TABLE <table_name> ADD PRIMARY KEY(<column_name>, <column_name>);
 # Filter
 
 ```sql
-SELECT column1, column2 FROM table1 WHERE column2='Value' AND (column3='Value2' OR column3='value3')
 ORDER BY column_name LIMIT 10 OFFSET 3;
 
 # COALESCE - print a value for NULL values
@@ -233,13 +232,35 @@ SELECT COALESCE(column1, 'Entry not found') FROM table1;
 ```
 
 **SELECT**:
-- `SELECT DISTINCT(column1)`: only print unique values from the column
-- `SELECT COUNT(*)` count the total number of rows
-- `SELECT MAX(column1)` print the max value of column1
-- `SELECT AVG(column1)` 
-- `SELECT ROUND(AVG(column1))`
-- `SELECT SUM(column1)` sum all values in a column
-- `SELECT column1 AS "Column title"`
+
+General form:
+```sql
+SELECT column1, column2 
+FROM table1 
+WHERE column2='Value'
+AND (column3='Value2' OR column3='value3');
+```
+
+Examples:
+```sql
+# Select all rows for all columns from a table
+SELECT * FROM table1;
+
+# Only print unique values from the column
+SELECT DISTINCT(column1)
+# Count the total number of rows
+SELECT COUNT(*)
+# Print the max value of column2
+SELECT MAX(column1)
+SELECT AVG(column1) 
+SELECT ROUND(AVG(column1))
+# Sum all values in a column
+SELECT SUM(column1)
+SELECT column1 AS "Column title"
+
+# Select example
+SELECT column1 FROM table1 WHERE column2 = 'value' and column3 > 100;
+```
 
 **WHERE**:
 - `WHERE column1 != 2 OR column2 IS null;`
