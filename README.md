@@ -59,9 +59,13 @@ DROP DATABASE second_database;
 
 # Table
 
+General form
+```sql
+CREATE TABLE table1(column1 DATATYPE CONSTRAINTS, column2 DATATYPE CONSTRAINTS);
+```
+More commands
 ```sql
 # Create / delete a new table
-CREATE TABLE table1(column1 DATATYPE CONSTRAINTS, column2 DATATYPE CONSTRAINTS);
 CREATE TABLE IF NOT EXISTS tablename;
 # Rename a table
 ALTER TABLE table1 RENAME TO table2;
@@ -112,7 +116,7 @@ ALTER TABLE table1
 ADD COLUMN column1 DATATYPE CONSTRAINTS DEFAULT 'default', 
 ADD COLUMN column2 DATATYPE CONSTRAINTS REFERENCES table2(column1);
 ```
-
+More commands:
 ```sql
 # Add a column by concatenating two other columns (NOTE: this is not the most optimal solution, but it's the one that works for me):
 ALTER TABLE table1 ADD COLUMN full_name VARCHAR(30); 
