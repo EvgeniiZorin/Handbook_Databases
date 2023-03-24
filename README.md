@@ -494,6 +494,8 @@ SELECT * FROM table1 JOIN table2 USING (id_name)
 
 In SQL, stored procedure is a set of statement(s) that perform some defined actions. We make stored procedures so that we can reuse statements that are used frequently. Below are the procedures for PostgreSQL.
 
+Not sure if I can get a procedure to return information in a SELECT statement.
+
 Check all procedures for postgreSQL
 ```sql
 \df
