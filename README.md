@@ -23,6 +23,7 @@
 - [Dates](#Dates)
 - [Join tables](#Join-tables)
 - [Export query to CSV](#Export-query-to-CSV)
+- [Procedures](#Procedures)
 
 # Essentials
 
@@ -488,3 +489,33 @@ SELECT * FROM table1 JOIN table2 USING (id_name)
 # Example
 \copy (SELECT * FROM table1 WHERE first_name='Evgenii') TO '/Users/evgen/Desktop/query2.csv' DELIMITER ',' CSV HEADER;
 ```
+
+# Procedures
+
+In SQL, stored procedure is a set of statement(s) that perform some defined actions. We make stored procedures so that we can reuse statements that are used frequently. Below are the procedures for PostgreSQL.
+
+Check all procedures for postgreSQL
+```sql
+\df
+```
+
+Create a new procedure for PostgreSQL
+```sql
+CREATE PROCEDURE proc_1 ()
+LANGUAGE SQL
+AS $$
+SELECT * FROM table1;
+$$;
+```
+
+Run a procedure
+```sql
+CALL proc_1();
+```
+
+Delete a procedure
+```sql
+DROP PROCEDURE proc_1;
+```
+
+
