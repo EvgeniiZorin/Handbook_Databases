@@ -78,10 +78,17 @@ CREATE TABLE table1(id BIGSERIAL NOT NULL PRIMARY KEY);
 # Rename a table
 ALTER TABLE table1 RENAME TO table2;
 
-# Delete all the data inside the tables, but not the tables themselves
-TRUNCATE table1, table2; 
-DROP TABLE second_table; 
-DROP TABLE IF EXISTS tablename;
+# Delete records from a table, but leave the table
+# DELETE - has a possible IF clause
+DELETE FROM table1;
+DELETE FROM table1 WHERE column1 = value; 
+# Delete records from a table, but leave the table
+# TRUNCATE - like DELETE, but doesn't have a possible IF clause
+TRUNCATE table1;
+TRUNCATE table1, table2;
+# Delete the table and all the rows inside it
+DROP TABLE table1;
+DROP TABLE IF EXISTS table1;
 ```
 
 **Datatypes**: 
