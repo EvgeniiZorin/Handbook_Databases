@@ -382,6 +382,8 @@ There are two main categories of joins:
 
 Combine two tables by a column with the same values. Join only gives rows that have foreign key in both tables. 
 
+<img src="Media/inner_joins.png" alt="inner joins" width="400">
+
 General form:
 ```sql
 SELECT * FROM table1
