@@ -49,13 +49,13 @@ Basic commands:
 # Database
 
 ```sql
-# To create a new database, simply type: 
+# Create a new database
 CREATE DATABASE database1;
+# Rename a database
+ALTER DATABASE first_database RENAME TO second_database;
+# Delete a database
+DROP DATABASE second_database;
 ```
-
-- `ALTER DATABASE first_database RENAME TO mario_database;` rename a database
-- `DROP DATABASE second_database;` delete a database
-
 
 # Table
 
@@ -63,14 +63,25 @@ CREATE DATABASE database1;
 # Create / delete a new table
 CREATE TABLE table1(column1 DATATYPE CONSTRAINTS, column2 DATATYPE CONSTRAINTS);
 CREATE TABLE IF NOT EXISTS tablename;
-
+# Rename a table
 ALTER TABLE table1 RENAME TO table2;
 
-TRUNCATE table1, table2; # Deletes all the data inside the specified tables, but not the tables themselves
+# Delete all the data inside the tables, but not the tables themselves
+TRUNCATE table1, table2; 
 
 DROP TABLE second_table; 
 DROP TABLE IF EXISTS tablename;
 ```
+
+**Datatypes**: 
+| Datatype | Description |
+| --- | --- |
+| `DATE` | YYYY-MM-DD |
+| `INT` | |
+| `SERIAL` | Auto-increments? |
+| `BIGSERIAL` | Auto-increments a number |
+| `VARCHAR(30)` | String (max length) |
+| `NUMERIC(4, 1)` | Float with number of decimals (1) |
 
 **Constraints**: 
 | Constraint | Meaning |
@@ -82,15 +93,7 @@ DROP TABLE IF EXISTS tablename;
 | `BOOLEAN ` | True / False, 'Yes' / 'No' |
 | `UNIQUE` | Values in this column must be unique |
 
-**Datatypes**: 
-| Datatype | Description |
-| --- | --- |
-| `DATE` | YYYY-MM-DD |
-| `INT` | |
-| `SERIAL` | Auto-increments? |
-| `BIGSERIAL` | Auto-increments a number |
-| `VARCHAR(30)` | String (max length) |
-| `NUMERIC(4, 1)` | Float with number of decimals (1) |
+
 
 Examples: 
 ```sql
@@ -103,8 +106,12 @@ CREATE TABLE table1(id BIGSERIAL NOT NULL PRIMARY KEY);
 
 # Edit columns
 
+General form:
 ```sql
 ALTER TABLE table1 ADD COLUMN column1 DATATYPE CONSTRAINTS DEFAULT 'default', ADD COLUMN column2 DATATYPE CONSTRAINTS REFERENCES table2(column1);
+```
+
+```sql
 # Add a column by concatenating two other columns (NOTE: this is not the most optimal solution, but it's the one that works for me):
 ALTER TABLE table1 ADD COLUMN full_name VARCHAR(30); 
 UPDATE table1 SET full_name = first_name || ' ' || last_name;
