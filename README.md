@@ -312,9 +312,24 @@ SELECT column1 as 'Column 1' FROM table1 WHERE table1.id NOT IN (SELECT customer
 ```
 
 
+# Operators
 
+## Logical operators
 
-# Comparison operators
+| Operator | Meaning |
+| - | - |
+| `AND` | Shows data if all the conditions separated by `AND` are TRUE. |
+| `OR` | Shows data if any of the conditions separated by `OR` is TRUE. |
+| `NOT` | Shows data if the condition after `NOT` is not true. |
+
+Some examples:
+```sql
+SELECT column1, column2 FROM table1 WHERE condition1 AND condition2 AND condition3;
+
+WHERE NOT condition;
+```
+
+## Comparison operators
 
 | Operator | Meaning |
 | --- | -- |
@@ -322,7 +337,31 @@ SELECT column1 as 'Column 1' FROM table1 WHERE table1.id NOT IN (SELECT customer
 | `=` | equals |
 | `<>` | not equal |
 
-## IF conditions
+## Arithmetic operations
+
+```sql
+SELECT 10 + 2;
+ROUND(column1, decimalplaces); 
+```
+| Operator | Meaning |
+| --- | --- |
+| `-`, `+`, `*`, `/` | |
+| `^` | power |
+| `%` | modulo |
+| `MIN(column1)` | minimum value of a column |
+| `SUM(column1)` | sum of all values in a column |
+| `AVG(column1)` | average of a column's values |
+| `CEIL(5.9)`, `FLOOR(5.1)` | round up a value |
+| `ROUND(<number_to_round>, <decimals_places>)` | round a value to the nearest whole number |
+| `COUNT(*)` | count number of rows |
+
+
+
+Examples: 
+- `SELECT column1 * 10`
+- `SELECT MAX(column1)`
+
+# IF conditions
 
 ```sql
 # From table 'Employee', calculate bonus for each employee_id. 
@@ -350,29 +389,7 @@ select * from courses where course like '_lgorithms';
 
 ---
 
-# Arithmetic operations
 
-```sql
-SELECT 10 + 2;
-ROUND(column1, decimalplaces); 
-```
-| Operator | Meaning |
-| --- | --- |
-| `-`, `+`, `*`, `/` | |
-| `^` | power |
-| `%` | modulo |
-| `MIN(column1)` | minimum value of a column |
-| `SUM(column1)` | sum of all values in a column |
-| `AVG(column1)` | average of a column's values |
-| `CEIL(5.9)`, `FLOOR(5.1)` | round up a value |
-| `ROUND(<number_to_round>, <decimals_places>)` | round a value to the nearest whole number |
-| `COUNT(*)` | count number of rows |
-
-
-
-Examples: 
-- `SELECT column1 * 10`
-- `SELECT MAX(column1)`
 
 
 # Dates
@@ -407,25 +424,25 @@ There are two main categories of joins:
 - **INNER JOIN**: will only retain the data from the two tables that is related to each other (that is present in both tables, like an overlap of the Venn diagram);
 - **OUTER JOIN**: will additionally retain the data that is not related from one table to the other; iow, combines values from the two tables, even those with NULL values.
 
+General form:
+```sql
+SELECT * FROM table1
+JOIN table2 ON relation;
+```
+
 ## Inner joins
 
 Combine two tables by a column with the same values. Join only gives rows that have foreign key in both tables. 
 
 <img src="Media/inner_join.png" alt="inner joins" width="300">
 
-General form:
-```sql
-SELECT * FROM table1
-JOIN table2 ON relation;
-```
+
 More examples:
 
 `\x` - toggle expanded display. 
 
 ```sql
 SELECT * FROM students INNER JOIN majors ON students.major_id = majors.major_id;
-SELECT * FROM table1 JOIN table2 ON table1.table1_id = table2.id; 
-SELECT table1.column1, table2.column FROM table1 JOIN table2 ON table1.table1_id = table2.id; # Or if you want to join selected columns only
 ```
 
 ## Left (outer) join
@@ -533,6 +550,37 @@ CALL proc_insertRecord ('Isabel2', 'weird', 10);
 Delete a procedure
 ```sql
 DROP PROCEDURE proc_1;
+```
+
+# Views
+
+A View is a kind of a table that is based on results of a previous SQL query. For example, you can save a table view upon running the inner join command, and then perform actions on that view table to not type in the join command over and over again. 
+
+After you create a view, it shows in the list of tables using the command `\d`. Nevertheless, this view is not a table; it simply is a result of a saved query. 
+
+```sql
+# Create a view of a table
+CREATE VIEW table1_view_males AS 
+SELECT * FROM table1 WHERE gender = 'Male';
+
+# Show a table view
+SELECT * FROM table1_view_males;
+```
+
+A more practical example
+```sql
+# Let's say you have a join query
+SELECT table1.first_name, table1.gender, table1.age, table2.item 
+FROM table1 
+INNER JOIN table2 ON table1.first_name = table2.first_name;
+# If you want to make an operation on it, instead of writing it out every time, you can save it as a view and then perform that action on the view of the table
+CREATE VIEW table1_table2_innerjoin AS 
+SELECT table1.first_name, table1.gender, table1.age, table2.item 
+FROM table1 
+INNER JOIN table2 ON table1.first_name = table2.first_name;
+# So now, you can perform operations on that view object you created, 
+# for example, you can count rows
+SELECT COUNT(*) FROM table1_table2_innerjoin;
 ```
 
 
