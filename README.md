@@ -581,6 +581,12 @@ SELECT * FROM table1 WHERE gender = 'Male';
 
 # Show a table view
 SELECT * FROM table1_view_males;
+
+# Update a view
+CREATE OR REPLACE VIEW view1 AS ...;
+
+# Delete a view
+DROP VIEW view1;
 ```
 
 A more practical example
@@ -589,11 +595,13 @@ A more practical example
 SELECT table1.first_name, table1.gender, table1.age, table2.item 
 FROM table1 
 INNER JOIN table2 ON table1.first_name = table2.first_name;
+
 # If you want to make an operation on it, instead of writing it out every time, you can save it as a view and then perform that action on the view of the table
 CREATE VIEW table1_table2_innerjoin AS 
 SELECT table1.first_name, table1.gender, table1.age, table2.item 
 FROM table1 
 INNER JOIN table2 ON table1.first_name = table2.first_name;
+
 # So now, you can perform operations on that view object you created, 
 # for example, you can count rows
 SELECT COUNT(*) FROM table1_table2_innerjoin;
