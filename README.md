@@ -2,7 +2,7 @@
 
 *Ver 3.0.0*
 
-> This is a practical handbook outlining the most important concepts and commands in SQL. When writing this material, I intended it to be a hands-on manual on how to achieve a specific objective in SQL, rather than to be an exhaustive piece of writing about every aspect of the language.   
+> This is a practical handbook outlining the most important concepts and commands in SQL. When writing this material, I intended it to be a hands-on manual on how to achieve a specific objective in SQL, rather than to be an exhaustive piece of writing about every aspect of the language. *Please note that, unless explicity stated, the commands are given for PostgreSQL*.
 > .   
 > Evgenii Zorin
 
@@ -57,7 +57,7 @@ Basic commands:
 | `\?` | print methods |
 | `\l` | list databases |
 | `\c database_name` | connect to a database |
-| `\d` | check which tables are present |
+| `\d` or MySQL `SHOW TABLES` | check which tables are present |
 | `\dt` | show tables ONLY, without `id_seq` |
 | `\d second_table` | check columns and details of a table in a database |
 
