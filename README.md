@@ -287,14 +287,27 @@ SELECT column1 FROM table1 WHERE column2 = 'value' and column3 > 100;
 ```
 
 **WHERE**:
-- `WHERE column1 != 2 OR column2 IS null;`
-- `WHERE column1 IN ('Value1', 'Value2', 'Value3');`
-- Values between two dates: `WHERE date BETWEEN DATE '1999-01-01' AND '2015-01-01';`
-- Values alphabetically between two strings: `WHERE column BETWEEN 'Alpha' AND 'Beta'`
-- Value starts with "a": `WHERE email LIKE 'a%'`
-- Value ends with ".com": `WHERE email LIKE '%.com'; `
-- `WHERE course NOT LIKE '_lgorithms';
-- `ILIKE`, `NOT ILIKE` - case-insensitive
+```sql
+WHERE column1 != 2 OR column2 IS null;
+WHERE column1 IN ('Value1', 'Value2', 'Value3')
+# Values between two dates
+WHERE date BETWEEN DATE '1999-01-01' AND '2015-01-01'
+# Values alphabetically between two strings
+WHERE column1 BETWEEN 'Alpha' AND 'Beta'
+
+# REGEXP
+### Value starts with 'a'
+WHERE email LIKE 'a%'
+### Value ends with '.com'
+WHERE email LIKE '%.com';
+#
+WHERE course NOT LIKE '_lgorithms';
+# case-insensitive
+ILIKE, NOT ILIKE
+# Entries start with a vowel
+SELECT DISTINCT(CITY) FROM STATION WHERE CITY ~ '^[AEIOUaeiou].*';
+SELECT DISTINCT(CITY) FROM STATION WHERE CITY REGEXP '^[aeiou]';
+```
 
 
 **ORDER BY**:
