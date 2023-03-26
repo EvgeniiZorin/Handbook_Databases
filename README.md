@@ -65,28 +65,31 @@ Basic commands:
 
 Denormalized dataset - all the data is combined in one dataset, without adhering to the database rules. To enter to a database, data has to have data integrity and adhere to some rules of good database design. Normalization of a database table - structuring it in such a way that it doesn't and cannot express *redundant information*. 
 
+The main purpose of database normalization is to avoid complexities, eliminate duplicates, and organize data in a consistent way.
+
 There are some normal forms (NF) which start with the most important (dangerous) at 1NF and continue to the less dangerous ones with increasing number. These are basically like safety assessment levels, starting from broader one to the more detailed ones. 
 
-
 1NF:
-- Row order should NOT be used to convey information;
-- Every column needs to have a single value of a single data type;
-- Primary key (one or several) needs to be present;
+
+Eliminates 
+- Row order should NOT be used to convey information in a table;
+- Atomicity: a single cell can only contain a single value of the same data type (within the column);
+- Every table has to have primary key (one or several);
 - Every row should be unique and not be repeated;
-- Not storing a repeating group of data items on a single row; instead, should be stored in a separate table referencing the main table via foreign key; 
+- A repeating group of data items should NOT be stored on a single row; instead, should be stored in a separate table referencing the main table via key;
 
 2NF:
-- update anomaly: insertion anomaly; 
-- each non-key attribute must depend on the entire primary key; 
+- The table has to be in 1NF;
+- Has to deal with update / insertion anomaly;
+- Each non-key attribute in a table must depend on the entire primary key (one or several) within that table; if it only depends on one of the primary keys, then it doesn't belong in this table;
+- Relationship between tables has to be formed with foreign keys;
 
+3NF:
+- The table has to be in 2NF;
+- every non-attribute in a table should depend on the key, the whole key, and nothing but the key;
 
+4NF:
 
-- Level 1: 1NF - first normal form; make database satisfy the 1NF = 1) every column / attribute needs to have a single value and 2) each row should be unique
-- Level 2: 2NF: - 1) must be in 1NF and 2) all non-key attributes must be fully dependent on candidate key (if a non-key column is partially dependent on candidate key, then split them into separate tables); 3) every table should have primary key and relationship between the tables should be formed using foreign key; 
- - Candidate key - set of columns which uniquely identify a record. 
- - 
-- 3NF
-- 4NF
 
 ---
 
