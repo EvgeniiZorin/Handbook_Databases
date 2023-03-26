@@ -370,6 +370,7 @@ ROUND(column1, decimalplaces);
 | `CEIL(5.9)`, `FLOOR(5.1)` | round up a value |
 | `ROUND(<number_to_round>, <decimals_places>)` | round a value to the nearest whole number |
 | `COUNT(*)` | count number of rows |
+| `mod(column1,2)` | Check the remainder of the division. In this case, remainder is zero if the number is even. |
 
 
 
