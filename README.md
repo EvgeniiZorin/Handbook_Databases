@@ -61,6 +61,33 @@ Basic commands:
 | `\dt` | show tables ONLY, without `id_seq` |
 | `\d second_table` | check columns and details of a table in a database |
 
+**Database Normalization**
+
+Denormalized dataset - all the data is combined in one dataset, without adhering to the database rules. To enter to a database, data has to have data integrity and adhere to some rules of good database design. Normalization of a database table - structuring it in such a way that it doesn't and cannot express *redundant information*. 
+
+There are some normal forms (NF) which start with the most important (dangerous) at 1NF and continue to the less dangerous ones with increasing number. These are basically like safety assessment levels, starting from broader one to the more detailed ones. 
+
+
+1NF:
+- Row order should NOT be used to convey information;
+- Every column needs to have a single value of a single data type;
+- Primary key (one or several) needs to be present;
+- Every row should be unique and not be repeated;
+- Not storing a repeating group of data items on a single row; instead, should be stored in a separate table referencing the main table via foreign key; 
+
+2NF:
+- update anomaly: insertion anomaly; 
+- each non-key attribute must depend on the entire primary key; 
+
+
+
+- Level 1: 1NF - first normal form; make database satisfy the 1NF = 1) every column / attribute needs to have a single value and 2) each row should be unique
+- Level 2: 2NF: - 1) must be in 1NF and 2) all non-key attributes must be fully dependent on candidate key (if a non-key column is partially dependent on candidate key, then split them into separate tables); 3) every table should have primary key and relationship between the tables should be formed using foreign key; 
+ - Candidate key - set of columns which uniquely identify a record. 
+ - 
+- 3NF
+- 4NF
+
 ---
 
 # Database
