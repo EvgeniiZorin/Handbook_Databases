@@ -69,27 +69,23 @@ The main purpose of database normalization is to avoid complexities, eliminate d
 
 There are some normal forms (NF) which start with the most important (dangerous) at 1NF and continue to the less dangerous ones with increasing number. These are basically like safety assessment levels, starting from broader one to the more detailed ones. 
 
-1NF:
-
-Eliminates 
+**1NF** - eliminates repeating groups:
 - Row order should NOT be used to convey information in a table;
 - Atomicity: a single cell can only contain a single value of the same data type (within the column);
 - Every table has to have primary key (one or several);
 - Every row should be unique and not be repeated;
 - A repeating group of data items should NOT be stored on a single row; instead, should be stored in a separate table referencing the main table via key;
 
-2NF:
+**2NF** - eliminates redundancy:
 - The table has to be in 1NF;
-- Has to deal with update / insertion anomaly;
-- Each non-key attribute in a table must depend on the entire primary key (one or several) within that table; if it only depends on one of the primary keys, then it doesn't belong in this table;
+- All non-key attribute in a table must depend on the entire primary key (one or several) within that table; if it only depends on one of the primary keys, then it doesn't belong in this table;
 - Relationship between tables has to be formed with foreign keys;
 
-3NF:
+**3NF** - eliminates transitive partial dependency:
 - The table has to be in 2NF;
-- every non-attribute in a table should depend on the key, the whole key, and nothing but the key;
+- every non-attribute in a table should depend on the key, the whole key, and nothing but the key; that is to say, there should not be dependencies between attributes that are not part of primary key;
 
-4NF:
-
+An excellent example is given here: https://www.freecodecamp.org/news/database-normalization-1nf-2nf-3nf-table-examples/#:~:text=The%20First%20Normal%20Form%20%E2%80%93%201NF,-For%20a%20table&text=there%20must%20be%20a%20primary,each%20row%20in%20the%20table
 
 ---
 
