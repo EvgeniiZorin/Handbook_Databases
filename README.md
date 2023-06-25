@@ -468,10 +468,16 @@ SELECT NOW()::TIME # HH:MM:SS.MSMS
 (NOW()::DATE + INTERVAL '10 MONTHS')::DATE
 ```
 
-Extracting fields: `DAY`, `DOW`, `YEAR`, `CENTURY`
+Extracting fields: `DAY`, `DOW`, `MONTH`, `YEAR`, `CENTURY`
 ```sql
 SELECT EXTRACT (YEAR FROM NOW());
 
+```
+
+Select a part of a date:
+- 'year', 'month', 'day', 'hour', 'minute', 'second'
+```sql
+SELECT date_part('year', (SELECT date_column_name))
 ```
 
 # Join tables
