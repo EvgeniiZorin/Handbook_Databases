@@ -51,6 +51,7 @@ SQL - structured query language.
 - Examples: MySQL, PostgreSQL, SQLite, Microsoft SQL Server, MariaDB, Oracle
 - Allows users to query, insert, delete, and update records in relational databases
 - Uses:
+  - asdf
  - Suitable for structured data with predefined schema
 - Advantages:
  - More advantageous if if your application requires complex data queries and transactional support.
