@@ -45,7 +45,7 @@
 
 SQL - structured query language. 
 
-**SQL / relational databases **:
+**SQL / relational databases**:
 - Relational database management systems (RDBMSs) (there are relationships between tables): use SQL to store and retrieve data and store data in rows and columns.
 - In RDBMSs, information from various tables is connected with keys (primary, foreign keys) 
 - Examples: MySQL, PostgreSQL, SQLite, Microsoft SQL Server, MariaDB, Oracle
