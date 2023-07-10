@@ -43,10 +43,19 @@
 
 # Essentials
 
-**Types of databases**:
-- SQL (relational databases): MySQL, PostreSQL, SQLite, Microsoft SQL Server, MariaDB, Oracle; 
-  - *In a relational database, there are relationships between tables.* 
-- NoSQL (not only SQL; can also structure in non-structured data): MongoDB, Redis, Firebase, DynamoDB, Cassandra; 
+**SQL**:
+- Relational databases (there are relationships between tables)
+- Examples: MySQL, PostgreSQL, SQLite, Microsoft SQL Server, MariaDB, Oracle
+- Allows users to query, insert, delete, and update records in relational databases
+- Advantages and uses:
+- 
+- More advantageous if if your application requires complex data queries and transactional support.
+
+**NoSQL**:
+- NoSQL (not only SQL; can also structure in non-structured data): MongoDB, Redis, Firebase, DynamoDB, Cassandra;
+- It is a type of database that uses non-relational data structures, such as documents, graph databases, and key-value stores to store and retrieve data. NoSQL systems are designed to be more flexible than traditional relational databases and can scale up or down easily to accommodate changes in usage or load.
+- Offers more flexibility and scalability. Allows fast prototyping, without worrying about the underlying data storage implementation. |
+ 
 
 Basic commands: 
 | Command | Function |
