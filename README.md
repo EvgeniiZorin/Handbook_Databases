@@ -37,6 +37,7 @@
 - [Export query to CSV](#export-query-to-csv)
 - [Procedures](#procedures)
 - [Views](#views)
+- [AQL]
 
 <small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
 
@@ -63,7 +64,7 @@ SQL - structured query language.
 - It is a type of database that uses non-relational data structures, such as documents, graph databases, and key-value stores to store and retrieve data. NoSQL systems are designed to be more flexible than traditional relational databases and can scale up or down easily to accommodate changes in usage or load.
 - Examples:
   - MongoDB: document-oriented database that uses JSON-like documents with optional schemas
-  - ArangoDB: free, open-source graph database
+  - ArangoDB: free, open-source graph database. Uses AQL (ArangoDB Query Language)
   - Redis, Firebase, DynamoDB, Cassandra
 - Uses:
   - Suitable for unstructured and semi-structured data
