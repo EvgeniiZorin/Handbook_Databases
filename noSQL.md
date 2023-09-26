@@ -24,10 +24,10 @@ Comments:
 
 Example of a basic query:
 ```aql
-FOR u IN users /* `users-collection-1`
+FOR u IN users // `users-collection-1`
   FILTER u.type == "newbie" && u.active == true
   RETURN u.name
-/* in the above example, `type`, `active`, and `name` are attributes of documents from the collection `users`
+// in the above example, `type`, `active`, and `name` are attributes of documents from the collection `users`
 ```
 
 ## Data types
