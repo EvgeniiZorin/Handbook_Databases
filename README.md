@@ -59,14 +59,19 @@ SQL - structured query language.
   - SQL can be too restrictive with data schema: You have to use predefined schemas to determine your data structure before you can work with it. All of your data must follow the same structure, and this process requires significant upfront preparation. If you ever need to change your data structure, it would be difficult and disruptive to your whole system. 
 
 **NoSQL**:
-- NoSQL (not only SQL; can also structure in non-structured data): MongoDB, Redis, Firebase, DynamoDB, Cassandra;
+- NoSQL (not only SQL; can also structure in non-structured data)
 - It is a type of database that uses non-relational data structures, such as documents, graph databases, and key-value stores to store and retrieve data. NoSQL systems are designed to be more flexible than traditional relational databases and can scale up or down easily to accommodate changes in usage or load.
+- Examples:
+  - MongoDB: document-oriented database that uses JSON-like documents with optional schemas
+  - ArangoDB: free, open-source graph database
+  - Redis, Firebase, DynamoDB, Cassandra
 - Uses:
   - Suitable for unstructured and semi-structured data
 - Advantages:
   - Offers more flexibility and scalability. Allows fast prototyping, without worrying about the underlying data storage implementation. |
 - Disadvantages:
   - Does not support complex queries;
+  - Does not support JOIN operations;
 
 Basic commands: 
 | Command | Function |
