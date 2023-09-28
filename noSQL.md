@@ -3,13 +3,15 @@
 
 # AQL
 
-## Basic
-
 All the material can be found here: https://docs.arangodb.com/3.11/aql/
+
+## Basic syntax
 
 Two types of operations:
 - Returning a result with RETURN keyword
 - Modifying the data with INSERT, UPDATE, REPLACE, REMOVE, or UPSERT keywords
+
+Whitespace (blanks, carriage returns, line feeds, and tab stops) can be used in the query text to increase its readability. Tokens have to be separated by any number of whitespace. Whitespace within strings or names must be enclosed in quotes in order to be preserved.
 
 Comments:
 
@@ -34,8 +36,8 @@ FOR u IN users // `users-collection-1`
 
 | Data type |	Description |
 | - | - |
-| null |	An empty value, also: the absence of a value |
-| boolean |	Boolean truth value with possible values false and true |
+| null `null` |	An empty value, also: the absence of a value |
+| boolean `true`, `false` |	Boolean truth value with possible values false and true |
 | number |	Signed (real) number |
 | string |	UTF-8 encoded text value |
 | array / list |	Sequence of values, referred to by their positions |
