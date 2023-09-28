@@ -34,14 +34,14 @@ FOR u IN users // `users-collection-1`
 
 ## Data types
 
-| Data type |	Description |
-| - | - |
-| null `null` |	An empty value, also: the absence of a value |
-| boolean `true`, `false` |	Boolean truth value with possible values false and true |
-| number |	Signed (real) number |
-| string |	UTF-8 encoded text value |
-| array / list |	Sequence of values, referred to by their positions |
-| object / document |	Sequence of values, referred to by their names |
+| Data type | Example |	Description |
+| - | - | - |
+| null | `null` |	An empty value, also: the absence of a value |
+| boolean | `true`, `false` |	Boolean truth value with possible values false and true |
+| number | 1, +1, -1, 1.05 |	Signed (real) number |
+| string | `'string'`, `"string"`, `"this is a \"quoted\" word"`, `'this is a "quoted" word'` |	UTF-8 encoded text value |
+| array / list | `[ -99, "yikes!", [ false, ["no"], [] ], 1 ]` |	Sequence of values, referred to by their positions. Nesting is allowed. Slicing is done as in Python. |
+| object / document / dictionary | `{ "name" : "Vanessa", "age" : 15 }` | Sequence of values, referred to by their names |
 
 
 
