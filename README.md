@@ -33,7 +33,8 @@ SQL - structured query language.
 - Examples:
   - MongoDB: document-oriented database that uses JSON-like documents with optional schemas
   - ArangoDB: free, open-source multi-model (can be used as document DB, key-value store, or graph DB) database. Uses AQL (ArangoDB Query Language)
-  - Redis, Firebase, DynamoDB, Cassandra
+  - Redis: open source key-value data storage
+  - Firebase, DynamoDB, Cassandra
 - Uses:
   - Suitable for unstructured and semi-structured data
 - Advantages:
