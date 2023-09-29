@@ -17,10 +17,23 @@ Examples of RETURN operation:
 FOR doc IN users
 RETURN doc
 
+//filter
+FOR friend IN friends
+FILTER friend.name == 'Will'
+RETURN friend
+
+//return document by its id `_id`
+RETURN document("<name-of-collection>/<id-number>")
+
 //create a projection of returning value
 FOR doc IN users
 RETURN { user: doc,
 newAttribute: true }
+```
+
+Examples of INSERT operation:
+```sql
+insert {"name": "Will"} into friends //insert key:value pair into "friends" collection
 ```
 
 Whitespace (blanks, carriage returns, line feeds, and tab stops) can be used in the query text to increase its readability. Tokens have to be separated by any number of whitespace. Whitespace within strings or names must be enclosed in quotes in order to be preserved.
