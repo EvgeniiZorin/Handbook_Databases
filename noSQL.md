@@ -88,6 +88,18 @@ Examples:
 | `..` | This operator produced an array of the integer values in the defined range, with both bounding values included. E.g. `2010..2013` produced an array `[2010, 2011, 2012, 2013]` |
 
 
+## Graph traversals
+
+```sql
+FOR vertex[, edge[, path]]
+IN [min[..max]] // the minimal and maximal depth for the traversal
+OUTBOUND|INBOUND|ANY
+startVertex
+GRAPH graphName
+[PRUNE [pruneVariable = ]pruneCondition]
+[OPTIONS options]
+```
+
 
 
 
