@@ -3,6 +3,11 @@
 
 # AQL
 
+AQL is for ArangoDB. ArangoDB can be run in localhost with Docker:
+```powershell
+docker run -e ARANGO_NO_AUTH=1 -p 8529:8529 -d --name test-arangodb arangodb
+```
+
 All the material can be found here: https://docs.arangodb.com/3.11/aql/
 
 ## Basic syntax
