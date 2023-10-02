@@ -18,7 +18,7 @@ Two types of operations / queries:
 
 Examples of RETURN operation:
 ```sql
-//return each document unchanged
+//return each document unchanged, as a list of dictionaries
 FOR doc IN users
 RETURN doc
 
@@ -31,6 +31,8 @@ RETURN friend
 RETURN document("<name-of-collection>/<id-number>")
 
 //create a projection of returning value
+//which is a list of dictionaries, but each dictionary inside of one value (for this example, 'user') will also have
+// a dictionary with the query result
 FOR doc IN users
 RETURN { user: doc,
 newAttribute: true }
@@ -116,6 +118,14 @@ startVertex
 GRAPH graphName
 [PRUNE [pruneVariable = ]pruneCondition]
 [OPTIONS options]
+```
+
+Examples:
+```sql
+// return nodes that are 1 edge away from the node "friends/237", edges being defined in collection "hi_fives"
+for friend in 1..1 outbound 
+"friends/237" hi_fives
+return friend
 ```
 
 
