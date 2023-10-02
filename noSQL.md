@@ -121,11 +121,23 @@ GRAPH graphName
 ```
 
 Examples:
+
 ```sql
-// return nodes that are 1 edge away from the node "friends/237", edges being defined in collection "hi_fives"
+// insert an edge into edge collection "hi_fives" connecting two nodes from the document collection "friends" with "_id" values being "friends/332" and "friends/2771": 
+insert {_from: "friends/332", _to: "friends/2771", handCoverage: 0.1} into "hi_fives"
+```
+
+```sql
+// return nodes that are at most 1 edge away from the node "friends/237", edges being defined in collection "hi_fives"
 for friend in 1..1 outbound 
 "friends/237" hi_fives
 return friend
+
+// return nodes that are at most 2 edges away from the node "friends/237", edges being defined in collection "hi_fives"
+for friend in 1..2 outbound 
+"friends/237" hi_fives
+return friend
+
 ```
 
 
