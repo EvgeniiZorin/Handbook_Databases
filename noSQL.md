@@ -1,6 +1,12 @@
 
 # noSQL
 
+# MongoDB
+
+```powershell
+docker run -p 27023:27017 --name local-mongo3 -d mongo
+```
+
 # AQL
 
 AQL is for ArangoDB. ArangoDB can be run in localhost with Docker:
