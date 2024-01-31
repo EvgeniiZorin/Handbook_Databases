@@ -1,5 +1,3 @@
-arangodb
-
 # AQL
 
 AQL is for ArangoDB. ArangoDB can be run in localhost with Docker:
@@ -9,7 +7,7 @@ docker run -e ARANGO_NO_AUTH=1 -p 8529:8529 -d --name test-arangodb arangodb
 
 All the material can be found here: https://docs.arangodb.com/3.11/aql/
 
-## Basic syntax
+# Basic syntax
 
 Two types of operations / queries:
 - Returning a result with RETURN keyword
@@ -53,6 +51,7 @@ Comments:
    a multi line
    comment */
 // a single line comment
+some command here // and a comment afterwards
 ```
 
 Example of a basic query:
@@ -63,7 +62,7 @@ FOR u IN users // `users-collection-1`
 // in the above example, `type`, `active`, and `name` are attributes of documents from the collection `users`
 ```
 
-## Data types
+# Data types
 
 | Data type | Example |	Description |
 | - | - | - |
@@ -71,10 +70,10 @@ FOR u IN users // `users-collection-1`
 | boolean | `true`, `false` |	Boolean truth value with possible values false and true |
 | number | 1, +1, -1, 1.05 |	Signed (real) number |
 | string | `'string'`, `"string"`, `"this is a \"quoted\" word"`, `'this is a "quoted" word'` |	UTF-8 encoded text value |
-| array / list | `[ -99, "yikes!", [ false, ["no"], [] ], 1 ]` |	Sequence of values, referred to by their positions. Nesting is allowed. Slicing is done as in Python. |
+| array / list | `[ -99, "yikes!", [ false, ["no"], [] ], 1 ]` <br> `['a', 'b', 'c']` |	Sequence of values, referred to by their positions. Nesting is allowed. Slicing is done as in Python. |
 | object / document / dictionary | `{ "name" : "Vanessa", "age" : 15 }` | Sequence of values, referred to by their names |
 
-## Operators
+# Operators
 
 **Comparison operators**
 | Operator | Description |
@@ -106,8 +105,19 @@ Examples:
 | - | - |
 | `..` | This operator produced an array of the integer values in the defined range, with both bounding values included. E.g. `2010..2013` produced an array `[2010, 2011, 2012, 2013]` |
 
+# Filter
 
-## Graph traversals
+```aql
+filter class.attribute 
+
+== 'term here' // exact match
+=~ 'term here' // str.contains
+=~ 'term1|term2' // str.contains with an OR logical operator
+!= 'term1' // not equal to
+in ['2021', '2022']
+```
+
+# Graph traversals
 
 ```sql
 FOR vertex[, edge[, path]]
