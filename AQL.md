@@ -117,6 +117,23 @@ filter class.attribute
 in ['2021', '2022']
 ```
 
+COLLECT - counts rows
+```sql
+for node in nodes
+filter node.class=='classHere'
+
+collect 
+CLASS = node.class, 
+CLASS2 = node.class2
+with count into n
+
+return distinct {
+class1: CLASS,
+class2: CLASS2,
+COUNT: n
+}
+```
+
 # Graph traversals
 
 ```sql
