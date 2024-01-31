@@ -107,7 +107,7 @@ Examples:
 
 # Filter
 
-```aql
+```sql
 filter class.attribute 
 
 == 'term here' // exact match
