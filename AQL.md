@@ -115,6 +115,11 @@ filter class.attribute
 =~ 'term1|term2' // str.contains with an OR logical operator
 != 'term1' // not equal to
 in ['2021', '2022']
+
+//-------------------------------------------------------------------------
+
+filter not contains(cv.source "douyin")
+filter length(className) > 0 // remove nan values (???)
 ```
 
 COLLECT - counts rows
