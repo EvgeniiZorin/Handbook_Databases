@@ -107,6 +107,29 @@ Examples:
 
 # Filter
 
+## Get unique attributes for a class 'Class1'
+
+```sql
+let attr = (for d in nodes
+filter d._class == 'Class1'
+return distinct attributes(d))
+
+return unique(flatten(attr))
+```
+
+### Check all neighbouring classes from one of the directions of the link
+
+inbound or outbound
+
+```sql
+for i in nodes
+filter i._class == 'class1'
+for j in 1..1 inbound i rels
+return distinct j._class
+```
+
+---
+
 ```sql
 filter class.attribute 
 
