@@ -75,6 +75,8 @@ FOR u IN users // `users-collection-1`
 
 # Operators
 
+https://docs.arangodb.com/3.12/aql/operators/
+
 **Comparison operators**
 | Operator | Description |
 | - | - |
@@ -117,7 +119,7 @@ return distinct attributes(d))
 return unique(flatten(attr))
 ```
 
-### Check all neighbouring classes from one of the directions of the link
+## Check all neighbouring classes from one of the directions of the link
 
 inbound or outbound
 
