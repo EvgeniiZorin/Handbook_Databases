@@ -130,6 +130,23 @@ for j in 1..1 inbound i rels
 return distinct j._class
 ```
 
+## "Let" statement
+
+```sql
+let statement1 = (
+    for s in 1..1 inbound nodes rels
+    FILTER s._class == "class-here" 
+    RETURN distinct {att1: s.att1, att2: s.att2}
+)
+
+filter length (statement1) != 0
+
+return distinct{
+ATT1: concat_separator('; ', statement1[*].att1),
+ATT2: concat_separator('; ', statement1[*].att2),
+}
+```
+
 ---
 
 ```sql
