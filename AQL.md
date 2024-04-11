@@ -149,16 +149,18 @@ ATT2: concat_separator('; ', statement1[*].att2),
 
 ---
 
+## General examples
+
 ```sql
 filter class.attribute 
 
 == 'term here' // exact match
-=~ 'term here' // str.contains
-=~ 'term1|term2' // str.contains with an OR logical operator
 != 'term1' // not equal to
 in ['2021', '2022']
 
 //-------------------------------------------------------------------------
+
+
 
 filter not contains(cv.source "douyin")
 filter length(className) > 0 // remove nan values (???)
@@ -179,6 +181,15 @@ class1: CLASS,
 class2: CLASS2,
 COUNT: n
 }
+```
+
+## REGEXP
+
+```sql
+=~ 'term here' // str.contains
+=~ 'term1|term2' // str.contains with an OR logical operator
+a =~ 'disease[sd]'
+a =~ 'cancer(s|ous)'
 ```
 
 # Graph traversals
