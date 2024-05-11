@@ -319,6 +319,18 @@ SELECT DISTINCT(CITY) FROM STATION WHERE CITY ~ '^[AEIOUaeiou].*';
 SELECT DISTINCT(CITY) FROM STATION WHERE CITY REGEXP '^[aeiou]';
 ```
 
+**HAVING**
+
+WHERE is used for filtering rows BEFORE any grouping or aggregation.
+
+HAVING is used for filtering rows AFTER any grouping or aggregation.
+
+If you have both a WHERE clause and a HAVING clause in your query, WHERE will execute first.
+
+In order to use HAVING, you also need:
+- A GROUP BY clause
+- An aggregation in your SELECT section (SUM, MIN, MAX, etc.)
+
 
 **ORDER BY**:
 -  `ORDER BY column1 ASC`
