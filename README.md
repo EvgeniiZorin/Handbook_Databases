@@ -8,38 +8,84 @@
 
 [![License: CC BY 4.0](https://img.shields.io/badge/License-CC_BY_4.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
 
-I have Markdown documents with commands for [SQL](SQL.md) and [noSQL](noSQL.md).
 
 # Classifications
 
-SQL - structured query language. 
+**Database** is an organised structure made for storing, editing, and processing of information. There are two types - [SQL](SQL.md) and [noSQL](noSQL.md):
 
-**SQL / relational databases**:
-- Relational database management systems (RDBMSs) (there are relationships between tables): use SQL to store and retrieve data and store data in rows and columns.
-- In RDBMSs, information from various tables is connected with keys (primary, foreign keys) 
-- Examples: MySQL, PostgreSQL, SQLite, Microsoft SQL Server, MariaDB, Oracle
-- Allows users to query, insert, delete, and update records in relational databases
-- Uses:
-  - Suitable for structured data with predefined schema
-- Advantages:
-  - More advantageous if if your application requires complex data queries and transactional support.
-  - Perfect for complex queries - supports complex queries
-- Disadvantages:
-  - SQL can be too restrictive with data schema: You have to use predefined schemas to determine your data structure before you can work with it. All of your data must follow the same structure, and this process requires significant upfront preparation. If you ever need to change your data structure, it would be difficult and disruptive to your whole system. 
+## SQL
 
-**NoSQL**:
-- NoSQL (not only SQL; can also structure in non-structured data)
-- It is a type of database that uses non-relational data structures, such as documents, graph databases, and key-value stores to store and retrieve data. NoSQL systems are designed to be more flexible than traditional relational databases and can scale up or down easily to accommodate changes in usage or load.
-- Examples:
-  - MongoDB: document-oriented database that uses JSON-like documents with optional schemas
-  - ArangoDB: free, open-source multi-model (can be used as document DB, key-value store, or graph DB) database. Uses AQL (ArangoDB Query Language)
-  - Redis: open source key-value data storage
-  - Firebase, DynamoDB, Cassandra
-- Uses:
-  - Suitable for unstructured and semi-structured data
-- Advantages:
-  - Offers more flexibility and scalability. Allows fast prototyping, without worrying about the underlying data storage implementation. |
-- Disadvantages:
-  - Does not support complex queries;
-  - Does not support JOIN operations;
+SQL - structured query language. Also known as **Relational databases** / Relational database management systems (RDBMSs): store data as a series of tables, where each column contains data of the same type and there are relationships between tables that are specified with keys (primary, foreign keys);
+
+Another feature is that the data schema for a table is specified upon its creation; 
+
+Advantages / uses:
+- Suitable for structured data with **rigid, predefined data schema**
+- More suitable if your application requires complex data queries and transactional support
+- Supports **complex queries** with keys, join statements, etc.
+
+Disadvantages:
+- SQL can be **too restrictive with its data schema**: you have to use predefined schemas to determine your data structure before you can work with it. All of your data must follow the same structure, and this process requires significant upfront preparation. If you ever need to change your data structure, it would be difficult and disruptive to your whole system
+
+Examples: 
+- MySQL, 
+- PostgreSQL, 
+- SQLite, 
+- Microsoft SQL Server, 
+- MariaDB, 
+- Oracle
+
+
+## noSQL
+
+Non-relational databases (NoSQL - Not Only SQL): have **non-relational, flexible data structures** (such as documents, graph databases, and key-value stores) that often do not require upfront design and specification of data schema. 
+
+NoSQL systems are designed to be more flexible than traditional relational databases and can scale up or down easily to accommodate changes in usage or load.
+
+Advantages:
+- Offers more flexibility and scalability. Allows fast prototyping, without worrying about the underlying data storage implementation. |
+- Suitable for unstructured and semi-structured data
+
+Disadvantages:
+- Does not support complex queries;
+- Does not support JOIN operations;
+
+
+Examples of different types of databases:
+- **Key/Value**: data is queried upon requesting its key
+  - Redis (open-source), KeyDB, memcached, etcd
+- **Document-oriented**: uses structured formats (JSON, BSON, XML) for storing documents; specifying data schemas is optional; as a result, each document / data point can have its own internal structure; they are great for prototyping and fast development due to ease of use and ability to change data types; 
+  - MondoDB, RethinkDB, Elasticsearch, Aerospike
+- **Column**: databases optimised for column search; as opposed to the RDBMS, which scans scans the entire table, this one allows searching only in specific columns;
+  - ClickHouse, Cassandra
+- **Graph**: make links between tables using edges, nodes, and properties.
+  - ArangoDB: free, open-source multi-model (can be used as document DB, key-value store, or graph DB). Uses AQL (ArangoDB query language)
+  - Neo4j, Dgraph, RedisGraph
+- **Time series**: optimised for time series
+  - Prometheus, InfluxDB
+
+
+# CAP Theorem
+
+(from Wikipedia)
+In database theory, the CAP theorem, also named Brewer's theorem after computer scientist Eric Brewer, states that any distributed data store can provide only two of the following three guarantees:
+
+- **Consistency**: <u>Every read receives the most recent write or an error</u>. So after we have written some new data into our database, any client upon request can get that data;
+- **Availability**: <u>Every request received by a non-failing node in the system must result in a response</u>. This is definition of availability in CAP theorem as defined by Gilbert and Lynch. But note that there are different notions of availability: in distributed systems, availability means the percentage of requests that clients see as successful, or something close to that.
+- **Partition tolerance**: <u>The system continues to operate despite an arbitrary number of messages being dropped (or delayed) by the network between nodes</u>.
+
+From the viewpoint of the CAP theorem, databases can be of three types: CA, CP, or AP.
+
+Read more: https://blog.iddqd.uk/interview-section-databases/
+
+<img src="Media/cap-theorem.png">
+
+# ACID
+
+ACID is a series of characteristics / features that which ensures that a set of database operations (grouped together in a transaction) leave the database in a valid state even in the event of unexpected errors.
+- **Atomicity**: Atomicity guarantees that all of the commands that make up a transaction are treated as a single unit and either succeed or fail together.
+- **Consistency**: Consistency guarantees that changes made within a transaction are consistent with database constraints. This includes all rules, constraints, and triggers. If the data gets into an illegal state, the whole transaction fails.
+- **Isolation**: Isolation ensures that all transactions run in an isolated environment. That enables running transactions concurrently because transactions don’t interfere with each other.
+- **Durability**: Durability guarantees that once the transaction completes and changes are written to the database, they are persisted. This ensures that data within the system will persist even in the case of system failures like crashes or power outages.
+
 
