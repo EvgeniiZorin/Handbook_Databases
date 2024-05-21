@@ -2,7 +2,7 @@
 
 - [SQL](#sql)
 - [Basic](#basic)
-	- [Database Normalization](#database-normalization)
+- [Database Normalization](#database-normalization)
 - [Subsets of SQL commands](#subsets-of-sql-commands)
 	- [DDL](#ddl)
 	- [DML](#dml)
@@ -33,6 +33,13 @@
 - [Views](#views)
 - [Isolation levels](#isolation-levels)
 - [Denormalisation](#denormalisation)
+- [Relationships](#relationships)
+	- [One-to-one](#one-to-one)
+	- [One-to-many](#one-to-many)
+	- [Many-to-many](#many-to-many)
+	- [Many-to-one](#many-to-one)
+	- [Self-referencing](#self-referencing)
+- [PostgreSQL](#postgresql)
 
 <small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
 
@@ -53,7 +60,7 @@ Basic commands:
 | `\dt` | show tables ONLY, without `id_seq` |
 | `\d second_table` | check columns and details of a table in a database |
 
-## Database Normalization
+# Database Normalization
 
 **Database normalization** is the process of **structuring a relational database** in accordance with a series of so-called **normal forms** in order to reduce data redundancy and improve data integrity. It was first proposed by British computer scientist Edgar F. Codd as part of his relational model.
 
@@ -117,7 +124,6 @@ Table commands:
 CREATE TABLE table1(
 column1 DATATYPE CONSTRAINTS, 
 column2 DATATYPE CONSTRAINTS);
-
 -- Create a new table
 CREATE TABLE IF NOT EXISTS tablename;
 -- Create an empty table
@@ -125,13 +131,16 @@ CREATE TABLE table1();
 -- Some examples
 CREATE TABLE table1(id SERIAL PRIMARY KEY, first_name VARCHAR(50) NOT NULL, gender VARCHAR(7) NOT NULL, date_birth DATE NOT NULL);
 CREATE TABLE table1(id BIGSERIAL NOT NULL PRIMARY KEY);
+
 -- Rename a table
-ALTER TABLE table1 RENAME TO table2;
+ALTER TABLE table1 
+RENAME TO table2;
 
 -- Delete records from a table, but leave the table
 -- TRUNCATE - like DELETE, but doesn't have a possible IF clause
 TRUNCATE table1;
 TRUNCATE table1, table2;
+
 -- Delete the table and all the rows inside it
 DROP TABLE table1;
 DROP TABLE IF EXISTS table1;
@@ -140,14 +149,14 @@ DROP TABLE IF EXISTS table1;
 ALTER TABLE table1 
 ADD COLUMN column1 DATATYPE CONSTRAINTS DEFAULT 'default', 
 ADD COLUMN column2 DATATYPE CONSTRAINTS REFERENCES table2(column1);
-
--- More commands:
-
--- Add a column
-ALTER TABLE table1 ADD COLUMN name VARCHAR(30) NOT NULL;
+-- Add a column example
+ALTER TABLE table1 
+ADD COLUMN name VARCHAR(30) NOT NULL UNIQUE;
 
 -- Rename a column
-ALTER TABLE table1 RENAME COLUMN column1 TO column2
+ALTER TABLE table1 
+RENAME COLUMN column1 TO column2;
+
 -- Change datatype of a column
 ALTER TABLE characters ALTER COLUMN date_of_birth SET DATA TYPE VARCHAR(10); # Change datatype of a column
 -- Restart the auto-incrementing values
@@ -156,7 +165,9 @@ ALTER SEQUENCE person_id_seq RESTART WITH 10; # or 1
 ALTER TABLE <table_name> ADD FOREIGN KEY(<column_name>) REFERENCES <referenced_table_name>(<referenced_column_name>);
 
 -- Delete a column
-ALTER TABLE table1 DROP COLUMN column1;
+ALTER TABLE table1 
+DROP COLUMN column1;
+
 -- Drop a constraint for a column
 ALTER TABLE table1 DROP CONSTRAINT constraint_name; # Drop a named constraint
 ALTER TABLE table1 ALTER COLUMN column1 DROP NOT NULL; # Drop not null constraint
@@ -199,7 +210,9 @@ INSERT INTO table1 (column1, column2, column3) VALUES ('Value1', 52, DATE '1995-
 INSERT INTO table1 (column1, column2, column3) VALUES (...), (...);
 
 # Update an entry based on IF-condition
-UPDATE table1 SET column1=5, column2=10 WHERE row="Rowname";
+UPDATE table1 
+SET column1=5, column2=10 
+WHERE row='Rowname' AND row2='Rowname2';
 
 # Delete all records
 DELETE FROM table1; 
@@ -293,6 +306,8 @@ In order to use HAVING, you also need:
 -  `ORDER BY column1 ASC`
 -  `ORDER BY column1 DESC`
 
+`SELECT * FROM characters ORDER BY character_id;`
+
 **GROUP BY**:
 - `GROUP BY column1`
 - `GROUP BY column1 HAVING COUNT(*) > 5` only group those values whose count is > 5
@@ -327,12 +342,14 @@ Data Control Language, shortly termed DCL, is comprised of those commands in SQL
 | Datatype | Description |
 | --- | --- |
 | `DATE` | YYYY-MM-DD |
-| `INT` | |
-| `SERIAL` | Auto-increments? |
+| `INT` | Integer. |
+| `SERIAL` | Auto-increments a number. The SERIAL type will make your column an INT with a NOT NULL constraint, and automatically increment the integer when a new row is added.  |
 | `BIGSERIAL` | Auto-increments a number |
-| `CHAR(30)` | String (specified length). The string has to be EXACTLY the specified length, in this case, 30 characters - no more, no less. |
-| `VARCHAR(30)` | String (max length). The string can have a length up to the specified limit, such as 10, 20, 25 characters, but no more than 30 characters. |
+| `CHAR(30)` | String (specified length). The string has to be EXACTLY the specified length, in this case, 30 characters - no more, no less. *Note: use single quotes, not doublequotes* |
+| `VARCHAR(30)` | String (max length). The string can have a length up to the specified limit, such as 10, 20, 25 characters, but no more than 30 characters. *Note: use single quotes, not doublequotes* |
 | `NUMERIC(4, 1)` | Float with number of decimals (1) |
+| `NULL` | Null |
+| `BOOLEAN` | `TRUE`, `FALSE` |
 
 # Constraints
 
@@ -352,7 +369,8 @@ Constraints are used to limit the data types for specific columns.
 
 Examples:
 ```sql
-ALTER TABLE table_name ALTER COLUMN column_name SET NOT NULL; # Add NOT NULL constraint to foreign key column, so that there will be no rows for nobody 
+-- Add a NOT NULL constraint to the foreign key column, so that there will be no Null rows
+ALTER TABLE table_name ALTER COLUMN column_name SET NOT NULL;
 ```
 
 UNIQUE - makes sure that only unique values can be added in a column
@@ -396,25 +414,82 @@ Features:
 - `Null` values are not accepted. 
 - Are indexed automatically.
 
+
 ```sql
-ALTER TABLE table1 ADD PRIMARY KEY (column1); # Add primary key constraint to a column
+-- You can create a table with a column with PRIMARY KEY constraint. As it is SERIAL, you don't need to specify it when inserting new rows - it will be created automatically as per the internal rules:
+CREATE TABLE sounds (sound_id SERIAL PRIMARY KEY);
+
+-- Or add a new column and set it up as a primary key
+ALTER TABLE moon ADD COLUMN moon_id SERIAL PRIMARY KEY;
+
+-- Adding a new column and setting it up as a primary key can also be done in two steps:
+ALTER TABLE table_name ADD COLUMN column1 SERIAL;
+ALTER TABLE table1 ADD PRIMARY KEY (column1);
+```
+
+
+
+
+If you want to alter the primary key, you can do it like this. Check first the details of a table with the command `\d characters`:
+```txt
+mario_database=> \d characters
+                                             Table "public.characters"
++----------------+-----------------------+-----------+----------+--------------------------------------------------+
+|     Column     |         Type          | Collation | Nullable |                     Default                      |
++----------------+-----------------------+-----------+----------+--------------------------------------------------+
+| character_id   | integer               |           | not null | nextval('characters_character_id_seq'::regclass) |
+| name           | character varying(30) |           | not null |                                                  |
+| homeland       | character varying(60) |           |          |                                                  |
+| favorite_color | character varying(30) |           |          |                                                  |
++----------------+-----------------------+-----------+----------+--------------------------------------------------+
+Indexes:
+    "characters_pkey" PRIMARY KEY, btree (name)
+```
+
+Then drop contraint:
+```sql
+ALTER TABLE characters DROP CONSTRAINT characters_pkey;
+```
+
+---
+
+Other commands:
+
 ALTER TABLE table_name ADD PRIMARY KEY(column1, column2); # create composite primary key (primary key from two columns)
 
 ALTER TABLE table1 DROP CONSTRAINT person_pkey # Drop primary key constraint
-```
+
 
 ## Composite primary key 
 
-Uses more than one column as a unique pair. 
-
 ```sql
+-- Uses more than one column as a unique pair. 
 ALTER TABLE <table_name> ADD PRIMARY KEY(<column_name>, <column_name>);
 ```
----
 
 ## Foreign key
 
-Makes a connection between two tables via their joint column.
+Makes a connection between two tables via their joint column. A Foreign keys enforce data integrity, making sure the data confirms to some rules when it is added to the DB.
+
+```sql
+-- Create foreign key upon creation of the table
+CREATE TABLE user_profiles (
+    profile_id INT PRIMARY KEY,
+    user_id INT UNIQUE,
+    profile_data VARCHAR(255),
+    FOREIGN KEY (user_id) REFERENCES users(user_id));
+
+-- Create a new column with  the constraint of foreign key
+ALTER TABLE more_info 
+ADD COLUMN character_id INT 
+REFERENCES characters(character_id);
+
+-- You can set an existing column as a foreign key like this:
+ALTER TABLE table_name 
+ADD FOREIGN KEY(column_name) 
+REFERENCES referenced_table(referenced_column);
+```
+
 
 # Sub-query
 
@@ -637,6 +712,13 @@ Or, if the column has the same name:
 SELECT * FROM table1 JOIN table2 USING (id_name)
 ```
 
+Or if we want to joint three tables:
+```sql
+SELECT columns FROM junction_table
+FULL JOIN table_1 ON junction_table.foreign_key_column = table_1.primary_key_column
+FULL JOIN table_2 ON junction_table.foreign_key_column = table_2.primary_key_column;
+```
+
 # Export query to CSV
 
 ```sql
@@ -770,5 +852,129 @@ Cons of Denormalization:
 - Increased Update and Maintenance Complexity: Denormalization can increase the complexity of updating and maintaining the database by introducing redundant data.
 - Limited Flexibility: Denormalization can reduce the flexibility of a database system by introducing redundant data and making it harder to modify the schema.
 
+# Relationships
 
+Relationships in SQL are a way to establish connections between multiple tables. There are five different types of relationships between tables:
+- One-to-one
+- One-to-many
+- Many-to-many
+- Many-to-one
+- Self-referencing
+
+Read more: https://www.geeksforgeeks.org/relationships-in-sql-one-to-one-one-to-many-many-to-many/
+
+## One-to-one
+
+- Definition: Each record in Table A is associated with one and only one record in Table B, and vice versa.
+- Setup: Include a foreign key in one of the tables that references the primary key of the other table.
+
+```sql
+-- For example: Tables users and user_profiles, where each user has a single corresponding profile.
+CREATE TABLE users (
+    user_id INT PRIMARY KEY,
+    username VARCHAR(50));
+CREATE TABLE user_profiles (
+    profile_id INT PRIMARY KEY,
+    user_id INT UNIQUE,
+    profile_data VARCHAR(255),
+    FOREIGN KEY (user_id) REFERENCES users(user_id));
+```
+
+## One-to-many
+
+- Definition: Each record in Table A can be associated with multiple records in Table B, but each record in Table B is associated with only one record in Table A.
+- Setup: Include a foreign key in the "many" side table (Table B) that references the primary key of the "one" side table (Table A).
+
+```sql
+-- For example: Tables departments and employees, where each department can have multiple employees, but each employee belongs to one department.
+CREATE TABLE departments (
+    department_id INT PRIMARY KEY,
+    department_name VARCHAR(50));
+CREATE TABLE employees (
+    employee_id INT PRIMARY KEY,
+    employee_name VARCHAR(50),
+    department_id INT,
+    FOREIGN KEY (department_id) REFERENCES departments(department_id));
+```
+
+```txt
+Example: each character from the Mario franchise is associated with multiple filenames that represent sounds, but each sound is only connected to one character.
+
+In this example, the foreign key from table B (`sounds`) references the primary key from table A (`characters`): 
+
+mario_database=> SELECT * FROM characters FULL JOIN sounds ON characters.character_id = sounds.character_id;
+mario_database=>                                                    
++--------------+--------+------------------+----------------+----------+--------------+--------------+
+| character_id |  name  |     homeland     | favorite_color | sound_id |   filename   | character_id |
++--------------+--------+------------------+----------------+----------+--------------+--------------+
+|            1 | Mario  | Mushroom Kingdom | Red            |        1 | its-a-me.wav |            1 |
+|            1 | Mario  | Mushroom Kingdom | Red            |        2 | yippee.wav   |            1 |
+|            2 | Luigi  | Mushroom Kingdom | Green          |        3 | ha-ha.wav    |            2 |
+|            2 | Luigi  | Mushroom Kingdom | Green          |        4 | oh-yeah.wav  |            2 |
+|            3 | Peach  | Mushroom Kingdom | Pink           |        5 | yay.wav      |            3 |
+|            3 | Peach  | Mushroom Kingdom | Pink           |        6 | woo-hoo.wav  |            3 |
+|            3 | Peach  | Mushroom Kingdom | Pink           |        7 | mm-hmm.wav   |            3 |
+|            1 | Mario  | Mushroom Kingdom | Red            |        8 | yahoo.wav    |            1 |
+```
+
+## Many-to-many
+
+- Definition: Each record in Table A can be associated with multiple records in Table B, and vice versa.
+- Setup: Create an intermediate (junction, linking) table that contains foreign keys referencing both related tables.
+
+```sql
+-- For example: Tables students and courses, where each student can enroll in multiple courses, and each course can have multiple students.
+CREATE TABLE students (
+    student_id INT PRIMARY KEY,
+    student_name VARCHAR(50));
+CREATE TABLE courses (
+    course_id INT PRIMARY KEY,
+    course_name VARCHAR(50));
+CREATE TABLE student_courses (
+    student_id INT,
+    course_id INT,
+    PRIMARY KEY (student_id, course_id),
+    FOREIGN KEY (student_id) REFERENCES students(student_id),
+    FOREIGN KEY (course_id) REFERENCES courses(course_id));
+```
+
+## Many-to-one
+
+> Note: A Many-to-One relation is the same as one-to-many, but from a different viewpoint.
+
+- Definition: Multiple records in table A can be associated with one record in table B.
+- Setup: Crate a Foreign key in “Many Table” that references to Primary Key in “One Table”.
+
+```sql
+-- Example: Table Courses and Teachers, many courses can be taught by single teacher.
+CREATE TABLE Teachers (
+    teacher_id INT PRIMARY KEY,
+    first_name VARCHAR(255),
+    last_name VARCHAR(255)
+);
+CREATE TABLE Courses (
+    course_id INT PRIMARY KEY,
+    course_name VARCHAR(255),
+    teacher_id INT,
+    FOREIGN KEY (teacher_id) REFERENCES Teachers(teacher_id)
+);
+```
+
+## Self-referencing
+
+- Definition: A table has a foreign key that references its primary key.
+- Setup: Include a foreign key column in the same table that references its primary key.
+
+```sql
+-- For example : A table `employees` with a column `manager_id` referencing the same table’s `employee_id`.
+CREATE TABLE employees (
+    employee_id INT PRIMARY KEY,
+    employee_name VARCHAR(50),
+    manager_id INT,
+    FOREIGN KEY (manager_id) REFERENCES employees(employee_id));
+```
+
+# PostgreSQL
+
+Login: `psql --username=<username-here> --dbname=<dbname-here>`
 
