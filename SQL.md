@@ -4,41 +4,42 @@
 - [Basic](#basic)
 - [Database Normalization](#database-normalization)
 - [Subsets of SQL commands](#subsets-of-sql-commands)
-	- [DDL](#ddl)
-	- [DML](#dml)
-		- [SELECT](#select)
-	- [DCL](#dcl)
+  - [DDL](#ddl)
+  - [DML](#dml)
+    - [SELECT](#select)
+  - [DCL](#dcl)
 - [Datatypes](#datatypes)
 - [Constraints](#constraints)
 - [Keys](#keys)
-	- [Unique key](#unique-key)
-	- [Primary key](#primary-key)
-	- [Composite primary key](#composite-primary-key)
-	- [Foreign key](#foreign-key)
+  - [Unique key](#unique-key)
+  - [Primary key](#primary-key)
+  - [Composite primary key](#composite-primary-key)
+  - [Foreign key](#foreign-key)
 - [Sub-query](#sub-query)
 - [Operators](#operators)
-	- [Logical operators](#logical-operators)
-	- [Comparison operators](#comparison-operators)
-	- [Arithmetic operations](#arithmetic-operations)
+  - [Logical operators](#logical-operators)
+  - [Comparison operators](#comparison-operators)
+  - [Arithmetic operations](#arithmetic-operations)
 - [IF conditions](#if-conditions)
 - [REGEX](#regex)
 - [Dates](#dates)
 - [Joins](#joins)
-	- [Inner joins](#inner-joins)
-	- [Left (outer) join](#left-outer-join)
-	- [Right (outer) join](#right-outer-join)
-	- [Full (outer) join](#full-outer-join)
+  - [Inner joins](#inner-joins)
+  - [Left (outer) join](#left-outer-join)
+  - [Right (outer) join](#right-outer-join)
+  - [Full (outer) join](#full-outer-join)
 - [Export query to CSV](#export-query-to-csv)
 - [Procedures](#procedures)
 - [Views](#views)
+- [Transaction](#transaction)
 - [Isolation levels](#isolation-levels)
 - [Denormalisation](#denormalisation)
 - [Relationships](#relationships)
-	- [One-to-one](#one-to-one)
-	- [One-to-many](#one-to-many)
-	- [Many-to-many](#many-to-many)
-	- [Many-to-one](#many-to-one)
-	- [Self-referencing](#self-referencing)
+  - [One-to-one](#one-to-one)
+  - [One-to-many](#one-to-many)
+  - [Many-to-many](#many-to-many)
+  - [Many-to-one](#many-to-one)
+  - [Self-referencing](#self-referencing)
 - [PostgreSQL](#postgresql)
 
 <small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
@@ -811,21 +812,84 @@ INNER JOIN table2 ON table1.first_name = table2.first_name;
 SELECT COUNT(*) FROM table1_table2_innerjoin;
 ```
 
+# Transaction
+
+A transaction is $N \ge 1$ queries to DB that either compelete successfully all together or are not completed at all.
+
+A SQL transaction is a sequence of database operations that behave as a single unit of work. It ensures that multiple operations are executed in an atomic and consistent manner, which is crucial for maintaining database integrity. SQL transactions adhere to a set of principles known as ACID.
+
+Primary statements used for managing SQL transactions:
+- BEGIN TRANSACTION / START TRANSACTION
+- COMMIT
+- ROLLBACK
+
+
+Example of a transaction: consider a bank database with two tables: Customers (customer_id, name, account_balance) and Transactions (transaction_id, transaction_amount, customer_id). To transfer a specific amount from one customer to another securely, you would use a SQL transaction as follows:
+```sql
+BEGIN TRANSACTION;
+
+-- Reduce the balance of the sender
+UPDATE Customers
+SET account_balance = account_balance - 100
+WHERE customer_id = 1;
+
+-- Increase the balance of the receiver
+UPDATE Customers
+SET account_balance = account_balance + 100
+WHERE customer_id = 2;
+
+-- Insert a new entry into the Transactions table
+INSERT INTO Transactions (transaction_amount, customer_id)
+VALUES (-100, 1),
+       (100, 2);
+
+-- Check if the sender's balance is sufficient
+IF (SELECT account_balance FROM Customers WHERE customer_id = 1) >= 0
+    COMMIT;
+ELSE
+    ROLLBACK;
+```
+
+SQL transactions are crucial in various real-world scenarios that require multiple database operations to occur atomically and consistently. Below are some common examples:
+- E-commerce: When processing an order that includes billing, shipping, and updating the inventory, it is essential to execute these actions as a single transaction to ensure data consistency and avoid potential double bookings, incorrect inventory updates, or incomplete order processing.
+- Banking and financial systems: Managing accounts, deposits, withdrawals, and transfers require transactions for ensuring data integrity and consistency while updating account balances and maintaining audit trails of all transactions.
+- Reservation systems: For booking tickets or accommodations, the availability of the seats or rooms must be checked, confirmed, and updated in the system. Transactions are necessary for this process to prevent overbooking or incorrect reservations.
+- User registration and authentication: While creating user accounts, it is vital to ensure that the account information is saved securely to the correct tables and without duplicates. Transactions can ensure atomicity and isolation of account data operations.
+
+Potential issues with SQL transactions:
+- Isolation problems:
+  - Dirty reads - where a transaction may see uncommitted changes made by some other transaction. 
+  - Non-repeatable reads: Before transaction A is over, another transaction B also accesses the same data. Then, due to the modification caused by transaction B, the data read twice from transaction A may be different. The key to non-repeatable reading is to modify: In the same conditions, the data you have read, read it again, and find that the value is different.
+  - Phantom reads: When the user reads records, another transaction inserts or deletes rows to the records being read. When the user reads the same rows again, a new “phantom” row will be found. The key point of the phantom reading is to add or delete: Under the same conditions, the number of records read out for the first time and the second time is different.
+- Deadlocks
+- Lost updates
+- Long-running transactions
+
 # Isolation levels
 
 > Read more: https://blog.iddqd.uk/interview-section-databases/
 
-Transaction is $N \ge 1$ queries to DB that either compelete successfully all together or are not completed at all.
+Transaction isolation levels are how SQL databases solve data reading problems in concurrent transactions. 
 
 The four isolation levels in increasing order of isolation attained for a given transaction, are READ UNCOMMITTED , READ COMMITTED , REPEATABLE READ , and SERIALIZABLE.
+- **Read uncommitted**: one transaction can read the data of another uncommitted transaction.  
+  - Weakest isolation, but also the fastest;
+  - Allows dirty reads, non-repeatable reads, phantoms
+  - Is acceptable when 1) you are reading data that you know will never be modified in any way or 2) for non-critical summary reports
+- **Read committed**: a transaction cannot read data until another transaction is committed. 
+  - Default for PostgreSQL
+  - Prevents dirty reads
+  - Allows non-repeatable reads, phantom reads
+- **Repeatable read**: when starting to read data (transaction is opened), modification operations are no longer allowed. Solved non-repeatable read.
+  - Default for MySQL
+  - Prevents dirty reads, non-repeatable reads
+  - Allows phantoms
+- **Serializable**: erializable is the highest transaction isolation level. Under this level, transactions are serialized and executed sequentially, which can avoid dirty read, non-repeatable read, and phantom read. However, this transaction isolation level is inefficient and consumes database performance, so it is rarely used.
+  - Strongest isolation, but also the slowest
+  - Prevents dirty reads, non-repeatable reads, and phantom reads
 
-Read uncommitted (самая плохая согласованность данных, но самая высокая скорость выполнения) - каждая транзакция видит незафиксированные изменения другой транзакции (феномен “грязного чтения”). На данном уровне нельзя использовать данные, на основе которых делаются важные для приложения выводы и критические решения
 
-Read committed (используется по умолчанию в PostgreSQL) - параллельно исполняющиеся транзакции видят только зафиксированные изменения из других транзакций (защита от “грязного чтения”). Т.е. для транзакции, работающей на этом уровне, запрос SELECT (без предложения FOR UPDATE/SHARE) видит только те данные, которые были зафиксированы до начала запроса; она никогда не увидит незафиксированных данных или изменений, внесённых в процессе выполнения запроса параллельными транзакциями. Этот уровень подвержен феномену неповторяющегося чтения
 
-Repeatable read (используется по умолчанию в MySQL) - уровень, позволяющий предотвратить феномен неповторяющегося чтения. Т.е. мы не видим в исполняющейся транзакции измененные и удаленные записи другой транзакцией. Но все еще видим вставленные записи из другой транзакции. Чтение фантомов никуда не уходит.
-
-Serializable (самая низкая скорость выполнения и самая высокая согласованность) - транзакции ведут себя как будто ничего более не существует, никакого влияния друг на друга нет. В классическом представлении этот уровень избавляет от эффекта чтения фантомов
 
 
 # Denormalisation
