@@ -8,16 +8,58 @@
 
 [![License: CC BY 4.0](https://img.shields.io/badge/License-CC_BY_4.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
 
+# Introduction
+
+**Database** is an organised structure made for storing, editing, and processing of information, typically stored electronically in a computer system.
+
+Two types of databases - **relational** and **non-relational** database.
+
+A **DBMS** (Database Management System):
+- is a software applications that helps users create and maintain a database. 
+- It does:
+- Security
+- Backups
+- Importing / exporting data
+- Concurrency
+- Interacts with software applications, e.g. programing languages
+- DBMS allow you to perform CRUD operations and other administrative tasks
+
+**RDBMS** (Relational DBMS): 
+- <u>Manages a relational database</u>
+- a type of DBMS that deals with relations and various key constraints. 
+- Helps users create and maintain a relational database. 
+- Examples include PostgreSQL, MySQL, etc.
+
+**NRDBMS** (Non-relational DBMS):
+- <u>Manager a non-relational database</u>
+- Helps users create and maintain a non-relational database, e.g. mongoDB, dynamoDB, etc.
+- Any non-relational database falls under this category, so there's no set language standard
+- Most NRDBMS will implement their own NoSQL language for performing CRUD and administrative operations on the database
+
+Four basic operations of persistent storage - CRUD:
+- Create
+- Read
+- Update
+- Delete
+
+A **Query** is a request made to the DBMS for specific information. We write queries for a specific DBMS (RDBMS or NRDBMS) using a query language (either SQL or NoSQL).
 
 # Classifications
 
-**Database** is an organised structure made for storing, editing, and processing of information. There are two types - [SQL](SQL.md) and [noSQL](noSQL.md):
+Two types of databases - relational databases using [SQL](SQL.md) and non-relational databases using [noSQL](noSQL.md):
 
 ## SQL
 
-SQL - structured query language. Also known as **Relational databases** / Relational database management systems (RDBMSs): store data as a series of tables, where each column contains data of the same type and there are relationships between tables that are specified with keys (primary, foreign keys);
+Relational Database: 
+- <u>Stores data as a series of tables</u>, where each column contains data of the same type and there are relationships between tables that are specified with keys (primary, foreign keys);
+- Another feature is that the data schema for a table is specified upon its creation; 
 
-Another feature is that the data schema for a table is specified upon its creation; 
+SQL (Structured Query Language):
+- is used to interact with RDBMS, 
+- perform CRUD operations, 
+- and perform other administrative tasks (user management, security, backup, etc.)
+- used to define tables and structures
+- SQL is standardised; however, different RDBMS make slight modifications to the SQL language. Therefore, code used on one RDBMS is not always portable to another without modification
 
 Advantages / uses:
 - Suitable for structured data with **rigid, predefined data schema**
@@ -27,7 +69,7 @@ Advantages / uses:
 Disadvantages:
 - SQL can be **too restrictive with its data schema**: you have to use predefined schemas to determine your data structure before you can work with it. All of your data must follow the same structure, and this process requires significant upfront preparation. If you ever need to change your data structure, it would be difficult and disruptive to your whole system
 
-Examples: 
+Examples of RDBMS:
 - MySQL, 
 - PostgreSQL, 
 - SQLite, 
@@ -38,9 +80,11 @@ Examples:
 
 ## noSQL
 
-Non-relational databases (NoSQL - Not Only SQL): have **non-relational, flexible data structures** (such as documents, graph databases, and key-value stores) that often do not require upfront design and specification of data schema. 
-
-NoSQL systems are designed to be more flexible than traditional relational databases and can scale up or down easily to accommodate changes in usage or load.
+Non-Relational Database:
+- Have **non-relational, flexible data structures** (such as documents, graph databases, and key-value stores) that often do not require upfront design and specification of data schema. 
+- <u>Organise data in anything but a traditional table</u>
+- Different non-relational databases use different NoSQL language
+- NoSQL systems are designed to be more flexible than traditional relational databases and can scale up or down easily to accommodate changes in usage or load.
 
 Advantages:
 - Offers more flexibility and scalability. Allows fast prototyping, without worrying about the underlying data storage implementation. |
@@ -51,8 +95,8 @@ Disadvantages:
 - Does not support JOIN operations;
 
 
-Examples of different types of databases:
-- **Key/Value**: data is queried upon requesting its key
+Examples of different types of NRDBMS:
+- **Key/Value Hash**: data is queried upon requesting its key
   - Redis (open-source), KeyDB, memcached, etcd
 - **Document-oriented**: uses structured formats (JSON, BSON, XML) for storing documents; specifying data schemas is optional; as a result, each document / data point can have its own internal structure; they are great for prototyping and fast development due to ease of use and ability to change data types; 
   - MondoDB, RethinkDB, Elasticsearch, Aerospike
@@ -64,6 +108,11 @@ Examples of different types of databases:
 - **Time series**: optimised for time series
   - Prometheus, InfluxDB
 
+# State vs Schema
+
+Database state: the collection of information stored in a database at a particular moment;
+
+Database schema: the overall design of the database;
 
 # CAP Theorem
 

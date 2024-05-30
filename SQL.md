@@ -8,6 +8,7 @@
   - [DML](#dml)
     - [SELECT](#select)
   - [DCL](#dcl)
+  - [TCL](#tcl)
 - [Datatypes](#datatypes)
 - [Constraints](#constraints)
 - [Keys](#keys)
@@ -275,6 +276,11 @@ WHERE column1 IN ('Value1', 'Value2', 'Value3')
 WHERE date BETWEEN DATE '1999-01-01' AND '2015-01-01'
 # Values alphabetically between two strings
 WHERE column1 BETWEEN 'Alpha' AND 'Beta'
+-- Odd number
+MOD(columnName, 2) <> 0
+-- Even number
+MOD(columnName, 2) = 0
+
 
 # REGEXP
 ### Value starts with 'a'
@@ -337,6 +343,12 @@ Data Control Language, shortly termed DCL, is comprised of those commands in SQL
 | **GRANT** | Gives access privileges or permissions like ALL, SELECT, and EXECUTE to the database objects like views, tables, etc, in SQL. |
 | **REVOKE** | Withdraws access privileges or permissions given with the GRANT command. |
 
+## TCL
+
+Transaction Control Language:
+- COMMIT
+- ROLLBACK
+- SAVEPOINT
 
 # Datatypes
 
@@ -349,7 +361,7 @@ Data Control Language, shortly termed DCL, is comprised of those commands in SQL
 | `CHAR(30)` | String (specified length). The string has to be EXACTLY the specified length, in this case, 30 characters - no more, no less. *Note: use single quotes, not doublequotes* |
 | `VARCHAR(30)` | String (max length). The string can have a length up to the specified limit, such as 10, 20, 25 characters, but no more than 30 characters. *Note: use single quotes, not doublequotes* |
 | `NUMERIC(4, 1)` | Float with number of decimals (1) |
-| `NULL` | Null |
+| `NULL` | Null. `column IS NULL`|
 | `BOOLEAN` | `TRUE`, `FALSE` |
 
 # Constraints
@@ -524,6 +536,10 @@ WHERE NOT condition;
 | `=`, `<`, `<=`, `>`, `>=` | |
 | `=` | equals |
 | `<>` | not equal |
+
+> Note: NULL value indicates an unavailable or unassigned value. The value NULL does not equal zero (0), nor does it equal a space (‘ ‘). Because the NULL value cannot be equal or unequal to any value, you cannot perform any comparison on this value by using operators such as ‘=’ or ‘<>’.
+>
+> Therefore, use `Column IS NULL` or NOT NULL
 
 ## Arithmetic operations
 
@@ -776,6 +792,12 @@ DROP PROCEDURE proc_1;
 # Views
 
 A View is a kind of a table that is based on results of a previous SQL query. For example, you can save a table view upon running the inner join command, and then perform actions on that view table to not type in the join command over and over again. 
+
+Uses and advantages:
+- Views can join and simplify multiple tables into a single virtual table;
+- Views can act as aggregated tables
+- Views can hide the complexity of data
+- Views can provide extra security to a DBMS
 
 After you create a view, it shows in the list of tables using the command `\d`. Nevertheless, this view is not a table; it simply is a result of a saved query. 
 
