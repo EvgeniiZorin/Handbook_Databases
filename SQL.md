@@ -16,6 +16,7 @@
   - [Primary key](#primary-key)
   - [Composite primary key](#composite-primary-key)
   - [Foreign key](#foreign-key)
+- [Trigger](#trigger)
 - [Sub-query](#sub-query)
 - [Operators](#operators)
   - [Logical operators](#logical-operators)
@@ -30,6 +31,7 @@
   - [Left (outer) join](#left-outer-join)
   - [Right (outer) join](#right-outer-join)
   - [Full (outer) join](#full-outer-join)
+- [Nested queries](#nested-queries)
 - [Export query to CSV](#export-query-to-csv)
 - [Procedures](#procedures)
 - [Views](#views)
@@ -537,11 +539,14 @@ ALTER TABLE <table_name> ADD PRIMARY KEY(<column_name>, <column_name>);
 
 ## Foreign key
 
-A foreign key makes a connection between two tables via their joint column. 
+A foreign key:
+- Makes a connection between two tables via their joint column. 
+- A foreign key in one table usually references a primary key in another. 
+- Enforce data integrity, making sure the data confirms to some rules when it is added to the DB.
 
-A foreign key in one table usually references a primary key in another. 
+ON DELETE SET NULL: if in the table 1 a row is deleted, then in the table 2 that references that first table via foreign key the corresponding value is set to NULL;
 
-A Foreign keys enforce data integrity, making sure the data confirms to some rules when it is added to the DB.
+ON DELETE CASCADE: if the row in the original table containing an id is deleted, then in a table referencing that table via a foreign key the entire row is deleted. 
 
 ```sql
 -- Create foreign key upon creation of the table
@@ -549,9 +554,8 @@ CREATE TABLE user_profiles (
     profile_id INT PRIMARY KEY,
     user_id INT UNIQUE,
     profile_data VARCHAR(255),
-    FOREIGN KEY (user_id) REFERENCES users(user_id)
-    -- You can also add a feature to auto set the value of the foreign key column to nULL
-    -- FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL
+    FOREIGN KEY (user_id) REFERENCES users(user_id) -- ON DELETE SET NULL --or-- ON DELETE CASCADE
+
 );
 
 
@@ -568,6 +572,22 @@ ON DELETE SET NULL -- optional option
 ;
 ```
 
+# Trigger
+
+Defines a certain action when a certain operation is performed on a database. 
+
+```sql
+-- Run this in the MySQL terminal
+DELIMITER $$
+CREATE
+    TRIGGER my_trigger BEFORE INSERT
+    ON employee
+    FOR EACH ROW BEGIN
+        INSERT INTO trigger_test VALUES('added new employee'); -- `VALUES(NEW.attribute_name)` if you want to add attribute of the newly-inserted row  
+    END$$
+DELIMITER ;
+-- Now, every time a row is added to the table `employee`, a row is added into the table `trigger_test` saying `added new employee`
+```
 
 # Sub-query
 
@@ -853,6 +873,30 @@ Or if we want to joint three tables:
 SELECT columns FROM junction_table
 FULL JOIN table_1 ON junction_table.foreign_key_column = table_1.primary_key_column
 FULL JOIN table_2 ON junction_table.foreign_key_column = table_2.primary_key_column;
+```
+
+# Nested queries
+
+Using multiple SELECT statements, where the output of one query gets passed on to another query. 
+
+```sql
+-- Find names of all employees who have sold over 30,000 to a single client
+SELECT employee.first_name, employee.last_name
+FROM employee
+WHERE employee.emp_id IN (
+    SELECT works_with.emp_id
+    FROM works_with
+    WHERE works_with.total_sales > 30000
+);
+
+-- Find all clients who are handled by the branch that Michael Scott manages
+SELECT client.client_name
+FROM client
+WHERE branch_id = (
+    SELECT employee.branch_id
+    FROM employee
+    WHERE employee.first_name = 'Michael' AND employee.last_name = 'Scott'
+);
 ```
 
 # Export query to CSV
