@@ -24,6 +24,7 @@
 - [IF conditions](#if-conditions)
 - [REGEX](#regex)
 - [Dates](#dates)
+- [Union](#union)
 - [Joins](#joins)
   - [Inner joins](#inner-joins)
   - [Left (outer) join](#left-outer-join)
@@ -56,11 +57,13 @@ Basic commands:
 | `\! dir` | list files in the current dir |
 | `\i file.sql` | import file |
 | `\?` | print methods |
-| `\l` | list databases |
-| `\c database_name` | connect to a database |
-| `\d` or MySQL `SHOW TABLES` | check which tables are present |
+| `\l` or MySQL `SHOW DATABASES;` | list databases |
+| `\c database_name` or MySQL `use database_name;` | connect to a database |
+| `\d` or MySQL `SHOW TABLES;` | check which tables are present |
 | `\dt` | show tables ONLY, without `id_seq` |
-| `\d second_table` | check columns and details of a table in a database |
+| PostgreSQL `\d second_table`, `\d+ second_table`; MySQL `DESCRIBE tablename` | check columns and details of a table in a database |
+
+
 
 # Database Normalization
 
@@ -93,6 +96,8 @@ An excellent example is given here: https://www.freecodecamp.org/news/database-n
 ---
 
 # Subsets of SQL commands
+
+SQL is a hybrid language that contains 4 languages at once - DDL, DML, DCL, DQL
 
 Read more: https://www.scaler.com/topics/ddl-dml-dcl/
 
@@ -206,19 +211,25 @@ DELETE FROM table1 WHERE column1 = value;
 ```
 
 ```sql
-# Insert a row
+-- Insert a row in the default order of columns
+INSERT INTO table1 VALUES ('Value1', 52, DATE '1995-05-04');
+-- Insert a row with data for specified columns only
 INSERT INTO table1 (column1, column2, column3) VALUES ('Value1', 52, DATE '1995-05-04');
-# Insert two rows
+-- Insert two rows
 INSERT INTO table1 (column1, column2, column3) VALUES (...), (...);
 
-# Update an entry based on IF-condition
+-- Alter all rows
+UPDATE table1
+SET column1 = 10
+
+-- Update an entry based on IF-condition
 UPDATE table1 
 SET column1=5, column2=10 
 WHERE row='Rowname' AND row2='Rowname2';
 
-# Delete all records
+-- Delete all rows
 DELETE FROM table1; 
-# Delete a row in which column has the specified value
+-- Delete a row in which column has the specified value
 DELETE FROM table1 WHERE column1='Value'; 
 
 ## Update rows
@@ -230,51 +241,76 @@ UPDATE Salary SET sex = CASE WHEN sex = 'm' THEN 'f' ELSE 'm' END;
 
 ### SELECT
 
-```sql
-ORDER BY column_name LIMIT 10 OFFSET 3;
-
-# COALESCE - print a value for NULL values
-SELECT COALESCE(column1, 'Entry not found') FROM table1;   
-```
-
-**SELECT**:
-
 General form:
 ```sql
-SELECT column1, column2 
+SELECT column1, column2 -- or `*` -- or `table1.column1, table1.column2` to specify which table, especially useful in joins
 FROM table1 
 WHERE column2='Value'
 AND (column3='Value2' OR column3='value3');
 ```
 
-Examples:
+Some more examples:
 ```sql
-# Select all rows for all columns from a table
+ORDER BY column_name LIMIT 10 OFFSET 3;
+-- COALESCE - print a value for NULL values
+SELECT COALESCE(column1, 'Entry not found') FROM table1;   
+-- Select all rows for all columns from a table
 SELECT * FROM table1;
 
-# Only print unique values from the column
-SELECT DISTINCT(column1)
-# Count the total number of rows
-SELECT COUNT(*)
+
 # Print the max value of column2
 SELECT MAX(column1)
-SELECT AVG(column1) 
+
 SELECT ROUND(AVG(column1))
-# Sum all values in a column
-SELECT SUM(column1)
+
 SELECT column1 AS "Column title"
 
 # Select example
 SELECT column1 FROM table1 WHERE column2 = 'value' and column3 > 100;
 ```
 
+**SQL functions**:
+
+```sql
+-- COUNT
+-- Count the total number of rows
+SELECT COUNT(*)
+-- Count non-null values in a column
+SELECT COUNT(column_name)
+-- Count all female employees
+SELECT COUNT(emp_id) FROM employee WHERE sex = 'F';
+-- Count how many entries for each unique group in column 'sex' there are
+SELECT COUNT(sex), sex FROM employee GROUP BY sex;
+
+-- AVG
+SELECT AVG(column1) 
+
+-- SUM
+-- Sum all values in a column
+SELECT SUM(column1)
+-- Find the total sales of each salesman
+SELECT SUM(total_sales), emp_id FROM works_with GROUP BY emp_id;
+
+```
+
+**DISTINCT**:
+```sql
+-- Only print unique values from the column
+SELECT DISTINCT(column1)
+```
+
+**AS**:
+```sql
+SELECT column1 AS new_column_name
+```
+
 **WHERE**:
 ```sql
 WHERE column1 != 2 OR column2 IS null;
 WHERE column1 IN ('Value1', 'Value2', 'Value3')
-# Values between two dates
+-- Values between two dates
 WHERE date BETWEEN DATE '1999-01-01' AND '2015-01-01'
-# Values alphabetically between two strings
+-- Values alphabetically between two strings
 WHERE column1 BETWEEN 'Alpha' AND 'Beta'
 -- Odd number
 MOD(columnName, 2) <> 0
@@ -282,16 +318,16 @@ MOD(columnName, 2) <> 0
 MOD(columnName, 2) = 0
 
 
-# REGEXP
-### Value starts with 'a'
+-- REGEXP
+-- Value starts with 'a'
 WHERE email LIKE 'a%'
-### Value ends with '.com'
+-- Value ends with '.com'
 WHERE email LIKE '%.com';
-#
+
 WHERE course NOT LIKE '_lgorithms';
-# case-insensitive
+-- case-insensitive
 ILIKE, NOT ILIKE
-# Entries start with a vowel
+-- Entries start with a vowel
 SELECT DISTINCT(CITY) FROM STATION WHERE CITY ~ '^[AEIOUaeiou].*';
 SELECT DISTINCT(CITY) FROM STATION WHERE CITY REGEXP '^[aeiou]';
 ```
@@ -312,6 +348,7 @@ In order to use HAVING, you also need:
 **ORDER BY**:
 -  `ORDER BY column1 ASC`
 -  `ORDER BY column1 DESC`
+-  `ORDER BY column1, column2`
 
 `SELECT * FROM characters ORDER BY character_id;`
 
@@ -324,6 +361,7 @@ In order to use HAVING, you also need:
 
 
 **OFFSET**: skip n rows
+
 **LIMIT**: show n first rows
 
 Examples: 
@@ -355,12 +393,13 @@ Transaction Control Language:
 | Datatype | Description |
 | --- | --- |
 | `DATE` | YYYY-MM-DD |
-| `INT` | Integer. |
+| `TIMESTAMP` | YYYY-MM-DD HH:MM:SS |
+| `INT` | Whole number. |
 | `SERIAL` | Auto-increments a number. The SERIAL type will make your column an INT with a NOT NULL constraint, and automatically increment the integer when a new row is added.  |
 | `BIGSERIAL` | Auto-increments a number |
 | `CHAR(30)` | String (specified length). The string has to be EXACTLY the specified length, in this case, 30 characters - no more, no less. *Note: use single quotes, not doublequotes* |
 | `VARCHAR(30)` | String (max length). The string can have a length up to the specified limit, such as 10, 20, 25 characters, but no more than 30 characters. *Note: use single quotes, not doublequotes* |
-| `NUMERIC(4, 1)` | Float with number of decimals (1) |
+| `NUMERIC(4, 1)` | Float with number of decimals (1). For MySQL, I think, it's `DECIMAL(10, 4)`|
 | `NULL` | Null. `column IS NULL`|
 | `BOOLEAN` | `TRUE`, `FALSE` |
 
@@ -391,6 +430,11 @@ UNIQUE - makes sure that only unique values can be added in a column
 ALTER TABLE table1 ADD CONSTRAINT constraint_name_here UNIQUE (column1) # Custom constraint name
 # or
 ALTER TABLE table1 ADD UNIQUE (column1) # Constraint name defined by psql
+```
+
+DEFAULT - specify a default value for a column
+```sql
+CREATE TABLE table1 (column1 INT DEFAULT 'undecided')
 ```
 
 CHECK - a column can only accept specific values
@@ -426,12 +470,23 @@ Primary key is an entry into the `Primary key` column that **inequivocally (uniq
 Features:
 - `Null` values are not accepted. 
 - Are indexed automatically.
+- If you manually tried inserting a row with a primary key that already exists in the table, it would lead to an error, as no duplicate primary keys are allowed;
+- By definition, primary key has two constraints - NOT NULL and UNIQUE;
 
 
 ```sql
--- You can create a table with a column with PRIMARY KEY constraint. As it is SERIAL, you don't need to specify it when inserting new rows - it will be created automatically as per the internal rules:
-CREATE TABLE sounds (sound_id SERIAL PRIMARY KEY);
+-- NOTE: NOT A GOOD PRACTICE, but an example. Create a column with primary key that you manually have to enter:
+CREATE TABLE sounds (sound_id INT PRIMARY KEY);
 
+-- You can create a table with a column with PRIMARY KEY constraint. As it is SERIAL, you don't need to specify it when inserting new rows - it will be created automatically as per the internal rules:
+-- PostgreSQL
+CREATE TABLE sounds (
+  sound_id SERIAL PRIMARY KEY
+);
+-- MySQL
+CREATE TABLE student (
+    student_id INT AUTO_INCREMENT PRIMARY KEY
+);
 -- Or add a new column and set it up as a primary key
 ALTER TABLE moon ADD COLUMN moon_id SERIAL PRIMARY KEY;
 
@@ -482,7 +537,11 @@ ALTER TABLE <table_name> ADD PRIMARY KEY(<column_name>, <column_name>);
 
 ## Foreign key
 
-Makes a connection between two tables via their joint column. A Foreign keys enforce data integrity, making sure the data confirms to some rules when it is added to the DB.
+A foreign key makes a connection between two tables via their joint column. 
+
+A foreign key in one table usually references a primary key in another. 
+
+A Foreign keys enforce data integrity, making sure the data confirms to some rules when it is added to the DB.
 
 ```sql
 -- Create foreign key upon creation of the table
@@ -490,7 +549,11 @@ CREATE TABLE user_profiles (
     profile_id INT PRIMARY KEY,
     user_id INT UNIQUE,
     profile_data VARCHAR(255),
-    FOREIGN KEY (user_id) REFERENCES users(user_id));
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+    -- You can also add a feature to auto set the value of the foreign key column to nULL
+    -- FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL
+);
+
 
 -- Create a new column with  the constraint of foreign key
 ALTER TABLE more_info 
@@ -500,7 +563,9 @@ REFERENCES characters(character_id);
 -- You can set an existing column as a foreign key like this:
 ALTER TABLE table_name 
 ADD FOREIGN KEY(column_name) 
-REFERENCES referenced_table(referenced_column);
+REFERENCES referenced_table(referenced_column)
+ON DELETE SET NULL -- optional option
+;
 ```
 
 
@@ -530,6 +595,8 @@ WHERE NOT condition;
 ```
 
 ## Comparison operators
+
+Can be used for comparing numbers or strings. 
 
 | Operator | Meaning |
 | --- | -- |
@@ -579,22 +646,27 @@ SELECT employee_id, if(employee_id % 2 = 1 AND name NOT LIKE 'M%', salary, 0) AS
 
 # REGEX
 
-```sql
-select * from courses where course like '_lgorithms';
-```
-
 | Sign | Meaning |
 | --- | --- |
 | `%` | any character, any number of times |
 | `_` | exactly 1 character |
 
-- `LIKE 'W%'` names starting with 'W'
-- `LIKE '_e%'` second letter is 'e'
-- `LIKE '% %'` values with a space in them
+These are used with the SQL keyword `LIKE`
 
----
+```sql
+SELECT * FROM courses WHERE course LIKE '_lgorithms';
+-- Find any clients who are an LLC
+SELECT * FROM client WHERE client_name LIKE '%LLC';
+-- Find employees born in october
+SELECT * FROM employee WHERE birth_date LIKE '____-10-%';
 
-
+-- names starting with 'W'
+LIKE 'W%'
+-- the second letter is 'e'
+LIKE '_e%'
+-- values with a space in them
+LIKE '% %'
+```
 
 
 # Dates
@@ -635,6 +707,30 @@ Select a part of a date:
 SELECT date_part('year', (SELECT date_column_name))
 ```
 
+# Union
+
+UNION combines the results from several SELECT statements.
+
+Rule:
+- You have to have the same number of columns in the two statements that are joined by the `UNION` statement
+- The columns being concatenated have to have the same data type
+
+```sql
+-- Return a list of employee names and then branch names located below the first list
+SELECT first_name -- can also specify the name of the common column, e.g. `AS name_of_the_union_column`
+FROM employee 
+UNION 
+SELECT branch_name 
+FROM branch;
+
+-- Find a list of all clients and branch suppliers ids
+SELECT client_name, branch_id -- to increase clarity, can specify the table: `client.branch_id`
+FROM client 
+UNION
+SELECT supplier_name, branch_id -- same: `branch_supplier.branch_id`
+FROM branch_supplier;
+```
+
 # Joins
 
 JOIN is a command for linking rows from two or more tables based on a column common for all of them. 
@@ -645,7 +741,7 @@ There are two main categories of joins:
 
 General form:
 ```sql
-SELECT * FROM table1
+SELECT * FROM table1 -- or SELECT table1.id, table2.id2
 JOIN table2 ON relation;
 ```
 
@@ -658,6 +754,12 @@ Intersection of two tables, meaning all rows that exist for both.
 
 <img src="Media/inner_join.png" alt="inner joins" width="300">
 
+Example table:
+| emp_id | first_name | branch_name |
+| - | - | - |
+| 100 | David | Corporate |
+| 102 | Michael | Scranton |
+| 106 | Josh | Stamford | 
 
 More examples:
 
@@ -665,13 +767,22 @@ More examples:
 
 ```sql
 SELECT * FROM students INNER JOIN majors ON students.major_id = majors.major_id;
+
+
 ```
 
 ## Left (outer) join
 
-Will keep the unrelated data from the left (the first) table. Left join gets all rows from the left table, but from the right table - only rows that are linked to those of the table on the left. 
+Example table:
+| emp_id | first_name | branch_name |
+| - | - | - |
+| 100 | David | Corporate |
+| 102 | Michael | Scranton |
+| 106 | Josh | Stamford | 
+| 110 | Angela | NULL |
+| 111 | Jack | NULL |
 
-
+Will keep the unrelated data from the left (the first) table. Left join gets all rows from the left table, but from the right table - only rows that are linked to those of the table on the left. Missing data from the right table will have NULL values. 
 
 <img src="Media/left_outer_join.png" alt="left (outer) join" width="300">
 
@@ -694,6 +805,14 @@ SELECT * FROM person LEFT JOIN car ON car.id = person.car_id WHERE car.* IS NULL
 All rows from the second / right table + the rows that match the rows from the second table .
 
 <img src="Media/right_outer_join.png" alt="right (outer) join" width="300">
+
+Example table:
+| emp_id | first_name | branch_name |
+| - | - | - |
+| 100 | David | Corporate |
+| 102 | Michael | Scranton |
+| 106 | Josh | Stamford | 
+| NULL | NULL | Buffalo |
 
 General form:
 ```sql

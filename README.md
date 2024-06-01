@@ -44,6 +44,13 @@ Four basic operations of persistent storage - CRUD:
 
 A **Query** is a request made to the DBMS for specific information. We write queries for a specific DBMS (RDBMS or NRDBMS) using a query language (either SQL or NoSQL).
 
+```sql
+-- Example query in SQL
+SELECT employee.name, employee.age 
+FROM employee
+WHERE employee.salary > 30000;
+```
+
 # Classifications
 
 Two types of databases - relational databases using [SQL](SQL.md) and non-relational databases using [noSQL](noSQL.md):
