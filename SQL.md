@@ -355,6 +355,17 @@ In order to use HAVING, you also need:
 `SELECT * FROM characters ORDER BY character_id;`
 
 **GROUP BY**:
+
+```sql
+-- Count number of repetitions of unique categories in column `column1`
+SELECT branch_id, COUNT(*) FROM branch_supplier GROUP BY branch_id 
+-- Count number of repetitions of unique categories in column `column1` where count is greater than 3
+SELECT branch_id, COUNT(*) FROM branch_supplier GROUP BY branch_id HAVING COUNT(*) > 3;
+
+-- Count how many unique categories each super_id has
+SELECT super_id, COUNT(DISTINCT(emp_id)) FROM employee GROUP BY super_id;
+```
+
 - `GROUP BY column1`
 - `GROUP BY column1 HAVING COUNT(*) > 5` only group those values whose count is > 5
 - `select major_id, count(*) from students group by major_id;` count unique values in column 'major_id'
@@ -643,7 +654,7 @@ ROUND(column1, decimalplaces);
 | `SUM(column1)` | sum of all values in a column |
 | `AVG(column1)` | average of a column's values |
 | `CEIL(5.9)`, `FLOOR(5.1)` | round up a value |
-| `ROUND(<number_to_round>, <decimals_places>)` | round a value to the nearest whole number |
+| `ROUND(<number_to_round>, <decimals_places>)` or `round(15.51235312, 2)` | round a value to the nearest whole number |
 | `COUNT(*)` | count number of rows |
 | `mod(column1,2)` | Check the remainder of the division. In this case, remainder is zero if the number is even. |
 
