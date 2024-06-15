@@ -42,6 +42,8 @@ Four basic operations of persistent storage - CRUD:
 - Update
 - Delete
 
+
+
 A **Query** is a request made to the DBMS for specific information. We write queries for a specific DBMS (RDBMS or NRDBMS) using a query language (either SQL or NoSQL).
 
 ```sql

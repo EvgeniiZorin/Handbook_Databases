@@ -6,10 +6,15 @@
 - [Subsets of SQL commands](#subsets-of-sql-commands)
   - [DDL](#ddl)
   - [DML](#dml)
-    - [SELECT](#select)
   - [DCL](#dcl)
   - [TCL](#tcl)
 - [Datatypes](#datatypes)
+- [Statements](#statements)
+  - [SELECT](#select)
+  - [SELECT functions](#select-functions)
+  - [Clauses](#clauses)
+  - [Aggregate functions](#aggregate-functions)
+  - [examples of some statements](#examples-of-some-statements)
 - [Constraints](#constraints)
 - [Keys](#keys)
   - [Unique key](#unique-key)
@@ -51,6 +56,10 @@
 # Basic
 
 **Table** - organised set of data in the form of rows and columns.
+
+A few types of schema in a relational database:
+- Star schema: 
+- Snowflake schema
 
 Basic commands: 
 | Command | Function |
@@ -241,39 +250,99 @@ UPDATE Salary SET sex = CASE WHEN sex = 'm' THEN 'f' ELSE 'm' END;
 
 ```
 
-### SELECT
+## DCL
 
-General form:
+Data Control Language, shortly termed DCL, is comprised of those commands in SQL that deal with controls, rights, and permission in the database system. DCL commands are SQL commands that perform operations like giving and withdrawing database access from the user.
+
+| Command | Explanation | 
+| - | - |
+| **GRANT** | Gives access privileges or permissions like ALL, SELECT, and EXECUTE to the database objects like views, tables, etc, in SQL. |
+| **REVOKE** | Withdraws access privileges or permissions given with the GRANT command. |
+
+## TCL
+
+Transaction Control Language:
+- COMMIT
+- ROLLBACK
+- SAVEPOINT
+
+# Datatypes
+
+| Datatype | Description |
+| --- | --- |
+| `DATE` | YYYY-MM-DD |
+| `TIMESTAMP` | YYYY-MM-DD HH:MM:SS |
+| `INT` | Whole number. |
+| `SERIAL` | Auto-increments a number. The SERIAL type will make your column an INT with a NOT NULL constraint, and automatically increment the integer when a new row is added.  |
+| `BIGSERIAL` | Auto-increments a number |
+| `CHAR(30)` | String (specified length). The string has to be EXACTLY the specified length, in this case, 30 characters - no more, no less. *Note: use single quotes, not doublequotes* |
+| `VARCHAR(30)` | String (max length). The string can have a length up to the specified limit, such as 10, 20, 25 characters, but no more than 30 characters. *Note: use single quotes, not doublequotes* |
+| `NUMERIC(4, 1)` | Float with number of decimals (1). For MySQL, I think, it's `DECIMAL(10, 4)`|
+| `NULL` | Null. `column IS NULL`|
+| `BOOLEAN` | `TRUE`, `FALSE` |
+
+# Statements
+
+## SELECT
+
 ```sql
-SELECT column1, column2 -- or `*` -- or `table1.column1, table1.column2` to specify which table, especially useful in joins
-FROM table1 
-WHERE column2='Value'
-AND (column3='Value2' OR column3='value3');
+-- General syntax
+SELECT column1 AS "column title", column2 AS aliasHere, ..., columnN
+-- or `*` to select the rows from all the columns in a table
+-- or `table1.column1, table1.column2` to specify which table, especially useful in joins
+FROM table1
+WHERE column2 = 'Value' -- allows us to specify a condition by using an operator
+AND (column3 = 'Value2' OR column3 > 100);
 ```
 
-Some more examples:
+## SELECT functions
+
+These functions are used with SELECT:
 ```sql
-ORDER BY column_name LIMIT 10 OFFSET 3;
+-- Only print unique values from the column
+SELECT DISTINCT(column1)
+SELECT DISTINCT column1
+
 -- COALESCE - print a value for NULL values
 SELECT COALESCE(column1, 'Entry not found') FROM table1;   
--- Select all rows for all columns from a table
-SELECT * FROM table1;
 
 
-# Print the max value of column2
-SELECT MAX(column1)
 
 SELECT ROUND(AVG(column1))
 
-SELECT column1 AS "Column title"
-
-# Select example
-SELECT column1 FROM table1 WHERE column2 = 'value' and column3 > 100;
 ```
 
-**SQL functions**:
+## Clauses
+
+**WHERE**
+
+The WHERE clause is used in a SELECT statement to filter rows based on specified conditions before the data is grouped or aggregated. It operates on individual rows and filters them based on the given conditions.
+
+
+**ORDER BY**
 
 ```sql
+-- General form
+SELECT column1, column2, ..., columnN
+FROM table_name
+ORDER BY column1 [ASC|DESC], column2 [ASC|DESC], ... columnN [ASC|DESC];
+
+-- Examples
+SELECT *
+FROM employees
+ORDER BY salary DESC, age DESC;
+```
+
+## Aggregate functions
+
+```sql
+-- General form
+SELECT column1, column2, columnN aggregate_function(columnX)
+FROM table
+GROUP BY columns(s);
+
+SELECT column1, aggregate_function(column2)AS alias
+
 -- COUNT
 -- Count the total number of rows
 SELECT COUNT(*)
@@ -284,27 +353,44 @@ SELECT COUNT(emp_id) FROM employee WHERE sex = 'F';
 -- Count how many entries for each unique group in column 'sex' there are
 SELECT COUNT(sex), sex FROM employee GROUP BY sex;
 
--- AVG
-SELECT AVG(column1) 
-
 -- SUM
 -- Sum all values in a column
 SELECT SUM(column1)
 -- Find the total sales of each salesman
 SELECT SUM(total_sales), emp_id FROM works_with GROUP BY emp_id;
 
+-- MIN, MAX
+-- Print the max value of column2
+SELECT MAX(column1)
+
+-- AVG
+SELECT AVG(column1) 
+
+-- GROUP BY
+-- Find out the total salary paid out by each department
+SELECT department_id, SUM(salary) as total_salary
+FROM employees
+GROUP BY department_id;
+
+-- HAVING clause
+-- The HAVING clause was added to SQL to filter the results of the GROUP BY clause since WHERE does not work with aggregated results. The syntax for the HAVING clause is as follows:
+-- The HAVING clause is used in combination with the GROUP BY clause in a SELECT statement to filter rows based on specified conditions after the data is grouped and aggregated. It operates on the result of the grouping operation and filters the aggregated data.
+SELECT column1, aggregate_function(column2)
+FROM table
+GROUP BY column1
+HAVING aggregated_condition;
+-- Find out which departments have a total salary payout greater than 50,000
+SELECT department_id, SUM(salary) as total_salary
+FROM employees
+GROUP BY department_id
+HAVING SUM(salary) > 50000;
 ```
 
-**DISTINCT**:
-```sql
--- Only print unique values from the column
-SELECT DISTINCT(column1)
-```
 
-**AS**:
-```sql
-SELECT column1 AS new_column_name
-```
+## examples of some statements
+
+
+**SQL functions**:
 
 **WHERE**:
 ```sql
@@ -346,14 +432,6 @@ In order to use HAVING, you also need:
 - A GROUP BY clause
 - An aggregation in your SELECT section (SUM, MIN, MAX, etc.)
 
-
-**ORDER BY**:
--  `ORDER BY column1 ASC`
--  `ORDER BY column1 DESC`
--  `ORDER BY column1, column2`
-
-`SELECT * FROM characters ORDER BY character_id;`
-
 **GROUP BY**:
 
 ```sql
@@ -384,37 +462,6 @@ Examples:
 - `SELECT column1, COUNT(*) FROM table GROUP BY column1;` print count of each value in column1
 - `SELECT make, SUM(price) FROM car GROUP BY make;`
 - `WHERE column1 < 'M'` selects rows with column1 values before 'M' alphabetically
-
-## DCL
-
-Data Control Language, shortly termed DCL, is comprised of those commands in SQL that deal with controls, rights, and permission in the database system. DCL commands are SQL commands that perform operations like giving and withdrawing database access from the user.
-
-| Command | Explanation | 
-| - | - |
-| **GRANT** | Gives access privileges or permissions like ALL, SELECT, and EXECUTE to the database objects like views, tables, etc, in SQL. |
-| **REVOKE** | Withdraws access privileges or permissions given with the GRANT command. |
-
-## TCL
-
-Transaction Control Language:
-- COMMIT
-- ROLLBACK
-- SAVEPOINT
-
-# Datatypes
-
-| Datatype | Description |
-| --- | --- |
-| `DATE` | YYYY-MM-DD |
-| `TIMESTAMP` | YYYY-MM-DD HH:MM:SS |
-| `INT` | Whole number. |
-| `SERIAL` | Auto-increments a number. The SERIAL type will make your column an INT with a NOT NULL constraint, and automatically increment the integer when a new row is added.  |
-| `BIGSERIAL` | Auto-increments a number |
-| `CHAR(30)` | String (specified length). The string has to be EXACTLY the specified length, in this case, 30 characters - no more, no less. *Note: use single quotes, not doublequotes* |
-| `VARCHAR(30)` | String (max length). The string can have a length up to the specified limit, such as 10, 20, 25 characters, but no more than 30 characters. *Note: use single quotes, not doublequotes* |
-| `NUMERIC(4, 1)` | Float with number of decimals (1). For MySQL, I think, it's `DECIMAL(10, 4)`|
-| `NULL` | Null. `column IS NULL`|
-| `BOOLEAN` | `TRUE`, `FALSE` |
 
 # Constraints
 
@@ -478,7 +525,11 @@ A unique key prevents duplicate values in a column and can store NULL values.
 
 ## Primary key
 
-Primary key is an entry into the `Primary key` column that **inequivocally (uniquely)** identify each one row in a table, i.e. an ID for each data point / row.
+Primary key:
+- Serves as a **unique identifier** for each record in a table;
+- IOW, it is an entry into the `Primary key` column that **inequivocally (uniquely)** identify each one row in a table, i.e. an ID for each data point / row.
+
+
 
 Features:
 - `Null` values are not accepted. 
@@ -610,6 +661,8 @@ SELECT column1 as 'Column 1' FROM table1 WHERE table1.id NOT IN (SELECT customer
 
 # Operators
 
+Operators are usually used with a WHERE statement. 
+
 ## Logical operators
 
 | Operator | Meaning |
@@ -617,6 +670,9 @@ SELECT column1 as 'Column 1' FROM table1 WHERE table1.id NOT IN (SELECT customer
 | `AND` | Shows data if all the conditions separated by `AND` are TRUE. |
 | `OR` | Shows data if any of the conditions separated by `OR` is TRUE. |
 | `NOT` | Shows data if the condition after `NOT` is not true. |
+| `BETWEEN ... AND ...` | Return values that are between the two values. `WHERE salary BETWEEN 5000 AND 10000` |
+| `IN` | TRUE if the operand is equal to one of a list of expressions |
+| `LIKE` | TRUE if the operand matches a pattern |
 
 Some examples:
 ```sql
@@ -631,7 +687,7 @@ Can be used for comparing numbers or strings.
 
 | Operator | Meaning |
 | --- | -- |
-| `=`, `<`, `<=`, `>`, `>=` | |
+| `<`, `<=`, `>`, `>=` | |
 | `=` | equals |
 | `<>` | not equal |
 
