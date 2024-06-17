@@ -22,11 +22,13 @@
   - [Composite primary key](#composite-primary-key)
   - [Foreign key](#foreign-key)
 - [Trigger](#trigger)
-- [Sub-query](#sub-query)
+- [Subquery](#subquery)
+- [CTE](#cte)
 - [Operators](#operators)
   - [Logical operators](#logical-operators)
   - [Comparison operators](#comparison-operators)
   - [Arithmetic operations](#arithmetic-operations)
+  - [Concatenation](#concatenation)
 - [IF conditions](#if-conditions)
 - [REGEX](#regex)
 - [Dates](#dates)
@@ -36,7 +38,8 @@
   - [Left (outer) join](#left-outer-join)
   - [Right (outer) join](#right-outer-join)
   - [Full (outer) join](#full-outer-join)
-- [Nested queries](#nested-queries)
+  - [Multi-table joins](#multi-table-joins)
+- [CASE WHEN](#case-when)
 - [Export query to CSV](#export-query-to-csv)
 - [Procedures](#procedures)
 - [Views](#views)
@@ -293,6 +296,11 @@ SELECT column1 AS "column title", column2 AS aliasHere, ..., columnN
 FROM table1
 WHERE column2 = 'Value' -- allows us to specify a condition by using an operator
 AND (column3 = 'Value2' OR column3 > 100);
+
+-- we can also give aliases to the tables
+SELECT o.OrderId, o.OrderDate, c.CustomerId, c.FirstName, c.LastName, c.Country
+FROM Orders o
+RIGHT JOIN Customers c ON o.CustomerId = c.CustomerId
 ```
 
 ## SELECT functions
@@ -334,6 +342,8 @@ ORDER BY salary DESC, age DESC;
 ```
 
 ## Aggregate functions
+
+> Note: aggregate functions such as AVG, MIN, and MAX cannot be used in a WHERE clause directly - they have to be wrapped in a subquery.
 
 ```sql
 -- General form
@@ -651,13 +661,145 @@ DELIMITER ;
 -- Now, every time a row is added to the table `employee`, a row is added into the table `trigger_test` saying `added new employee`
 ```
 
-# Sub-query
+# Subquery
+
+Subquery, aka nested queries, inner queries:
+- are querries that are embedded within the context of another SQL query. 
+- Are powerful tools for performing complex data manipulations that require one or more intermediary steps
+- Types (depending on where / in which clause the subquery is located):
+  - SELECT subqueries
+  - FROM subqueries
+  - WHERE subqueries
+  - HAVING subqueries
+
+**SELECT subqueries**
+
+```sql
+-- General Form
+SELECT column1, column2, columnN,
+(SELECT agg_function(column) FROM table WHERE condition)
+FROM table
+```
+
+**FROM subqueries**
+
+Subqueries in the FROM clause create a temporary table that can be used for the main query. This allows
+the programmer to simplify the process by breaking the problem into smaller, more manageable parts.
+
+```sql
+-- General form
+SELECT employee, total_sales
+FROM (SELECT first_name || ' ' || last_name as employee, SUM(sales) as
+total_sales
+FROM sales
+GROUP BY employee) as sales_summary
+WHERE total_sales > 100000;
+```
+
+In this example, the subquery creates a temporary table aliased as `sales_summary`, which does the following:
+- Concatenates each employee’s first and last name (separated by a space). This concatenation is aliased as employee.
+- Calculates the total sales for each employee.
+- Groups the total_sales by employee.
+
+**WHERE subqueries**
+
+Subqueries in the WHERE clause are used to filter rows based on conditions detailed in a subquery.
+
+This method is useful when you don’t already have access to the condition on which you want to filter your query.
+
+Scalar example: 
+```sql
+-- Suppose that we have a table called employees with employee_id, first_name, last_name, salary, and department_id columns. If we want to find all employees who earn more than the average salary, we can use a subquery:
+SELECT first_name, last_name, salary
+FROM employees
+WHERE salary > (SELECT AVG(salary) FROM employees);
+```
+
+Non-scalar example:
+```sql
+-- Suppose that we are using the same dataset as before with the first_name, last_name, and salary fields. We want to return the first name, last name, and salary of employees whose first name begins with the letter 'J':
+SELECT first_name, last_name, salary
+FROM employees
+WHERE salary > ANY (SELECT salary FROM employees WHERE first_name LIKE 'J%');
+```
+
+**HAVING subqueries**
+
+The HAVING clause is used to filter the results of a GROUP BY query based on conditions involving
+aggregate functions. The subquery is executed for each group and filters the groups based on the
+specified condition.
+
+```sql
+SELECT CustomerID, AVG(TotalAmount) AS AverageTotalAmount
+FROM Orders
+GROUP BY CustomerID
+HAVING AVG(TotalAmount) > (SELECT AVG(TotalAmount)
+FROM Orders);
+```
+
+---
+
+Using multiple SELECT statements, where the output of one query gets passed on to another query. 
+
+```sql
+-- Find names of all employees who have sold over 30,000 to a single client
+SELECT employee.first_name, employee.last_name
+FROM employee
+WHERE employee.emp_id IN (
+    SELECT works_with.emp_id
+    FROM works_with
+    WHERE works_with.total_sales > 30000
+);
+
+-- Find all clients who are handled by the branch that Michael Scott manages
+SELECT client.client_name
+FROM client
+WHERE branch_id = (
+    SELECT employee.branch_id
+    FROM employee
+    WHERE employee.first_name = 'Michael' AND employee.last_name = 'Scott'
+);
+```
+
 
 Use IDs from one table to use in querying another table
 ```sql
 SELECT column1 as 'Column 1' FROM table1 WHERE table1.id NOT IN (SELECT customer_id FROM table2);
 ```
 
+# CTE
+
+CTE, common table expressions
+
+CTEs are similar to subqueries. 
+
+CTEs are also temporary tables typically that are formulated at the beginning of a
+query and only exist during the execution of the query. This means that CTEs cannot be used in other
+queries beyond the one in which you are using the CTE.
+While CTEs and subqueries are both used in similar circumstances (such as when you need to produce
+an intermediary result), there are a couple of factors that tip off CTEs:
+• They are typically created at the beginning of a query using the WITH operator
+• They are followed by a query that queries the CTE
+Alternatively, subqueries are a query within a query, nested within one of a query’s clauses.
+
+```sql
+WITH alias AS ( <Put query here>
+)
+…. <Query that queries the alias>
+
+-- A more concrete example
+WITH customer_totals AS (
+  SELECT CustomerID, SUM(TotalAmount) AS total_sales
+  FROM Orders
+  GROUP BY CustomerID
+)
+SELECT c.CustomerID, c.total_sales, o.avg_order_amount
+FROM customer_totals c
+JOIN (
+  SELECT CustomerID, AVG(TotalAmount) AS avg_order_amount
+  FROM Orders GROUP BY CustomerID )
+ON c.CustomerID = o.CustomerID;
+```
 
 # Operators
 
@@ -719,6 +861,14 @@ ROUND(column1, decimalplaces);
 Examples: 
 - `SELECT column1 * 10`
 - `SELECT MAX(column1)`
+
+## Concatenation
+
+Concatenate two columns:
+```sql
+SELECT first_name || '-' || last_name AS column_name
+FROM employee;
+```
 
 # IF conditions
 
@@ -834,6 +984,22 @@ JOIN table2 ON relation;
 
 <img src="Media/joins.png" width=800>
 
+Now let's consider two tables and how they can be joined on the `student_id` column:
+
+Table `student`:
+| student_id |     name     | age|
+|:----|:----|:----|
+|          1 | John Stramer |  50|
+|          2 | John Wick    |  35|
+|          3 | Jack Bauer   |  45|
+
+Table `course`:
+| course_id | student_id|
+|:----|:----|
+|         1 |          1|
+|         1 |          2|
+|         2 |          1|
+|         3 |         10|
 
 ## Inner joins
 
@@ -841,45 +1007,38 @@ Intersection of two tables, meaning all rows that exist for both.
 
 <img src="Media/inner_join.png" alt="inner joins" width="300">
 
-Example table:
-| emp_id | first_name | branch_name |
-| - | - | - |
-| 100 | David | Corporate |
-| 102 | Michael | Scranton |
-| 106 | Josh | Stamford | 
-
-More examples:
-
-`\x` - toggle expanded display. 
-
+Command:
 ```sql
-SELECT * FROM students INNER JOIN majors ON students.major_id = majors.major_id;
-
-
+SELECT * FROM student INNER JOIN course ON student.student_id = course.student_id;
 ```
+Output:
+| student_id |     name     | age | course_id | student_id|
+|:----|:----|:----|:----|:----|
+|          1 | John Stramer |  50 |         1 |          1|
+|          2 | John Wick    |  35 |         1 |          2|
+|          1 | John Stramer |  50 |         2 |          1|
+
+> `\x` - toggle expanded display. 
+
 
 ## Left (outer) join
-
-Example table:
-| emp_id | first_name | branch_name |
-| - | - | - |
-| 100 | David | Corporate |
-| 102 | Michael | Scranton |
-| 106 | Josh | Stamford | 
-| 110 | Angela | NULL |
-| 111 | Jack | NULL |
 
 Will keep the unrelated data from the left (the first) table. Left join gets all rows from the left table, but from the right table - only rows that are linked to those of the table on the left. Missing data from the right table will have NULL values. 
 
 <img src="Media/left_outer_join.png" alt="left (outer) join" width="300">
 
-General form:
+Command:
 ```sql
--- The same notation, just write `LEFT JOIN` instead of `JOIN`
-SELECT columns FROM table1
-LEFT JOIN table2 
-ON relation;
+SELECT * FROM student LEFT JOIN course ON student.student_id = course.student_id;
 ```
+Output:
+| student_id |     name     | age | course_id | student_id|
+|:----|:----|:----|:----|:----|
+|          1 | John Stramer |  50 |         1 |          1|
+|          2 | John Wick    |  35 |         1 |          2|
+|          1 | John Stramer |  50 |         2 |          1|
+|          3 | Jack Bauer   |  45 |         NULL | NULL |
+
 
 More examples:
 ```sql
@@ -887,29 +1046,40 @@ select * from a LEFT OUTER JOIN b on a.a = b.b;
 -- Only show entries that don't have a car
 SELECT * FROM person LEFT JOIN car ON car.id = person.car_id WHERE car.* IS NULL;
 ```
+
+> Note: we can change the join type from LEFT JOIN to RIGHT JOIN and vise versa as long as we also change the order of the tables
+>
+> For example, these two statements should return the same result:
+>
+> SELECT o.OrderId, o.OrderDate, c.CustomerId, c.FirstName, c.LastName, c.Country
+> FROM Customers c
+> LEFT JOIN Orders o ON c.CustomerId = o.CustomerId;
+>
+> and
+>
+> SELECT o.OrderId, o.OrderDate, c.CustomerId, c.FirstName, c.LastName, c.Country
+> FROM Orders o
+> RIGHT JOIN Customers c ON o.CustomerId = c.CustomerId
+
 ## Right (outer) join
 
 All rows from the second / right table + the rows that match the rows from the second table .
 
 <img src="Media/right_outer_join.png" alt="right (outer) join" width="300">
 
-Example table:
-| emp_id | first_name | branch_name |
-| - | - | - |
-| 100 | David | Corporate |
-| 102 | Michael | Scranton |
-| 106 | Josh | Stamford | 
-| NULL | NULL | Buffalo |
-
-General form:
+Command:
 ```sql
-SELECT columns FROM table1
-RIGHT JOIN table2
-ON relation;
-
--- example
-select * from a RIGHT OUTER JOIN b on a.a = b.b;
+SELECT * FROM student RIGHT JOIN course ON student.stu
+dent_id = course.student_id;
 ```
+Output:
+| student_id |     name     | age | course_id | student_id|
+|:----|:----|:----|:----|:----|
+|          1 | John Stramer |  50 |         1 |          1|
+|          2 | John Wick    |  35 |         1 |          2|
+|          1 | John Stramer |  50 |         2 |          1|
+|       NULL |       NULL   | NULL|         3 |         10|
+
 
 ## Full (outer) join
 
@@ -917,12 +1087,19 @@ Combine all values from the two tables, including those with NULL values.
 
 <img src="Media/full_outer_join.png" alt="full (outer) join" width="300">
 
-General form:
+Command:
 ```sql
-SELECT columns FROM table1
-FULL JOIN table2
-ON relation;
+SELECT * FROM student FULL JOIN course ON student.student_id = course.student_id;
 ```
+Output:
+| student_id |     name     | age | course_id | student_id|
+|:----|:----|:----|:----|:----|
+|          1 | John Stramer |  50 |         1 |          1|
+|          2 | John Wick    |  35 |         1 |          2|
+|          1 | John Stramer |  50 |         2 |          1|
+|       NULL | NULL         | NULL|         3 |         10|
+|          3 | Jack Bauer   |  45 |      NULL | NULL      |
+
 
 More examples:
 ```sql
@@ -942,28 +1119,44 @@ FULL JOIN table_1 ON junction_table.foreign_key_column = table_1.primary_key_col
 FULL JOIN table_2 ON junction_table.foreign_key_column = table_2.primary_key_column;
 ```
 
-# Nested queries
+## Multi-table joins
 
-Using multiple SELECT statements, where the output of one query gets passed on to another query. 
+Example:
+```sql
+-- example 1
+SELECT c.CustomerName, o.OrderDate, p.ProductName
+FROM Customers c
+INNER JOIN Orders o ON c.CustomerID = o.CustomerID
+INNER JOIN Products p ON o.ProductID = p.ProductID;
+
+-- example 2
+SELECT c.CustomerName, o.OrderDate, p.ProductName
+FROM Customers c
+INNER JOIN Orders o ON c.CustomerID = o.CustomerID
+LEFT JOIN Products p ON o.ProductID = p.ProductID;
+```
+
+# CASE WHEN
+
+Creating a new column / field based on a condition for the other columns. 
 
 ```sql
--- Find names of all employees who have sold over 30,000 to a single client
-SELECT employee.first_name, employee.last_name
-FROM employee
-WHERE employee.emp_id IN (
-    SELECT works_with.emp_id
-    FROM works_with
-    WHERE works_with.total_sales > 30000
-);
+-- General view
+CASE WHEN
+condition1 THEN result1
+WHEN condition2 THEN result2
+WHEN conditionN THEN resultN
+ELSE else_result
+END AS alias;
+```
 
--- Find all clients who are handled by the branch that Michael Scott manages
-SELECT client.client_name
-FROM client
-WHERE branch_id = (
-    SELECT employee.branch_id
-    FROM employee
-    WHERE employee.first_name = 'Michael' AND employee.last_name = 'Scott'
-);
+Here is an example where we create a new field that will detail if a student passed or failed, based on their scores:
+```sql
+SELECT student_id, student_name, exam_score,
+CASE WHEN exam_score >= 60 THEN 'Pass'
+ELSE 'Fail'
+END AS result
+FROM students;
 ```
 
 # Export query to CSV
