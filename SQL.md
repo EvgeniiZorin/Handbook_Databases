@@ -29,6 +29,7 @@
   - [Comparison operators](#comparison-operators)
   - [Arithmetic operations](#arithmetic-operations)
   - [Concatenation](#concatenation)
+- [Column operations](#column-operations)
 - [IF conditions](#if-conditions)
 - [REGEX](#regex)
 - [Dates](#dates)
@@ -870,6 +871,14 @@ SELECT first_name || '-' || last_name AS column_name
 FROM employee;
 ```
 
+# Column operations
+
+```sql
+SELECT col1 / col2 AS alias1
+-- or
+round( SUM(rating::dec / position::dec)::dec / COUNT(rating)::dec, 2) AS quality
+```
+
 # IF conditions
 
 ```sql
@@ -1157,6 +1166,12 @@ CASE WHEN exam_score >= 60 THEN 'Pass'
 ELSE 'Fail'
 END AS result
 FROM students;
+```
+
+```sql
+-- CASE WHEN can be used within a aggregate function
+-- For example, take values where rating < 3 as 1 (otherwise, take as 0), and sum them - that counts how many ratings there are with a value of less than 3
+SUM(case when rating < 3 then 1 else 0 end)
 ```
 
 # Export query to CSV
