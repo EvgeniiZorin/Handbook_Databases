@@ -40,7 +40,9 @@
   - [Right (outer) join](#right-outer-join)
   - [Full (outer) join](#full-outer-join)
   - [Multi-table joins](#multi-table-joins)
+  - [Self join](#self-join)
 - [CASE WHEN](#case-when)
+- [Wide -\> long](#wide---long)
 - [Export query to CSV](#export-query-to-csv)
 - [Procedures](#procedures)
 - [Views](#views)
@@ -285,6 +287,8 @@ Transaction Control Language:
 | `NULL` | Null. `column IS NULL`|
 | `BOOLEAN` | `TRUE`, `FALSE` |
 
+
+
 # Statements
 
 ## SELECT
@@ -301,7 +305,8 @@ AND (column3 = 'Value2' OR column3 > 100);
 -- we can also give aliases to the tables
 SELECT o.OrderId, o.OrderDate, c.CustomerId, c.FirstName, c.LastName, c.Country
 FROM Orders o
-RIGHT JOIN Customers c ON o.CustomerId = c.CustomerId
+RIGHT JOIN Customers c 
+ON o.CustomerId = c.CustomerId
 ```
 
 ## SELECT functions
@@ -382,6 +387,14 @@ SELECT AVG(column1)
 SELECT department_id, SUM(salary) as total_salary
 FROM employees
 GROUP BY department_id;
+-- Group by can be used with joins:
+SELECT u.name as NAME, SUM(t.amount) as BALANCE
+FROM Users u
+INNER JOIN Transactions t
+ON u.account = t.account
+GROUP BY u.name
+HAVING SUM(t.amount) > 10000
+
 
 -- HAVING clause
 -- The HAVING clause was added to SQL to filter the results of the GROUP BY clause since WHERE does not work with aggregated results. The syntax for the HAVING clause is as follows:
@@ -945,6 +958,14 @@ Extracting fields: `DAY`, `DOW`, `MONTH`, `YEAR`, `CENTURY`
 ```sql
 SELECT EXTRACT (YEAR FROM NOW());
 
+-- Thus, we can order birthdays based only on month and date
+-- For example, table like this:
+--  id | name         |    date    |
+-- ----+--------------+------------+
+--  21 | Person 1     | 1971-11-21 |
+--  23 | Person 2     | 1989-12-29 |
+
+SELECT * FROM notable_dates ORDER BY EXTRACT(MONTH FROM date), EXTRACT(DAY FROM date) DESC;
 ```
 
 Select a part of a date:
@@ -1145,6 +1166,32 @@ INNER JOIN Orders o ON c.CustomerID = o.CustomerID
 LEFT JOIN Products p ON o.ProductID = p.ProductID;
 ```
 
+## Self join
+
+Joining a table with itself. Can utilise inner, left, right, or full outer joins. 
+
+For example, let's consider the following table. 
+| id | name  | salary | managerId |
+| -- | ----- | ------ | --------- |
+| 1  | Joe   | 70000  | 3         |
+| 2  | Henry | 80000  | 4         |
+| 3  | Sam   | 60000  | null      |
+| 4  | Max   | 90000  | null      |
+
+We can join each employee with their manager:
+| name1 | salary1 | name2 | salary2 |
+| ----- | ------- | ----- | ------- |
+| Joe   | 70000   | Sam   | 60000   |
+| Henry | 80000   | Max   | 90000   |
+
+This can be done by using the following command:
+```sql
+SELECT e1.name AS name1, e1.salary AS salary1, e2.name AS name2, e2.salary AS salary2
+FROM Employee e1
+JOIN Employee e2
+ON e1.managerId = e2.id
+```
+
 # CASE WHEN
 
 Creating a new column / field based on a condition for the other columns. 
@@ -1172,6 +1219,52 @@ FROM students;
 -- CASE WHEN can be used within a aggregate function
 -- For example, take values where rating < 3 as 1 (otherwise, take as 0), and sum them - that counts how many ratings there are with a value of less than 3
 SUM(case when rating < 3 then 1 else 0 end)
+
+-- An example: multiply by -1 if another column says "Buy", else take the original value
+SELECT stock_name, 
+    CASE
+        WHEN operation = 'Buy' THEN price * -1 
+        ELSE price
+        END AS capital_proc
+    FROM Stocks
+```
+
+# Wide -> long
+
+From table: 
+| name | sport | color | bonus |
+| - | - | - | - |
+| name1 | basketball | green | 10 |
+| name2 | voleyball | red | 5 |
+
+To table:
+| name | category | value |
+| - | - | - |
+| name1 | sport | basketball | 
+| name1 | color | green |
+| name1 | bonus | 10 |
+| name2 | sport | voleyball |
+| name2 | color | red |
+| name2 | bonus | 5 |
+
+```sql
+select 
+ name, 
+ 'sport' as category, 
+ sport as value
+from wideClient
+union all 
+select 
+ name, 
+ 'color' as category, 
+ color as value
+from wideClient
+union all
+select 
+ name, 
+ 'bonus' as category, 
+ bonus as value 
+from wideClient
 ```
 
 # Export query to CSV
