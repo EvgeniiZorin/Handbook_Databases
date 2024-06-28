@@ -42,7 +42,9 @@
   - [Multi-table joins](#multi-table-joins)
   - [Self join](#self-join)
 - [CASE WHEN](#case-when)
-- [Wide -\> long](#wide---long)
+- [Pivot](#pivot)
+  - [Wide -\> long](#wide---long)
+  - [Long -\> wide](#long---wide)
 - [Export query to CSV](#export-query-to-csv)
 - [Procedures](#procedures)
 - [Views](#views)
@@ -966,6 +968,11 @@ SELECT EXTRACT (YEAR FROM NOW());
 --  23 | Person 2     | 1989-12-29 |
 
 SELECT * FROM notable_dates ORDER BY EXTRACT(MONTH FROM date), EXTRACT(DAY FROM date) DESC;
+
+
+-- Another example
+-- Select all rows where date is 2020
+select * from notable_dates where extract (year from date) = 2020;
 ```
 
 Select a part of a date:
@@ -1229,7 +1236,9 @@ SELECT stock_name,
     FROM Stocks
 ```
 
-# Wide -> long
+# Pivot
+
+## Wide -> long
 
 From table: 
 | name | sport | color | bonus |
@@ -1265,6 +1274,51 @@ select
  'bonus' as category, 
  bonus as value 
 from wideClient
+```
+
+## Long -> wide
+
+```txt
+Input: 
+Department table:
++------+---------+-------+
+| id   | revenue | month |
++------+---------+-------+
+| 1    | 8000    | Jan   |
+| 2    | 9000    | Jan   |
+| 3    | 10000   | Feb   |
+| 1    | 7000    | Feb   |
+| 1    | 6000    | Mar   |
++------+---------+-------+
+Output: 
++------+-------------+-------------+-------------+-----+-------------+
+| id   | Jan_Revenue | Feb_Revenue | Mar_Revenue | ... | Dec_Revenue |
++------+-------------+-------------+-------------+-----+-------------+
+| 1    | 8000        | 7000        | 6000        | ... | null        |
+| 2    | 9000        | null        | null        | ... | null        |
+| 3    | null        | 10000       | null        | ... | null        |
++------+-------------+-------------+-------------+-----+-------------+
+```
+
+Query:
+```sql
+SELECT
+    id,
+    MAX(CASE WHEN month='Jan' THEN revenue ELSE null END) AS Jan_Revenue,
+    MAX(CASE WHEN month='Feb' THEN revenue ELSE null END) AS Feb_Revenue,
+    MAX(CASE WHEN month='Mar' THEN revenue ELSE null END) AS Mar_Revenue,
+    MAX(CASE WHEN month='Apr' THEN revenue ELSE null END) AS Apr_Revenue,
+    MAX(CASE WHEN month='May' THEN revenue ELSE null END) AS May_Revenue,
+    MAX(CASE WHEN month='Jun' THEN revenue ELSE null END) AS Jun_Revenue,
+    MAX(CASE WHEN month='Jul' THEN revenue ELSE null END) AS Jul_Revenue,
+    MAX(CASE WHEN month='Aug' THEN revenue ELSE null END) AS Aug_Revenue,
+    MAX(CASE WHEN month='Sep' THEN revenue ELSE null END) AS Sep_Revenue,
+    MAX(CASE WHEN month='Oct' THEN revenue ELSE null END) AS Oct_Revenue,
+    MAX(CASE WHEN month='Nov' THEN revenue ELSE null END) AS Nov_Revenue,
+    MAX(CASE WHEN month='Dec' THEN revenue ELSE null END) AS Dec_Revenue
+FROM Department
+GROUP BY id
+ORDER BY id ASC
 ```
 
 # Export query to CSV
