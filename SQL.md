@@ -380,6 +380,10 @@ SELECT SUM(total_sales), emp_id FROM works_with GROUP BY emp_id;
 -- MIN, MAX
 -- Print the max value of column2
 SELECT MAX(column1)
+-- Select the earliest date for each 'player_id' category
+SELECT player_id, MIN(event_date) AS first_login
+FROM Activity
+GROUP BY player_id
 
 -- AVG
 SELECT AVG(column1) 
@@ -410,7 +414,15 @@ SELECT department_id, SUM(salary) as total_salary
 FROM employees
 GROUP BY department_id
 HAVING SUM(salary) > 50000;
+
+-- STRING_AGG to concatenate strings
+-- Below, the ORDER BY within the agg function is optional - it's just to sort the concatenated names lexicographically within each concatenation group
+SELECT id, STRING_AGG(name, ', ' ORDER BY name) AS names
+FROM some_table
+GROUP BY id
+
 ```
+
 
 
 ## examples of some statements
