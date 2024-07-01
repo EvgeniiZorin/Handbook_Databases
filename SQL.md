@@ -370,6 +370,9 @@ SELECT COUNT(column_name)
 SELECT COUNT(emp_id) FROM employee WHERE sex = 'F';
 -- Count how many entries for each unique group in column 'sex' there are
 SELECT COUNT(sex), sex FROM employee GROUP BY sex;
+-- Count unique categories in a column
+SELECT COUNT(DISTINCT sex) FROM employee;
+SELECT COUNT(DISTINCT(sex)) FROM employee;
 
 -- SUM
 -- Sum all values in a column
@@ -953,12 +956,16 @@ SELECT AGE(NOW(), date_of_birth);
 SELECT CURDATE(); select CURRENT_DATE 
 -- returns current date formatted as UNIX
 select UNIX_TIMESTAMP()
-```
 
-INTERVAL: `YEARS`, `MONTHS`, `DAYS`
+-- return records where date equals to specified date
+select * from personal_data where birthday = '1977-05-04'
+select * from personal_data where birthday = '1977-05-04'::date;
 
-```sql
+
+-- INTERVAL: `YEARS`, `MONTHS`, `DAYS`
 NOW() - INTERVAL '1 YEAR'; # Time a year ago
+-- Select birthdays between 1977-05-04 and 30 days before that
+SELECT * FROM personal_data WHERE birthday < '1977-05-04'::date AND birthday > '1977-05-04'::date - INTERVAL '30 DAYS';
 ```
 
 Typecasting: `::DATE`, `::TIME`
@@ -1159,6 +1166,26 @@ SELECT * FROM table1 FULL JOIN table2 ON table1.id = table2.char_id;
 Or, if the column has the same name:
 ```sql
 SELECT * FROM table1 JOIN table2 USING (id_name)
+```
+
+```sql
+-- We have two tables with primary and foreign key "employee_id", and we want to show ids that are not used for inner join (because they are not in both tables)
+SELECT absent_in_one AS employee_id 
+FROM (
+    SELECT
+    CASE 
+    WHEN e_emp_id IS NULL THEN s_emp_id
+    WHEN s_emp_id IS NULL THEN e_emp_id
+    ELSE NULL
+    END AS absent_in_one
+    FROM (
+        SELECT e.employee_id AS e_emp_id, e.name AS e_name, s.employee_id AS s_emp_id, s.salary AS s_salary
+        FROM Employees e
+        FULL JOIN Salaries s
+        ON e.employee_id = s.employee_id
+    )
+)
+WHERE absent_in_one IS NOT NULL
 ```
 
 Or if we want to joint three tables:
