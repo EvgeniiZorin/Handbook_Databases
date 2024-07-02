@@ -31,7 +31,8 @@
   - [Concatenation](#concatenation)
 - [Column operations](#column-operations)
 - [IF conditions](#if-conditions)
-- [REGEX](#regex)
+- [Where](#where)
+  - [REGEX](#regex)
 - [Dates](#dates)
 - [Union](#union)
 - [Joins](#joins)
@@ -283,7 +284,7 @@ Transaction Control Language:
 | `INT` | Whole number. |
 | `SERIAL` | Auto-increments a number. The SERIAL type will make your column an INT with a NOT NULL constraint, and automatically increment the integer when a new row is added.  |
 | `BIGSERIAL` | Auto-increments a number |
-| `CHAR(30)` | String (specified length). The string has to be EXACTLY the specified length, in this case, 30 characters - no more, no less. *Note: use single quotes, not doublequotes* |
+| `CHAR(30)` | String (specified length). The string has to be EXACTLY the specified length, in this case, 30 characters - no more, no less. *Note: use single quotes, not doublequotes*. If you need to use a single apostrophe as part of the string, use it two times to escape: `'O''Brien'` |
 | `VARCHAR(30)` | String (max length). The string can have a length up to the specified limit, such as 10, 20, 25 characters, but no more than 30 characters. *Note: use single quotes, not doublequotes* |
 | `NUMERIC(4, 1)` | Float with number of decimals (1). For MySQL, I think, it's `DECIMAL(10, 4)`|
 | `NULL` | Null. `column IS NULL`|
@@ -322,7 +323,13 @@ SELECT DISTINCT column1
 -- COALESCE - print a value for NULL values
 SELECT COALESCE(column1, 'Entry not found') FROM table1;   
 
-
+-- UPPER
+SELECT UPPER(name)
+-- Capitalise the first letter only
+SELECT CONCAT(
+  UPPER(SUBSTRING(name,1,1)),
+  LOWER(SUBSTRING(name, 2, LENGTH(name) - 1))
+) AS name
 
 SELECT ROUND(AVG(column1))
 
@@ -920,7 +927,15 @@ SELECT employee_id, CASE WHEN employee_id % 2 = 1 AND name NOT LIKE 'M%' THEN sa
 SELECT employee_id, if(employee_id % 2 = 1 AND name NOT LIKE 'M%', salary, 0) AS bonus FROM Employees;
 ```
 
-# REGEX
+# Where
+
+## REGEX
+
+There are two ways of writing regular expressions in SQL:
+- `~`: True REGEXP
+- `LIKE`: simplified REGEXP; is not as powerful, but typically faster than regular expressions.
+
+**LIKE**
 
 | Sign | Meaning |
 | --- | --- |
@@ -944,6 +959,11 @@ LIKE '_e%'
 LIKE '% %'
 ```
 
+**REGEXP**
+
+```sql
+SELECT * FROM table1 WHERE name ~ '^Grandfather.+|.+parents.+'
+```
 
 # Dates
 
