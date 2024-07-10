@@ -1012,6 +1012,7 @@ SELECT * FROM notable_dates ORDER BY EXTRACT(MONTH FROM date), EXTRACT(DAY FROM 
 -- Another example
 -- Select all rows where date is 2020
 select * from notable_dates where extract (year from date) = 2020;
+where extract(month from date) = 02 -- February
 ```
 
 Select a part of a date:
@@ -1057,6 +1058,16 @@ General form:
 SELECT * FROM table1 -- or SELECT table1.id, table2.id2
 JOIN table2 ON relation;
 ```
+
+You can also combine JOIN and WHERE operations:
+```sql
+SELECT column_list
+FROM table1
+JOIN table2 ON table1.column_name = table2.column_name
+WHERE condition;
+```
+
+---
 
 <img src="Media/joins.png" width=800>
 
