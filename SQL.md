@@ -983,7 +983,7 @@ select * from personal_data where birthday = '1977-05-04'::date;
 
 
 -- INTERVAL: `YEARS`, `MONTHS`, `DAYS`
-NOW() - INTERVAL '1 YEAR'; # Time a year ago
+NOW() - INTERVAL '1 YEAR'; -- Time a year ago
 -- Select birthdays between 1977-05-04 and 30 days before that
 SELECT * FROM personal_data WHERE birthday < '1977-05-04'::date AND birthday > '1977-05-04'::date - INTERVAL '30 DAYS';
 ```
