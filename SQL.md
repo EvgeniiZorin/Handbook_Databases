@@ -9,6 +9,7 @@
   - [DCL](#dcl)
   - [TCL](#tcl)
 - [Datatypes](#datatypes)
+  - [DATE](#date)
 - [Statements](#statements)
   - [SELECT](#select)
   - [SELECT functions](#select-functions)
@@ -33,7 +34,6 @@
 - [IF conditions](#if-conditions)
 - [Where](#where)
   - [REGEX](#regex)
-- [Dates](#dates)
 - [Union](#union)
 - [Joins](#joins)
   - [Inner joins](#inner-joins)
@@ -290,7 +290,66 @@ Transaction Control Language:
 | `NULL` | Null. `column IS NULL`|
 | `BOOLEAN` | `TRUE`, `FALSE` |
 
+## DATE
 
+```sql
+-- Gives YYYY-MM-DD HH:MM:SS.MSMS
+SELECT NOW();
+-- Get years of a person from his birthday
+SELECT AGE(NOW(), date_of_birth);
+-- returns 2022-03-16
+SELECT CURDATE(); select CURRENT_DATE 
+-- returns current date formatted as UNIX
+select UNIX_TIMESTAMP()
+
+-- INTERVAL: 'YEARS', 'MONTHS', 'DAYS'
+-- This is used to add time period to dates
+-- Time a year ago
+NOW() - INTERVAL '1 YEAR';
+-- Select birthdays between 1977-05-04 and 30 days before that
+SELECT * FROM personal_data 
+WHERE birthday < '1977-05-04'::date 
+AND birthday > '1977-05-04'::date - INTERVAL '30 DAYS';
+
+-- Typecasting
+-- YYYY-MM-DD
+SELECT NOW()::DATE
+-- HH:MM:SS.MSMS
+SELECT NOW()::TIME
+-- An example
+(NOW()::DATE + INTERVAL '10 MONTHS')::DATE
+
+-- EXTRACT: Extracting fields: DAY, DOW, MONTH, YEAR, CENTURY
+-- EXTRACT can be used in SELECT and WHERE
+EXTRACT (YEAR FROM NOW())
+-- Select month of February
+SELECT * FROM notable_dates WHERE EXTRACT (MONTH FROM DATE) = 02
+
+-- Select a part of a date
+-- year, month, day, hour, minute, second
+SELECT date_part('year', (SELECT date_column_name))
+```
+
+Examples:
+```sql
+-- return records where date equals to specified date
+select * from personal_data where birthday = '1977-05-04'
+select * from personal_data where birthday = '1977-05-04'::date;
+
+-- Thus, we can order birthdays based only on month and date
+-- For example, table like this:
+--  id | name         |    date    |
+-- ----+--------------+------------+
+--  21 | Person 1     | 1971-11-21 |
+--  23 | Person 2     | 1989-12-29 |
+
+SELECT * FROM notable_dates 
+ORDER BY 
+  EXTRACT(MONTH FROM date), 
+  EXTRACT(DAY FROM date) DESC;
+
+
+```
 
 # Statements
 
@@ -965,61 +1024,6 @@ LIKE '% %'
 SELECT * FROM table1 WHERE name ~ '^Grandfather.+|.+parents.+'
 ```
 
-# Dates
-
-```sql
--- Gives YYYY-MM-DD HH:MM:SS.MSMS
-SELECT NOW();
--- Get years of a person from his birthday
-SELECT AGE(NOW(), date_of_birth);
--- returns 2022-03-16
-SELECT CURDATE(); select CURRENT_DATE 
--- returns current date formatted as UNIX
-select UNIX_TIMESTAMP()
-
--- return records where date equals to specified date
-select * from personal_data where birthday = '1977-05-04'
-select * from personal_data where birthday = '1977-05-04'::date;
-
-
--- INTERVAL: `YEARS`, `MONTHS`, `DAYS`
-NOW() - INTERVAL '1 YEAR'; -- Time a year ago
--- Select birthdays between 1977-05-04 and 30 days before that
-SELECT * FROM personal_data WHERE birthday < '1977-05-04'::date AND birthday > '1977-05-04'::date - INTERVAL '30 DAYS';
-```
-
-Typecasting: `::DATE`, `::TIME`
-```sql
-SELECT NOW()::DATE # YYYY-MM-DD
-SELECT NOW()::TIME # HH:MM:SS.MSMS
-(NOW()::DATE + INTERVAL '10 MONTHS')::DATE
-```
-
-Extracting fields: `DAY`, `DOW`, `MONTH`, `YEAR`, `CENTURY`
-```sql
-SELECT EXTRACT (YEAR FROM NOW());
-
--- Thus, we can order birthdays based only on month and date
--- For example, table like this:
---  id | name         |    date    |
--- ----+--------------+------------+
---  21 | Person 1     | 1971-11-21 |
---  23 | Person 2     | 1989-12-29 |
-
-SELECT * FROM notable_dates ORDER BY EXTRACT(MONTH FROM date), EXTRACT(DAY FROM date) DESC;
-
-
--- Another example
--- Select all rows where date is 2020
-select * from notable_dates where extract (year from date) = 2020;
-where extract(month from date) = 02 -- February
-```
-
-Select a part of a date:
-- 'year', 'month', 'day', 'hour', 'minute', 'second'
-```sql
-SELECT date_part('year', (SELECT date_column_name))
-```
 
 # Union
 
