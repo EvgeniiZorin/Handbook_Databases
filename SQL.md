@@ -959,6 +959,15 @@ Examples:
 - `SELECT column1 * 10`
 - `SELECT MAX(column1)`
 
+```sql
+-- Examples
+SELECT column1 * 10
+SELECT MAX(column1)
+
+-- In a column 'comparison' with binary values (0 and 1), calculate percentage that all ones make from the total amount
+SELECT ROUND( (SUM(comparison)::numeric / COUNT(comparison)::numeric) * 100 , 2 ) AS immediate_percentage
+```
+
 ## Concatenation
 
 Concatenate two columns:
