@@ -9,7 +9,7 @@
   - [DCL](#dcl)
   - [TCL](#tcl)
 - [Datatypes](#datatypes)
-  - [DATE](#date)
+  - [Date](#date)
 - [Statements](#statements)
   - [SELECT](#select)
   - [SELECT functions](#select-functions)
@@ -290,7 +290,12 @@ Transaction Control Language:
 | `NULL` | Null. `column IS NULL`|
 | `BOOLEAN` | `TRUE`, `FALSE` |
 
-## DATE
+You can cast datatypes like this:
+```sql
+SELECT whatever::date, whatever2::numeric
+```
+
+## Date
 
 ```sql
 -- Gives YYYY-MM-DD HH:MM:SS.MSMS
@@ -328,6 +333,9 @@ SELECT * FROM notable_dates WHERE EXTRACT (MONTH FROM DATE) = 02
 -- Select a part of a date
 -- year, month, day, hour, minute, second
 SELECT date_part('year', (SELECT date_column_name))
+
+-- Select year and month
+SELECT TO_CHAR(order_date, 'YYYY-MM')
 ```
 
 Examples:
@@ -439,6 +447,8 @@ SELECT COUNT(sex), sex FROM employee GROUP BY sex;
 -- Count unique categories in a column
 SELECT COUNT(DISTINCT sex) FROM employee;
 SELECT COUNT(DISTINCT(sex)) FROM employee;
+-- Equivalent of COUNTIF in excel
+SUM(CASE WHEN state='approved' THEN 1 ELSE 0 END)
 
 -- SUM
 -- Sum all values in a column
@@ -973,6 +983,9 @@ SELECT ROUND( (SUM(comparison)::numeric / COUNT(comparison)::numeric) * 100 , 2 
 Concatenate two columns:
 ```sql
 SELECT first_name || '-' || last_name AS column_name
+FROM employee;
+-- or
+SELECT CONCAT( first_name, '-', last_name )
 FROM employee;
 ```
 
