@@ -377,6 +377,7 @@ SELECT o.OrderId, o.OrderDate, c.CustomerId, c.FirstName, c.LastName, c.Country
 FROM Orders o
 RIGHT JOIN Customers c 
 ON o.CustomerId = c.CustomerId
+
 ```
 
 ## SELECT functions
@@ -433,7 +434,12 @@ SELECT column1, column2, columnN aggregate_function(columnX)
 FROM table
 GROUP BY columns(s);
 
-SELECT column1, aggregate_function(column2)AS alias
+SELECT column1, aggregate_function(column2) AS alias
+
+--- we can use order of the tables in the filter statement - you basically substitute the names of columns in the filter statement with their ordinal number (index in the order of mention)
+SELECT column1, column2, column3
+FROM table1
+GROUP BY 1 2 ORDER BY 2 DESC
 
 -- COUNT
 -- Count the total number of rows
