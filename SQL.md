@@ -378,6 +378,12 @@ FROM Orders o
 RIGHT JOIN Customers c 
 ON o.CustomerId = c.CustomerId
 
+-- When aliasing, we can either use AS or omit it
+-- (albeit it is preferable to use the AS statement)
+SELECT column1 AS alias1 
+-- or
+SELECT column1 alias1
+
 ```
 
 ## SELECT functions
@@ -1122,6 +1128,8 @@ Table `course`:
 
 ## Inner joins
 
+> `INNER JOIN` can also be written as `JOIN`
+
 Intersection of two tables, meaning all rows that exist for both. 
 
 <img src="Media/inner_join.png" alt="inner joins" width="300">
@@ -1201,6 +1209,8 @@ Output:
 
 
 ## Full (outer) join
+
+> `FULL OUTER JOIN` can also be written as `FULL JOIN`
 
 Combine all values from the two tables, including those with NULL values. 
 
