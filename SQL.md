@@ -295,6 +295,12 @@ You can cast datatypes like this:
 SELECT whatever::date, whatever2::numeric
 ```
 
+Complex data types:
+```sql
+-- List - usually used within a WHERE _ IN <list> clause
+('Value1', 'Value2', 'Value3')
+```
+
 ## Date
 
 ```sql
