@@ -292,7 +292,10 @@ Transaction Control Language:
 
 You can cast datatypes like this:
 ```sql
-SELECT whatever::date, whatever2::numeric
+-- data types: date, numeric, int, float
+SELECT 
+  whatever::date, 
+  whatever2::numeric
 ```
 
 Complex data types:
@@ -413,6 +416,16 @@ SELECT CONCAT(
 
 SELECT ROUND(AVG(column1))
 
+-- Separate string into list items
+SELECT string_to_array('1 2 3 4', ' ') -- gives you output of one cell like this: {1,2,3,4}
+-- Separate and put as values of a column
+SELECT unnest(string_to_array('1 2 3 4', ' '))
+-- example usage: you have a string containing items you want to look for
+select *
+from employee
+where emp_id in (
+	select unnest(string_to_array('100 101 102', ' '))::numeric
+)
 ```
 
 ## Clauses
