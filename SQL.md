@@ -18,7 +18,6 @@
   - [examples of some statements](#examples-of-some-statements)
 - [Constraints](#constraints)
 - [Keys](#keys)
-  - [Unique key](#unique-key)
   - [Primary key](#primary-key)
   - [Composite primary key](#composite-primary-key)
   - [Foreign key](#foreign-key)
@@ -87,7 +86,7 @@ Basic commands:
 
 # Database Normalization
 
-**Database normalization** is the process of **structuring a relational database** in accordance with a series of so-called **normal forms** in order to reduce data redundancy and improve data integrity. It was first proposed by British computer scientist Edgar F. Codd as part of his relational model.
+**Database normalization** is the process of **structuring a relational database** in accordance with a series of so-called **normal forms** in order to reduce data redundancy and improve data integrity; usually it is done by splitting a table into smaller tables and coding relationships between them via keys. It was first proposed by British computer scientist Edgar F. Codd as part of his relational model.
 
 Denormalized dataset - all the data is combined in one dataset, without adhering to the database rules. To enter to a database, data has to have data integrity and adhere to some rules of good database design. Normalization of a database table - structuring it in such a way that it doesn't and cannot express *redundant information*. 
 
@@ -434,6 +433,9 @@ where emp_id in (
 
 The WHERE clause is used in a SELECT statement to filter rows based on specified conditions before the data is grouped or aggregated. It operates on individual rows and filters them based on the given conditions.
 
+`WHERE salary IS NOT NULL`
+
+
 
 **ORDER BY**
 
@@ -494,6 +496,10 @@ SELECT MAX(column1)
 SELECT player_id, MIN(event_date) AS first_login
 FROM Activity
 GROUP BY player_id
+-- Select the second highest salary in a table
+SELECT MAX(salary) AS second_highest_salary
+FROM employees
+WHERE salary < (SELECT MAX(salary) FROM employees);
 
 -- AVG
 SELECT AVG(column1) 
@@ -667,10 +673,6 @@ ALTER TABLE character_actions ADD FOREIGN KEY(character_id) REFERENCES character
 
 # Keys
 
-## Unique key
-
-A unique key prevents duplicate values in a column and can store NULL values.
-
 ## Primary key
 
 Primary key:
@@ -750,8 +752,8 @@ ALTER TABLE <table_name> ADD PRIMARY KEY(<column_name>, <column_name>);
 ## Foreign key
 
 A foreign key:
+- Field in a table that references the primary key of another table
 - Makes a connection between two tables via their joint column. 
-- A foreign key in one table usually references a primary key in another. 
 - Enforce data integrity, making sure the data confirms to some rules when it is added to the DB.
 
 ON DELETE SET NULL: if in the table 1 a row is deleted, then in the table 2 that references that first table via foreign key the corresponding value is set to NULL;
@@ -801,8 +803,9 @@ DELIMITER ;
 
 # Subquery
 
-Subquery, aka nested queries, inner queries:
-- are querries that are embedded within the context of another SQL query. 
+> a.k.a. subquery, nested query, inner query
+
+- Subqueries are embedded within another SQL query and are used when the result of one query depends on that of the other; 
 - Are powerful tools for performing complex data manipulations that require one or more intermediary steps
 - Types (depending on where / in which clause the subquery is located):
   - SELECT subqueries
@@ -1105,6 +1108,13 @@ FROM branch_supplier;
 # Joins
 
 JOIN is a command for linking rows from two or more tables based on a column common for all of them. 
+
+| Type | Explanation |
+| - | - |
+| Inner Join | Returns records with matching values in both tables. |
+| Left (outer) join | Returns all records from the left table and the matched records (or NULL for non-matched records) from the right table. |
+| Right (outer) join | The opposite of left outer join. |
+| Full (outer) joint | Returns all records, with non-matching records having NULL. |
 
 There are two main categories of joins:
 - **INNER JOIN**: will only retain the data from the two tables that is related to each other (that is present in both tables, like an overlap of the Venn diagram);
