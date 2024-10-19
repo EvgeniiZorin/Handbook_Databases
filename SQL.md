@@ -15,6 +15,7 @@
   - [SELECT functions](#select-functions)
   - [Clauses](#clauses)
   - [Aggregate functions](#aggregate-functions)
+  - [WITH ... AS](#with--as)
   - [examples of some statements](#examples-of-some-statements)
 - [Constraints](#constraints)
 - [Keys](#keys)
@@ -425,7 +426,11 @@ from employee
 where emp_id in (
 	select unnest(string_to_array('100 101 102', ' '))::numeric
 )
+
+-- make a database selection as a name
+
 ```
+
 
 ## Clauses
 
@@ -539,7 +544,25 @@ GROUP BY id
 
 ```
 
+## WITH ... AS
 
+```sql
+WITH a1 AS (
+	SELECT
+		bs.branch_id,
+		bs.branch_name,
+		COUNT(bs.mgr_id)
+	FROM employees_db.public.branch bs
+	INNER JOIN employees_db.public.branch_supplier bs2 
+	ON bs.branch_id = bs2.branch_id 
+	
+	GROUP BY 
+		bs.branch_id, 
+		bs.branch_name
+)
+
+SELECT * FROM a1
+```
 
 ## examples of some statements
 
@@ -1063,6 +1086,8 @@ These are used with the SQL keyword `LIKE`
 SELECT * FROM courses WHERE course LIKE '_lgorithms';
 -- Find any clients who are an LLC
 SELECT * FROM client WHERE client_name LIKE '%LLC';
+-- Case insensitive
+SELECT * FROM client WHERE LOWER(client_name) LIKE 'david'
 -- Find employees born in october
 SELECT * FROM employee WHERE birth_date LIKE '____-10-%';
 
@@ -1356,10 +1381,11 @@ END AS alias;
 
 Here is an example where we create a new field that will detail if a student passed or failed, based on their scores:
 ```sql
-SELECT student_id, student_name, exam_score,
-CASE WHEN exam_score >= 60 THEN 'Pass'
-ELSE 'Fail'
-END AS result
+SELECT 
+  student_id, 
+  student_name, 
+  exam_score,
+  CASE WHEN exam_score >= 60 THEN 'Pass' ELSE 'Fail' END AS result
 FROM students;
 ```
 
@@ -1375,6 +1401,20 @@ SELECT stock_name,
         ELSE price
         END AS capital_proc
     FROM Stocks
+```
+
+Another example of multiple filters:
+```sql
+SELECT 
+	sex,
+	count(*) AS count1,
+	sum(is_married) AS count_married,
+	sum(CASE WHEN e.birth_date > '1980-01-01' THEN 1 ELSE 0 END) AS count_older_1980,
+	sum(CASE WHEN e.birth_date < '1970-01-01' THEN 1 ELSE 0 END) AS count_younger_1970
+FROM employee e
+INNER JOIN newtable nt
+ON e.emp_id = nt.emp_id 
+GROUP BY sex
 ```
 
 # Pivot
