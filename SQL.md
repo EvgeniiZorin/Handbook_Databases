@@ -12,7 +12,12 @@
   - [Date](#date)
 - [Statements](#statements)
   - [SELECT](#select)
-  - [SELECT functions](#select-functions)
+    - [DISTINCT](#distinct)
+    - [COALESCE](#coalesce)
+    - [UPPER](#upper)
+    - [ROUND](#round)
+    - [EXCEPT](#except)
+    - [separate string into list items](#separate-string-into-list-items)
   - [Clauses](#clauses)
   - [Aggregate functions](#aggregate-functions)
   - [WITH ... AS](#with--as)
@@ -37,6 +42,7 @@
   - [REGEX](#regex)
 - [Union](#union)
 - [Joins](#joins)
+  - [ON vs USING](#on-vs-using)
   - [Inner joins](#inner-joins)
   - [Left (outer) join](#left-outer-join)
   - [Right (outer) join](#right-outer-join)
@@ -396,27 +402,69 @@ SELECT column1 alias1
 
 ```
 
-## SELECT functions
+### DISTINCT
 
-These functions are used with SELECT:
 ```sql
 -- Only print unique values from the column
 SELECT DISTINCT(column1)
 SELECT DISTINCT column1
+```
 
--- COALESCE - print a value for NULL values
-SELECT COALESCE(column1, 'Entry not found') FROM table1;   
+### COALESCE
 
--- UPPER
+```sql
+-- Returns the first non-null value in a list of columns. If all the values in the list of columns are NULL, then the function returns NULL
+SELECT 
+	name 
+	, alias 
+	, COALESCE(name, alias)
+FROM student s 
+-- returns:
+-- name        |alias       |coalesce    |
+-- ------------+------------+------------+
+-- John Wick   |Baba Yaga   |John Wick   |
+-- Jack Bauer  |Dude from 24|Jack Bauer  |
+-- Poseidon    |Tlalok      |Poseidon    |
+-- John Stramer|            |John Stramer|
+--             |Ghostface   |Ghostface   |
+
+
+-- in this case get a value for NULL values
+SELECT COALESCE(column1, 'Entry not found') FROM table1;
+```
+
+### UPPER
+
+```sql
 SELECT UPPER(name)
 -- Capitalise the first letter only
 SELECT CONCAT(
   UPPER(SUBSTRING(name,1,1)),
   LOWER(SUBSTRING(name, 2, LENGTH(name) - 1))
 ) AS name
+```
 
+### ROUND
+
+```sql
 SELECT ROUND(AVG(column1))
+```
 
+### EXCEPT
+
+This function doesn't work in PostgreSQL. Works in BigQuery.
+
+```sql
+-- Select every column except for the column `alias`
+SELECT
+	* EXCEPT (alias)
+FROM student s
+
+```
+
+### separate string into list items
+
+```sql
 -- Separate string into list items
 SELECT string_to_array('1 2 3 4', ' ') -- gives you output of one cell like this: {1,2,3,4}
 -- Separate and put as values of a column
@@ -1155,7 +1203,7 @@ There are two main categories of joins:
 General form:
 ```sql
 SELECT * FROM table1 -- or SELECT table1.id, table2.id2
-JOIN table2 ON relation;
+JOIN table2 ON table1.id = table2.id;
 ```
 
 You can also combine JOIN and WHERE operations:
@@ -1165,6 +1213,7 @@ FROM table1
 JOIN table2 ON table1.column_name = table2.column_name
 WHERE condition;
 ```
+
 
 ---
 
@@ -1186,6 +1235,42 @@ Table `course`:
 |         1 |          2|
 |         2 |          1|
 |         3 |         10|
+
+## ON vs USING
+
+There are two clauses for joining - ON and USING:
+
+**ON**
+
+the ON clause is the most general: `ON t1.a = t2.a`, `ON t1.a = t2.b AND t1.b = t2.b`
+
+```sql
+SELECT 
+  post.post_id,
+  title,
+  review
+FROM post
+INNER JOIN post_comment ON post.post_id = post_comment.post_id
+ORDER BY post.post_id, post_comment_id
+```
+
+**USING**
+
+the USING clause: shorthand form: `USING a`, `USING (a, b)` - where if you are joining on multiple columns you just write them in a tuple where each element is separated by a coma
+
+USING -any columns mentioned in the USING list will appear in the joined list only once with an unqualified name
+
+if a column used for join has the same name, USING can be used where you don't specify the table it is coming from;
+
+```sql
+SELECT
+  post_id,
+  title,
+  review
+FROM post
+INNER JOIN post_comment USING(post_id)
+ORDER BY post_id, post_comment_id
+```
 
 ## Inner joins
 
