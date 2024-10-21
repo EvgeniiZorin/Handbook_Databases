@@ -23,8 +23,9 @@
   - [Composite primary key](#composite-primary-key)
   - [Foreign key](#foreign-key)
 - [Trigger](#trigger)
-- [Subquery](#subquery)
-- [CTE](#cte)
+- [Query organisation](#query-organisation)
+  - [Subquery](#subquery)
+  - [CTE](#cte)
 - [Operators](#operators)
   - [Logical operators](#logical-operators)
   - [Comparison operators](#comparison-operators)
@@ -824,7 +825,8 @@ DELIMITER ;
 -- Now, every time a row is added to the table `employee`, a row is added into the table `trigger_test` saying `added new employee`
 ```
 
-# Subquery
+# Query organisation
+## Subquery
 
 > a.k.a. subquery, nested query, inner query
 
@@ -931,7 +933,7 @@ Use IDs from one table to use in querying another table
 SELECT column1 as 'Column 1' FROM table1 WHERE table1.id NOT IN (SELECT customer_id FROM table2);
 ```
 
-# CTE
+## CTE
 
 CTE, common table expressions
 
@@ -947,9 +949,14 @@ an intermediary result), there are a couple of factors that tip off CTEs:
 Alternatively, subqueries are a query within a query, nested within one of a query’s clauses.
 
 ```sql
-WITH alias AS ( <Put query here>
+WITH 
+alias AS (
+  -- <Put query here>
+), 
+alias2 AS (
+  -- <put query here>
 )
-…. <Query that queries the alias>
+-- ... <Query that queries the alias>
 
 -- A more concrete example
 WITH customer_totals AS (
