@@ -53,6 +53,19 @@ FROM employee
 WHERE employee.salary > 30000;
 ```
 
+Column vs row database:
+-	Column store: 
+  -	Easy to analyse entire columns quickly
+  -	optimized for aggregate functions (count group by column)
+  -	Easy to compress lots of data
+  -	Slow to add new data or manipulate old data
+-	Row store: 
+  -	Easy to read and manipulate one object at a time
+  -	optimized for filter functions (`where id = 3`)
+  -	Easy to insert new data
+  -	Slow to analyse large amounts of data
+
+
 # Classifications
 
 Two types of databases - relational databases using [SQL](SQL.md) and non-relational databases using [noSQL](noSQL.md):

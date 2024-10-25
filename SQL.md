@@ -499,10 +499,18 @@ SELECT * FROM sample_values WHERE random() < 0.00001;
 
 Sample N % of all data points. 
 
+> More info: https://cloud.google.com/bigquery/docs/table-sampling
+
 ```sql
 -- IMPORTANT! sampling is always done before the filtering. Here, you will first sample the table and then to that sample apply the WHERE clause, so the actual amount of sampled data will vary 
 SELECT *
 FROM table1 TABLESAMPLE SYSTEM (1)
+WHERE last_name = 'Wayne'
+
+-- or
+SELECT *
+FROM table1 AS t1
+TABLESAMPLE SYSTEM (0.1) -- sample 0.1% of rows
 WHERE last_name = 'Wayne'
 
 -- To first filter and then do sampling you can do this, you can create a temporary table but I don't know how to do it: https://dba.stackexchange.com/questions/258271/perform-tablesample-with-where-clause-in-postgresql#:~:text=However%20you%20can%20work%20around%20this%20if%20you%20really%20want%20to%20use%20the%20tablesample%20attribute%20by%20creating%20a%20temporary%20table%20(or%20similar)%20based%20on%20your%20conditional%20query.
