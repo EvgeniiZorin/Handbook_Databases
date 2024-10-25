@@ -2,6 +2,7 @@
 
 - [SQL](#sql)
 - [Basic](#basic)
+- [Query formatting](#query-formatting)
 - [Database Normalization](#database-normalization)
 - [Subsets of SQL commands](#subsets-of-sql-commands)
   - [DDL](#ddl)
@@ -97,6 +98,16 @@ Specific to BigQuery:
 SELECT column_name
 FROM <project_name>.<dataset_name>.INFORMATION_SCHEMA.COLUMNS
 WHERE table_name = '<table_name>' 
+```
+
+# Query formatting
+
+```sql
+SELECT a
+     , d
+     , c
+FROM table
+WHERE d = 'SOMETHING'
 ```
 
 # Database Normalization
@@ -413,8 +424,30 @@ SELECT column1 alias1
 
 ```sql
 -- Only print unique values from the column
-SELECT DISTINCT(column1)
+SELECT DISTINCT (column1)
 SELECT DISTINCT column1
+
+-- Show unique combinations of two columns - returns column where each row is a list of unique combs
+SELECT DISTINCT (column1, column2)
+-- row                   |
+-- ----------------------+
+-- (2,"Custom Forms")    |
+-- (2,Paper)             |
+-- (2,"Writing Utensils")|
+-- (3,"Custom Forms")    |
+-- (3,Paper)             |
+-- (3,"Writing Utensils")|
+
+-- Same but as separate columns
+SELECT DISTINCT column1, column2 
+-- branch_id|supply_type     |
+-- ---------+----------------+
+--         2|Custom Forms    |
+--         2|Paper           |
+--         2|Writing Utensils|
+--         3|Custom Forms    |
+--         3|Paper           |
+--         3|Writing Utensils|
 ```
 
 ### COALESCE
