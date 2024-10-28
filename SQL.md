@@ -659,6 +659,28 @@ ON u.account = t.account
 GROUP BY u.name
 HAVING SUM(t.amount) > 10000
 
+-- Note: order of GROUP BY doesn't matter - the final numbers will remain the sum, just the order will change
+-- https://www.kaggle.com/discussions/getting-started/100307
+-- https://stackoverflow.com/questions/3064677/does-the-order-of-columns-matter-in-a-group-by-clause
+-- consider this table:
+-- | country | person | sale |
+-- | - | - | - |
+-- | UK | John | 100 |
+-- | UK | John | 200 |
+-- | UK | Lisa | 500 |
+-- | Mex | John | 100 |
+-- | Mex | Marvin | 150 |
+-- | Mex | Marvin | 150 |
+-- | Mex | Jake | 50 |
+-- Now consider two queries: 
+SELECT 1, 2, SUM(sale)
+FROM table1
+GROUP BY 1, 2
+-- or
+SELECT 2, 1, SUM(sale)
+FROM table1
+GROUP BY 2, 1
+-- they will produce the same calculations, just in different order
 
 -- HAVING clause
 -- The HAVING clause was added to SQL to filter the results of the GROUP BY clause since WHERE does not work with aggregated results. The syntax for the HAVING clause is as follows:
