@@ -44,6 +44,7 @@
   - [REGEX](#regex)
 - [Union](#union)
 - [Joins](#joins)
+  - [ON...AND vs ON...WHERE](#onand-vs-onwhere)
   - [ON vs USING](#on-vs-using)
   - [Inner joins](#inner-joins)
   - [Left (outer) join](#left-outer-join)
@@ -1346,6 +1347,10 @@ Table `course`:
 |         2 |          1|
 |         3 |         10|
 
+## ON...AND vs ON...WHERE
+
+
+
 ## ON vs USING
 
 There are two clauses for joining - ON and USING:
@@ -1392,7 +1397,10 @@ Intersection of two tables, meaning all rows that exist for both.
 
 Command:
 ```sql
-SELECT * FROM student INNER JOIN course ON student.student_id = course.student_id;
+SELECT * 
+FROM student 
+INNER JOIN course 
+ON student.student_id = course.student_id;
 ```
 Output:
 | student_id |     name     | age | course_id | student_id|
@@ -1403,6 +1411,31 @@ Output:
 
 > `\x` - toggle expanded display. 
 
+Another example of joining two tables:
+```txt
+table1
+| id | val |
+| -  | -   |
+| 1  | A |
+| null | B |
+| 1 | C | 
+| 2 | D |
+
+table2
+| id | val |
+| - | - |
+| 1 | A |
+| null | B |
+| 1 | C |
+
+inner join of these tables:
+| id | table1.val | table2.val |
+| - | - | - |
+| 1 | A | A |
+| 1 | A | C |
+| 1 | C | A |
+| 1 | C | C |
+```
 
 ## Left (outer) join
 
