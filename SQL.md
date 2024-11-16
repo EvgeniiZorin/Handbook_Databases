@@ -69,6 +69,8 @@
   - [Many-to-one](#many-to-one)
   - [Self-referencing](#self-referencing)
 - [PostgreSQL](#postgresql)
+- [Tasks](#tasks)
+  - [JOINS](#joins-1)
 
 <small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
 
@@ -312,6 +314,7 @@ Transaction Control Language:
 | `BIGSERIAL` | Auto-increments a number |
 | `CHAR(30)` | String (specified length). The string has to be EXACTLY the specified length, in this case, 30 characters - no more, no less. *Note: use single quotes, not doublequotes*. If you need to use a single apostrophe as part of the string, use it two times to escape: `'O''Brien'` |
 | `VARCHAR(30)` | String (max length). The string can have a length up to the specified limit, such as 10, 20, 25 characters, but no more than 30 characters. *Note: use single quotes, not doublequotes* |
+| `FLOAT` | Float of varying number of points after decimal. | 
 | `NUMERIC(4, 1)` | Float with number of decimals (1). For MySQL, I think, it's `DECIMAL(10, 4)`|
 | `NULL` | Null. `column IS NULL`|
 | `BOOLEAN` | `TRUE`, `FALSE` |
@@ -1349,7 +1352,84 @@ Table `course`:
 
 ## ON...AND vs ON...WHERE
 
+Let's say we have two tables:
 
+```sql
+SELECT * FROM A
+```
+
+| id | val |
+| - | - |
+| 1 | A |
+| 2 | B |
+| 3 | C |
+
+```sql
+SELECT * FROM B
+```
+
+| id | val |
+| - | - |
+| 1 | A | 
+| 2 | B |
+| 3 | B |
+| 4 | A |
+
+You can join them with two different ways:
+
+**We do additional filter in the ON statement with AND - filter is happening BEFORE the join, in the individual table**
+
+```sql
+SELECT *
+FROM A
+LEFT JOIN B
+ON
+  A.id = B.id
+  AND B.val = 'A'
+```
+
+We get:
+
+| A.id | A.val | B.id | B.val |
+| - | - | - | - |
+| 1 | A | 1 | A | 
+| 2 | B | NULL | NULL |
+| 3 | C | NULL | NULL |
+
+**We do additional filter in the WHERE statement - filter is happening AFTER the join, in the resulting joined table**
+
+```sql
+SELECT *
+FROM A
+LEFT JOIN B
+ON
+  A.id = B.id
+WHERE B.val = 'A'
+```
+
+We get:
+
+| A.id | A.val | B.id | B.val |
+| - | - | - | - |
+| 1 | A | 1 | A |
+
+---
+
+You can also use joins for an advanced case like this:
+
+![alt text](image-2.png)
+
+```sql
+SELECT 
+  p.PROD_CAT,
+  COALESCE(SUM(s.PRICE * s.CNT), 0) AS TOTAL_AMT
+FROM public.product1 AS p
+LEFT JOIN public.sale1 AS s 
+ON 
+  p.PROD_NM = s.PROD_NM
+  AND s.SALE_DT BETWEEN p.EFF_DT AND p.EXP_DT
+GROUP BY p.PROD_CAT
+```
 
 ## ON vs USING
 
@@ -1596,7 +1676,7 @@ This can be done by using the following command:
 ```sql
 SELECT e1.name AS name1, e1.salary AS salary1, e2.name AS name2, e2.salary AS salary2
 FROM Employee e1
-JOIN Employee e2
+JOIN Employee e2 -- basically inner join
 ON e1.managerId = e2.id
 ```
 
@@ -2064,4 +2144,16 @@ CREATE TABLE employees (
 # PostgreSQL
 
 Login: `psql --username=<username-here> --dbname=<dbname-here>`
+
+# Tasks
+
+## JOINS
+
+![alt text](image-3.png)
+
+![alt text](image-4.png)
+
+![alt text](image-5.png)
+
+![alt text](image-6.png)
 
