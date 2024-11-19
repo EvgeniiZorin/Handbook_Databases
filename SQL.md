@@ -2,7 +2,7 @@
 
 - [SQL](#sql)
 - [Basic](#basic)
-- [Query formatting](#query-formatting)
+  - [Query formatting](#query-formatting)
 - [Database Normalization](#database-normalization)
 - [Subsets of SQL commands](#subsets-of-sql-commands)
   - [DDL](#ddl)
@@ -10,20 +10,35 @@
   - [DCL](#dcl)
   - [TCL](#tcl)
 - [Datatypes](#datatypes)
+  - [Type casting](#type-casting)
   - [Date](#date)
-- [Statements](#statements)
-  - [SELECT](#select)
-    - [DISTINCT](#distinct)
-    - [COALESCE](#coalesce)
-    - [UPPER](#upper)
-    - [ROUND](#round)
-    - [EXCEPT](#except)
-    - [Random sampling](#random-sampling)
-    - [separate string into list items](#separate-string-into-list-items)
-  - [Clauses](#clauses)
-  - [Aggregate functions](#aggregate-functions)
+- [SELECT statements](#select-statements)
+  - [DISTINCT](#distinct)
+  - [TRIM](#trim)
+  - [COALESCE](#coalesce)
+  - [UPPER](#upper)
+  - [ROUND](#round)
+  - [EXCEPT](#except)
+  - [CONCAT](#concat)
+  - [string\_to\_array](#string_to_array)
+  - [Random sampling](#random-sampling)
+  - [CASE WHEN](#case-when)
+  - [Aggregate statements](#aggregate-statements)
+    - [COUNT](#count)
+    - [SUM](#sum)
+    - [MIN/MAX](#minmax)
+    - [AVG](#avg)
+    - [GROUP BY](#group-by)
+    - [STRING\_AGG](#string_agg)
+- [Clauses](#clauses)
+  - [WHERE](#where)
+    - [REGEX](#regex)
+  - [HAVING](#having)
+  - [ORDER BY](#order-by)
   - [WITH ... AS](#with--as)
-  - [examples of some statements](#examples-of-some-statements)
+  - [OFFSET](#offset)
+  - [LIMIT](#limit)
+  - [UNION](#union)
 - [Constraints](#constraints)
 - [Keys](#keys)
   - [Primary key](#primary-key)
@@ -37,12 +52,7 @@
   - [Logical operators](#logical-operators)
   - [Comparison operators](#comparison-operators)
   - [Arithmetic operations](#arithmetic-operations)
-  - [Concatenation](#concatenation)
-- [Column operations](#column-operations)
 - [IF conditions](#if-conditions)
-- [Where](#where)
-  - [REGEX](#regex)
-- [Union](#union)
 - [Joins](#joins)
   - [ON...AND vs ON...WHERE](#onand-vs-onwhere)
   - [ON vs USING](#on-vs-using)
@@ -52,7 +62,6 @@
   - [Full (outer) join](#full-outer-join)
   - [Multi-table joins](#multi-table-joins)
   - [Self join](#self-join)
-- [CASE WHEN](#case-when)
 - [Pivot](#pivot)
   - [Wide -\> long](#wide---long)
   - [Long -\> wide](#long---wide)
@@ -103,7 +112,7 @@ FROM <project_name>.<dataset_name>.INFORMATION_SCHEMA.COLUMNS
 WHERE table_name = '<table_name>' 
 ```
 
-# Query formatting
+## Query formatting
 
 ```sql
 SELECT a
@@ -319,12 +328,21 @@ Transaction Control Language:
 | `NULL` | Null. `column IS NULL`|
 | `BOOLEAN` | `TRUE`, `FALSE` |
 
-You can cast datatypes like this:
+## Type casting
+
+You can cast datatypes in the ways below:
 ```sql
 -- data types: date, numeric, int, float
 SELECT 
   whatever::date, 
   whatever2::numeric
+-- or
+round( SUM(rating::dec / position::dec)::dec / COUNT(rating)::dec, 2) AS quality
+
+-- another way
+SELECT 
+  CAST(sss2.sku_id AS STRING),
+  CAST(age AS varchar)
 ```
 
 Complex data types:
@@ -340,8 +358,11 @@ Complex data types:
 SELECT NOW();
 -- Get years of a person from his birthday
 SELECT AGE(NOW(), date_of_birth);
--- returns 2022-03-16
-SELECT CURDATE(); select CURRENT_DATE 
+-- Get current date; returns 2022-03-16
+SELECT CURDATE()
+select CURRENT_DATE 
+-- Get current time
+SELECT CURTIME()
 -- returns current date formatted as UNIX
 select UNIX_TIMESTAMP()
 
@@ -365,6 +386,7 @@ SELECT NOW()::TIME
 -- EXTRACT: Extracting fields: DAY, DOW, MONTH, YEAR, CENTURY
 -- EXTRACT can be used in SELECT and WHERE
 EXTRACT (YEAR FROM NOW())
+SELECT YEAR(NOW()), MONTH(NOW()), DAY(NOW()), HOUR(NOW()), MINUTE(NOW()), SECOND(NOW())
 -- Select month of February
 SELECT * FROM notable_dates WHERE EXTRACT (MONTH FROM DATE) = 02
 
@@ -374,6 +396,10 @@ SELECT date_part('year', (SELECT date_column_name))
 
 -- Select year and month
 SELECT TO_CHAR(order_date, 'YYYY-MM')
+
+-- DATEDIFF
+-- returns the number of days between two dates
+SELECT DATEDIFF('2024-12-31', '2024-01-01')
 ```
 
 Examples:
@@ -397,13 +423,13 @@ ORDER BY
 
 ```
 
-# Statements
-
-## SELECT
+# SELECT statements
 
 ```sql
 -- General syntax
-SELECT column1 AS "column title", column2 AS aliasHere, ..., columnN
+SELECT 
+  column1 AS "column title", 
+  column2 AS aliasHere, ..., columnN
 -- or `*` to select the rows from all the columns in a table
 -- or `table1.column1, table1.column2` to specify which table, especially useful in joins
 FROM table1
@@ -424,7 +450,7 @@ SELECT column1 alias1
 
 ```
 
-### DISTINCT
+## DISTINCT
 
 ```sql
 -- Only print unique values from the column
@@ -454,10 +480,19 @@ SELECT DISTINCT column1, column2
 --         3|Writing Utensils|
 ```
 
-### COALESCE
+## TRIM
+
+Removes spaces or specified characters from both ends of a string.
 
 ```sql
--- Returns the first non-null value in a list of columns. If all the values in the list of columns are NULL, then the function returns NULL
+SELECT TRIM(name) FROM employees;
+```
+
+## COALESCE
+
+Return the first non-null value in a list of columns. If all the values in the list of columns are NULL, then the function returns NULL
+
+```sql
 SELECT 
 	name 
 	, alias 
@@ -477,7 +512,7 @@ FROM student s
 SELECT COALESCE(column1, 'Entry not found') FROM table1;
 ```
 
-### UPPER
+## UPPER
 
 ```sql
 SELECT UPPER(name)
@@ -488,13 +523,13 @@ SELECT CONCAT(
 ) AS name
 ```
 
-### ROUND
+## ROUND
 
 ```sql
 SELECT ROUND(AVG(column1))
 ```
 
-### EXCEPT
+## EXCEPT
 
 This function doesn't work in PostgreSQL. Works in BigQuery.
 
@@ -506,7 +541,38 @@ FROM student s
 
 ```
 
-### Random sampling
+## CONCAT
+
+Concatenate two columns:
+```sql
+SELECT first_name || '-' || last_name AS column_name
+FROM employee;
+-- or
+SELECT CONCAT( first_name, '-', last_name )
+FROM employee;
+```
+
+## string_to_array
+
+separate string into list items
+
+```sql
+-- Separate string into list items
+SELECT string_to_array('1 2 3 4', ' ') -- gives you output of one cell like this: {1,2,3,4}
+-- Separate and put as values of a column
+SELECT unnest(string_to_array('1 2 3 4', ' '))
+-- example usage: you have a string containing items you want to look for
+select *
+from employee
+where emp_id in (
+	select unnest(string_to_array('100 101 102', ' '))::numeric
+)
+
+-- make a database selection as a name
+
+```
+
+## Random sampling
 
 https://render.com/blog/postgresql-random-samples-big-tables
 
@@ -554,50 +620,59 @@ WHERE last_name = 'Wayne'
 
 ```
 
-### separate string into list items
+## CASE WHEN
+
+Creating a new column / field based on a condition for the other columns. 
 
 ```sql
--- Separate string into list items
-SELECT string_to_array('1 2 3 4', ' ') -- gives you output of one cell like this: {1,2,3,4}
--- Separate and put as values of a column
-SELECT unnest(string_to_array('1 2 3 4', ' '))
--- example usage: you have a string containing items you want to look for
-select *
-from employee
-where emp_id in (
-	select unnest(string_to_array('100 101 102', ' '))::numeric
-)
-
--- make a database selection as a name
-
+-- General view
+CASE WHEN
+condition1 THEN result1
+WHEN condition2 THEN result2
+WHEN conditionN THEN resultN
+ELSE else_result
+END AS alias;
 ```
 
-
-## Clauses
-
-**WHERE**
-
-The WHERE clause is used in a SELECT statement to filter rows based on specified conditions before the data is grouped or aggregated. It operates on individual rows and filters them based on the given conditions.
-
-`WHERE salary IS NOT NULL`
-
-
-
-**ORDER BY**
+Here is an example where we create a new field that will detail if a student passed or failed, based on their scores:
+```sql
+SELECT 
+  student_id, 
+  student_name, 
+  exam_score,
+  CASE WHEN exam_score >= 60 THEN 'Pass' ELSE 'Fail' END AS result
+FROM students;
+```
 
 ```sql
--- General form
-SELECT column1, column2, ..., columnN
-FROM table_name
-ORDER BY column1 [ASC|DESC], column2 [ASC|DESC], ... columnN [ASC|DESC];
+-- CASE WHEN can be used within a aggregate function
+-- For example, take values where rating < 3 as 1 (otherwise, take as 0), and sum them - that counts how many ratings there are with a value of less than 3
+SUM(case when rating < 3 then 1 else 0 end)
 
--- Examples
-SELECT *
-FROM employees
-ORDER BY salary DESC, age DESC;
+-- An example: multiply by -1 if another column says "Buy", else take the original value
+SELECT stock_name, 
+    CASE
+        WHEN operation = 'Buy' THEN price * -1 
+        ELSE price
+        END AS capital_proc
+    FROM Stocks
 ```
 
-## Aggregate functions
+Another example of multiple filters:
+```sql
+SELECT 
+	sex,
+	count(*) AS count1,
+	sum(is_married) AS count_married,
+	sum(CASE WHEN e.birth_date > '1980-01-01' THEN 1 ELSE 0 END) AS count_older_1980,
+	sum(CASE WHEN e.birth_date < '1970-01-01' THEN 1 ELSE 0 END) AS count_younger_1970
+FROM employee e
+INNER JOIN newtable nt
+ON e.emp_id = nt.emp_id 
+GROUP BY sex
+```
+
+## Aggregate statements
 
 > Note: aggregate functions such as AVG, MIN, and MAX cannot be used in a WHERE clause directly - they have to be wrapped in a subquery.
 
@@ -613,7 +688,11 @@ SELECT column1, aggregate_function(column2) AS alias
 SELECT column1, column2, column3
 FROM table1
 GROUP BY 1 2 ORDER BY 2 DESC
+```
 
+### COUNT
+
+```sql
 -- COUNT
 -- Count the total number of rows
 SELECT COUNT(*)
@@ -628,28 +707,46 @@ SELECT COUNT(DISTINCT sex) FROM employee;
 SELECT COUNT(DISTINCT(sex)) FROM employee;
 -- Equivalent of COUNTIF in excel
 SUM(CASE WHEN state='approved' THEN 1 ELSE 0 END)
+```
 
+### SUM
+
+```sql
 -- SUM
 -- Sum all values in a column
 SELECT SUM(column1)
 -- Find the total sales of each salesman
 SELECT SUM(total_sales), emp_id FROM works_with GROUP BY emp_id;
+```
 
+### MIN/MAX
+
+```sql
 -- MIN, MAX
 -- Print the max value of column2
 SELECT MAX(column1)
 -- Select the earliest date for each 'player_id' category
-SELECT player_id, MIN(event_date) AS first_login
+SELECT 
+  player_id, 
+  MIN(event_date) AS first_login
 FROM Activity
 GROUP BY player_id
 -- Select the second highest salary in a table
 SELECT MAX(salary) AS second_highest_salary
 FROM employees
 WHERE salary < (SELECT MAX(salary) FROM employees);
+```
 
+### AVG
+
+```sql
 -- AVG
 SELECT AVG(column1) 
+```
 
+### GROUP BY 
+
+```sql
 -- GROUP BY
 -- Find out the total salary paid out by each department
 SELECT department_id, SUM(salary) as total_salary
@@ -698,14 +795,168 @@ SELECT department_id, SUM(salary) as total_salary
 FROM employees
 GROUP BY department_id
 HAVING SUM(salary) > 50000;
+```
 
+```sql
+-- Count number of repetitions of unique categories in column `column1`
+SELECT branch_id, COUNT(*) FROM branch_supplier GROUP BY branch_id 
+-- Count number of repetitions of unique categories in column `column1` where count is greater than 3
+SELECT branch_id, COUNT(*) FROM branch_supplier GROUP BY branch_id HAVING COUNT(*) > 3;
+
+-- Count how many unique categories each super_id has
+SELECT super_id, COUNT(DISTINCT(emp_id)) FROM employee GROUP BY super_id;
+```
+
+- `GROUP BY column1`
+- `GROUP BY column1 HAVING COUNT(*) > 5` only group those values whose count is > 5
+- `select major_id, count(*) from students group by major_id;` count unique values in column 'major_id'
+- `select major_id, min(gpa) from students group by major_id;` view min value in each group within column major_id
+
+### STRING_AGG
+```sql
 -- STRING_AGG to concatenate strings
 -- Below, the ORDER BY within the agg function is optional - it's just to sort the concatenated names lexicographically within each concatenation group
 SELECT id, STRING_AGG(name, ', ' ORDER BY name) AS names
 FROM some_table
 GROUP BY id
+```
+
+```sql
+-- for each group in "supply_type", concatenate rows in the column "supplier_name" 
+SELECT 
+	supply_type,
+	STRING_AGG(supplier_name, ' | ') AS suppliers_agg
+FROM table1 
+GROUP BY supply_type
+
+-- supply_type     |suppliers_agg                            |
+-- ----------------+-----------------------------------------+
+-- Writing Utensils|Uni-ball | Uni-ball                      |
+-- Paper           |Hammer Mill | Patriot Paper | Hammer Mill|
+-- Custom Forms    |J.T. Forms & Labels | Stamford Lables    |
+
+-- Same but with a non-textual column
+STRING_AGG(CAST(supplier_id AS STRING), ' | ')
+```
+
+
+
+# Clauses
+
+## WHERE
+
+The WHERE clause is used in a SELECT statement to filter rows based on specified conditions before the data is grouped or aggregated. It operates on individual rows and filters them based on the given conditions.
+
+`WHERE salary IS NOT NULL`
+
+```sql
+-- OR condition
+WHERE 
+  column1 != 2 
+  OR column2 IS NULL
+
+-- IS
+age IS NOT NULL
+
+-- IN
+-- values are in a list
+column1 IN ('Value1', 'Value2', 'Value3')
+
+-- BETWEEN
+-- Between two numbers
+age BETWEEN 25 AND 30
+-- Values between two dates
+date BETWEEN DATE '1999-01-01' AND '2015-01-01'
+-- Values alphabetically between two strings
+column1 BETWEEN 'Alpha' AND 'Beta'
+
+-- Odd number
+MOD(columnName, 2) <> 0
+-- Even number
+MOD(columnName, 2) = 0
+```
+
+### REGEX
+
+There are two ways of writing regular expressions in SQL:
+- `LIKE`: simplified REGEXP; is not as powerful, but typically faster than regular expressions.
+- `~`: True REGEXP
+
+**LIKE**
+
+General form:
+```sql
+SELECT * 
+FROM courses 
+WHERE course LIKE '_lgorithms';
+```
+
+| Sign | Meaning |
+| --- | --- |
+| `%` | any character, any number of times |
+| `_` | exactly 1 character |
+
+These are used with the SQL keyword `LIKE`
+
+```sql
+-- Find any clients who are an LLC
+client_name LIKE '%LLC';
+-- Case insensitive
+LOWER(client_name) LIKE 'david'
+-- Find employees born in october
+birth_date LIKE '____-10-%';
+
+-- names starting with 'W'
+LIKE 'W%'
+-- the second letter is 'e'
+LIKE '_e%'
+-- values with a space in them
+LIKE '% %'
+-- Value ends with '.com'
+LIKE '%.com';
+-- negative LIKE
+NOT LIKE '_lgorithms';
+-- case-insensitive
+ILIKE, NOT ILIKE
 
 ```
+
+**REGEXP**
+
+```sql
+SELECT * FROM table1 WHERE name ~ '^Grandfather.+|.+parents.+'
+-- Entries start with a vowel
+SELECT DISTINCT(CITY) FROM STATION WHERE CITY ~ '^[AEIOUaeiou].*';
+SELECT DISTINCT(CITY) FROM STATION WHERE CITY REGEXP '^[aeiou]';
+```
+
+
+## HAVING
+
+WHERE is used for filtering rows BEFORE any grouping or aggregation.
+
+HAVING is used for filtering rows AFTER any grouping or aggregation.
+
+If you have both a WHERE clause and a HAVING clause in your query, WHERE will execute first.
+
+In order to use HAVING, you also need:
+- A GROUP BY clause
+- An aggregation in your SELECT section (SUM, MIN, MAX, etc.)
+
+## ORDER BY
+
+```sql
+-- General form
+SELECT column1, column2, ..., columnN
+FROM table_name
+ORDER BY column1 [ASC|DESC], column2 [ASC|DESC], ... columnN [ASC|DESC];
+
+-- Examples
+SELECT *
+FROM employees
+ORDER BY salary DESC, age DESC;
+```
+
 
 ## WITH ... AS
 
@@ -727,81 +978,47 @@ WITH a1 AS (
 SELECT * FROM a1
 ```
 
-## examples of some statements
+## OFFSET 
 
+Skip $n$ rows.
 
-**SQL functions**:
+## LIMIT
 
-**WHERE**:
-```sql
-WHERE column1 != 2 OR column2 IS null;
-WHERE column1 IN ('Value1', 'Value2', 'Value3')
--- Values between two dates
-WHERE date BETWEEN DATE '1999-01-01' AND '2015-01-01'
--- Values alphabetically between two strings
-WHERE column1 BETWEEN 'Alpha' AND 'Beta'
--- Odd number
-MOD(columnName, 2) <> 0
--- Even number
-MOD(columnName, 2) = 0
+show n first rows.
 
+## UNION
 
--- REGEXP
--- Value starts with 'a'
-WHERE email LIKE 'a%'
--- Value ends with '.com'
-WHERE email LIKE '%.com';
+UNION combines the results from several SELECT statements.
 
-WHERE course NOT LIKE '_lgorithms';
--- case-insensitive
-ILIKE, NOT ILIKE
--- Entries start with a vowel
-SELECT DISTINCT(CITY) FROM STATION WHERE CITY ~ '^[AEIOUaeiou].*';
-SELECT DISTINCT(CITY) FROM STATION WHERE CITY REGEXP '^[aeiou]';
-```
-
-**HAVING**
-
-WHERE is used for filtering rows BEFORE any grouping or aggregation.
-
-HAVING is used for filtering rows AFTER any grouping or aggregation.
-
-If you have both a WHERE clause and a HAVING clause in your query, WHERE will execute first.
-
-In order to use HAVING, you also need:
-- A GROUP BY clause
-- An aggregation in your SELECT section (SUM, MIN, MAX, etc.)
-
-**GROUP BY**:
+Rule:
+- You have to have the same number of columns in the two statements that are joined by the `UNION` statement
+- The columns being concatenated have to have the same data type
 
 ```sql
--- Count number of repetitions of unique categories in column `column1`
-SELECT branch_id, COUNT(*) FROM branch_supplier GROUP BY branch_id 
--- Count number of repetitions of unique categories in column `column1` where count is greater than 3
-SELECT branch_id, COUNT(*) FROM branch_supplier GROUP BY branch_id HAVING COUNT(*) > 3;
+-- Return a list of employee names and then branch names located below the first list
+SELECT first_name -- can also specify the name of the common column, e.g. `AS name_of_the_union_column`
+FROM employee 
+UNION 
+SELECT branch_name 
+FROM branch;
 
--- Count how many unique categories each super_id has
-SELECT super_id, COUNT(DISTINCT(emp_id)) FROM employee GROUP BY super_id;
+-- Find a list of all clients and branch suppliers ids
+SELECT client_name, branch_id -- to increase clarity, can specify the table: `client.branch_id`
+FROM client 
+UNION
+SELECT supplier_name, branch_id -- same: `branch_supplier.branch_id`
+FROM branch_supplier;
+
+-- Get distinct values from two columns - emp_id and is_married
+SELECT DISTINCT (a1.emp_marr_vals)
+FROM (
+	SELECT emp_id AS emp_marr_vals
+	FROM newtable
+	UNION 
+	SELECT is_married
+	FROM newtable
+) AS a1
 ```
-
-- `GROUP BY column1`
-- `GROUP BY column1 HAVING COUNT(*) > 5` only group those values whose count is > 5
-- `select major_id, count(*) from students group by major_id;` count unique values in column 'major_id'
-- `select major_id, min(gpa) from students group by major_id;` view min value in each group within column major_id
-
-
-
-**OFFSET**: skip n rows
-
-**LIMIT**: show n first rows
-
-Examples: 
-- `SELECT * FROM table1;` view table1
-- `SELECT * FROM characters ORDER BY character_id DESC;` view the whole table ordered by 'character_id'; DESC or ASC
-- `SELECT * FROM person WHERE gender='Female' AND (country_of_birth='Poland' OR country_of_birth='China') ORDER BY first_name;`
-- `SELECT column1, COUNT(*) FROM table GROUP BY column1;` print count of each value in column1
-- `SELECT make, SUM(price) FROM car GROUP BY make;`
-- `WHERE column1 < 'M'` selects rows with column1 values before 'M' alphabetically
 
 # Constraints
 
@@ -988,6 +1205,7 @@ DELIMITER ;
 ```
 
 # Query organisation
+
 ## Subquery
 
 > a.k.a. subquery, nested query, inner query
@@ -1204,24 +1422,6 @@ SELECT MAX(column1)
 SELECT ROUND( (SUM(comparison)::numeric / COUNT(comparison)::numeric) * 100 , 2 ) AS immediate_percentage
 ```
 
-## Concatenation
-
-Concatenate two columns:
-```sql
-SELECT first_name || '-' || last_name AS column_name
-FROM employee;
--- or
-SELECT CONCAT( first_name, '-', last_name )
-FROM employee;
-```
-
-# Column operations
-
-```sql
-SELECT col1 / col2 AS alias1
--- or
-round( SUM(rating::dec / position::dec)::dec / COUNT(rating)::dec, 2) AS quality
-```
 
 # IF conditions
 
@@ -1234,70 +1434,6 @@ SELECT employee_id, CASE WHEN employee_id % 2 = 1 AND name NOT LIKE 'M%' THEN sa
 SELECT employee_id, if(employee_id % 2 = 1 AND name NOT LIKE 'M%', salary, 0) AS bonus FROM Employees;
 ```
 
-# Where
-
-## REGEX
-
-There are two ways of writing regular expressions in SQL:
-- `~`: True REGEXP
-- `LIKE`: simplified REGEXP; is not as powerful, but typically faster than regular expressions.
-
-**LIKE**
-
-| Sign | Meaning |
-| --- | --- |
-| `%` | any character, any number of times |
-| `_` | exactly 1 character |
-
-These are used with the SQL keyword `LIKE`
-
-```sql
-SELECT * FROM courses WHERE course LIKE '_lgorithms';
--- Find any clients who are an LLC
-SELECT * FROM client WHERE client_name LIKE '%LLC';
--- Case insensitive
-SELECT * FROM client WHERE LOWER(client_name) LIKE 'david'
--- Find employees born in october
-SELECT * FROM employee WHERE birth_date LIKE '____-10-%';
-
--- names starting with 'W'
-LIKE 'W%'
--- the second letter is 'e'
-LIKE '_e%'
--- values with a space in them
-LIKE '% %'
-```
-
-**REGEXP**
-
-```sql
-SELECT * FROM table1 WHERE name ~ '^Grandfather.+|.+parents.+'
-```
-
-
-# Union
-
-UNION combines the results from several SELECT statements.
-
-Rule:
-- You have to have the same number of columns in the two statements that are joined by the `UNION` statement
-- The columns being concatenated have to have the same data type
-
-```sql
--- Return a list of employee names and then branch names located below the first list
-SELECT first_name -- can also specify the name of the common column, e.g. `AS name_of_the_union_column`
-FROM employee 
-UNION 
-SELECT branch_name 
-FROM branch;
-
--- Find a list of all clients and branch suppliers ids
-SELECT client_name, branch_id -- to increase clarity, can specify the table: `client.branch_id`
-FROM client 
-UNION
-SELECT supplier_name, branch_id -- same: `branch_supplier.branch_id`
-FROM branch_supplier;
-```
 
 # Joins
 
@@ -1680,57 +1816,6 @@ JOIN Employee e2 -- basically inner join
 ON e1.managerId = e2.id
 ```
 
-# CASE WHEN
-
-Creating a new column / field based on a condition for the other columns. 
-
-```sql
--- General view
-CASE WHEN
-condition1 THEN result1
-WHEN condition2 THEN result2
-WHEN conditionN THEN resultN
-ELSE else_result
-END AS alias;
-```
-
-Here is an example where we create a new field that will detail if a student passed or failed, based on their scores:
-```sql
-SELECT 
-  student_id, 
-  student_name, 
-  exam_score,
-  CASE WHEN exam_score >= 60 THEN 'Pass' ELSE 'Fail' END AS result
-FROM students;
-```
-
-```sql
--- CASE WHEN can be used within a aggregate function
--- For example, take values where rating < 3 as 1 (otherwise, take as 0), and sum them - that counts how many ratings there are with a value of less than 3
-SUM(case when rating < 3 then 1 else 0 end)
-
--- An example: multiply by -1 if another column says "Buy", else take the original value
-SELECT stock_name, 
-    CASE
-        WHEN operation = 'Buy' THEN price * -1 
-        ELSE price
-        END AS capital_proc
-    FROM Stocks
-```
-
-Another example of multiple filters:
-```sql
-SELECT 
-	sex,
-	count(*) AS count1,
-	sum(is_married) AS count_married,
-	sum(CASE WHEN e.birth_date > '1980-01-01' THEN 1 ELSE 0 END) AS count_older_1980,
-	sum(CASE WHEN e.birth_date < '1970-01-01' THEN 1 ELSE 0 END) AS count_younger_1970
-FROM employee e
-INNER JOIN newtable nt
-ON e.emp_id = nt.emp_id 
-GROUP BY sex
-```
 
 # Pivot
 
@@ -2149,11 +2234,11 @@ Login: `psql --username=<username-here> --dbname=<dbname-here>`
 
 ## JOINS
 
-![alt text](image-3.png)
+![alt text](Media/image-3.png)
 
-![alt text](image-4.png)
+![alt text](Media/image-4.png)
 
-![alt text](image-5.png)
+![alt text](Media/image-5.png)
 
-![alt text](image-6.png)
+![alt text](Media/image-6.png)
 
