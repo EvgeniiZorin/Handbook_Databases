@@ -839,8 +839,6 @@ GROUP BY supply_type
 STRING_AGG(CAST(supplier_id AS STRING), ' | ')
 ```
 
-
-
 # Clauses
 
 ## WHERE
