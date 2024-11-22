@@ -360,7 +360,7 @@ SELECT NOW();
 SELECT AGE(NOW(), date_of_birth);
 -- Get current date; returns 2022-03-16
 SELECT CURDATE()
-select CURRENT_DATE 
+select CURRENT_DATE() -- or CURRENT_DATE -- returns '2024-11-21'
 -- Get current time
 SELECT CURTIME()
 -- returns current date formatted as UNIX
@@ -388,7 +388,10 @@ SELECT NOW()::TIME
 EXTRACT (YEAR FROM NOW())
 SELECT YEAR(NOW()), MONTH(NOW()), DAY(NOW()), HOUR(NOW()), MINUTE(NOW()), SECOND(NOW())
 -- Select month of February
-SELECT * FROM notable_dates WHERE EXTRACT (MONTH FROM DATE) = 02
+SELECT * FROM notable_dates WHERE EXTRACT (MONTH FROM date1) = 02
+-- Compare two years
+WHERE EXTRACT(YEAR FROM date1) < EXTRACT(YEAR FROM CURRENT_DATE())
+WHERE EXTRACT(YEAR FROM e.birth_date) IN (1967, 1961)
 
 -- Select a part of a date
 -- year, month, day, hour, minute, second
