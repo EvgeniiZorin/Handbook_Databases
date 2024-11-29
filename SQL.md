@@ -956,6 +956,15 @@ ORDER BY column1 [ASC|DESC], column2 [ASC|DESC], ... columnN [ASC|DESC];
 SELECT *
 FROM employees
 ORDER BY salary DESC, age DESC;
+
+-- ORDER BY always comes after GROUP BY
+SELECT 
+  country, 
+  COUNT(*) AS n_companies
+FROM companies
+GROUP BY country
+ORDER BY n_companies DESC
+LIMIT 10
 ```
 
 
