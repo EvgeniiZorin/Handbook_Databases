@@ -12,6 +12,7 @@
 - [Datatypes](#datatypes)
   - [Type casting](#type-casting)
   - [Date](#date)
+  - [Array \> column etc.](#array--column-etc)
 - [SELECT statements](#select-statements)
   - [DISTINCT](#distinct)
   - [TRIM](#trim)
@@ -20,7 +21,6 @@
   - [ROUND](#round)
   - [EXCEPT](#except)
   - [CONCAT](#concat)
-  - [string\_to\_array](#string_to_array)
   - [Random sampling](#random-sampling)
   - [CASE WHEN](#case-when)
   - [Aggregate statements](#aggregate-statements)
@@ -426,6 +426,39 @@ ORDER BY
 
 ```
 
+## Array > column etc.
+
+Convert sql array into rows of a column
+```sql
+SELECT *
+FROM UNNEST(ARRAY[1, 2, 3,
+                  4, 5, 6
+]) AS id1
+-- id1   |
+-- ------+
+--      1|
+--      2|
+--      3|
+--      4|
+--      5|
+--      6|
+```
+
+Separate string into list items
+```sql
+-- Separate string into list items
+SELECT string_to_array('1 2 3 4', ' ') -- gives you output of one cell like this: {1,2,3,4}
+-- Separate and put as values of a column
+SELECT unnest(string_to_array('1 2 3 4', ' '))
+-- example usage: you have a string containing items you want to look for
+select *
+from employee
+where emp_id in (
+	select unnest(string_to_array('100 101 102', ' '))::numeric
+)
+-- make a database selection as a name
+```
+
 # SELECT statements
 
 ```sql
@@ -555,25 +588,6 @@ SELECT CONCAT( first_name, '-', last_name )
 FROM employee;
 ```
 
-## string_to_array
-
-separate string into list items
-
-```sql
--- Separate string into list items
-SELECT string_to_array('1 2 3 4', ' ') -- gives you output of one cell like this: {1,2,3,4}
--- Separate and put as values of a column
-SELECT unnest(string_to_array('1 2 3 4', ' '))
--- example usage: you have a string containing items you want to look for
-select *
-from employee
-where emp_id in (
-	select unnest(string_to_array('100 101 102', ' '))::numeric
-)
-
--- make a database selection as a name
-
-```
 
 ## Random sampling
 
@@ -840,6 +854,20 @@ GROUP BY supply_type
 
 -- Same but with a non-textual column
 STRING_AGG(CAST(supplier_id AS STRING), ' | ')
+```
+
+You can also concatenate rows from a non-textual column:
+```sql
+-- Method 1
+-- works in PostgreSQL
+WITH a1 AS (
+	SELECT CAST(emp_id AS VARCHAR)
+	FROM test.employee
+)
+SELECT STRING_AGG(emp_id, ' ') FROM a1
+-- Method 2
+SELECT STRING_AGG(CAST(emp_id AS VARCHAR), ' | ') -- VARCHAR for PostgreSQL and STRING for BigQuery
+FROM test.employee
 ```
 
 # Clauses
