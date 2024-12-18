@@ -838,6 +838,13 @@ FROM some_table
 GROUP BY id
 ```
 
+Concatenate all rows in column "countryname" into one cell, delimited by `, `
+```sql
+SELECT 
+  STRING_AGG(countryname, ', ')
+FROM table1
+```
+
 ```sql
 -- for each group in "supply_type", concatenate rows in the column "supplier_name" 
 SELECT 
