@@ -1,9 +1,10 @@
 # SQL
 
 - [SQL](#sql)
-- [Basic](#basic)
+- [General](#general)
+  - [Comments](#comments)
   - [Query formatting](#query-formatting)
-- [Database Normalization](#database-normalization)
+  - [Database Normalization](#database-normalization)
 - [Subsets of SQL commands](#subsets-of-sql-commands)
   - [DDL](#ddl)
   - [DML](#dml)
@@ -83,7 +84,7 @@
 
 <small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
 
-# Basic
+# General
 
 **Table** - organised set of data in the form of rows and columns.
 
@@ -112,6 +113,25 @@ FROM <project_name>.<dataset_name>.INFORMATION_SCHEMA.COLUMNS
 WHERE table_name = '<table_name>' 
 ```
 
+**Row / record**: a set of columns that together completely describe an entity or some action on an entity. 
+
+## Comments
+
+```sql
+SELECT /* comment here */
+FROM /* another comment here */
+-- this is another way to write comments
+
+/*
+you can write multi-line comments
+like this
+*/
+SELECT *
+FROM table1
+WHERE employee='Laura'
+
+```
+
 ## Query formatting
 
 ```sql
@@ -122,9 +142,13 @@ FROM table
 WHERE d = 'SOMETHING'
 ```
 
-# Database Normalization
+## Database Normalization
 
-**Database normalization** is the process of **structuring a relational database** in accordance with a series of so-called **normal forms** in order to reduce data redundancy and improve data integrity; usually it is done by splitting a table into smaller tables and coding relationships between them via keys. It was first proposed by British computer scientist Edgar F. Codd as part of his relational model.
+**Database normalization**:
+- The process of **structuring a relational database** in accordance with a series of so-called **normal forms** in order to reduce data redundancy and improve data integrity; usually it is done by splitting a table into smaller tables and coding relationships between them via keys. 
+- It was first proposed by British computer scientist Edgar F. Codd as part of his relational model.
+- Normalisation is the process of refining a database design to ensure that each independent piece of information is in only one place except for foreign key
+- Doesn't really apply in noSQL databases;
 
 Denormalized dataset - all the data is combined in one dataset, without adhering to the database rules. To enter to a database, data has to have data integrity and adhere to some rules of good database design. Normalization of a database table - structuring it in such a way that it doesn't and cannot express *redundant information*. 
 
