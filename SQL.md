@@ -93,17 +93,17 @@ A few types of schema in a relational database:
 - Snowflake schema
 
 Basic commands: 
-| Command | Function |
-| --- | --- |
-| `\! cd` | list current dir|
-| `\! dir` | list files in the current dir |
-| `\i file.sql` | import file |
-| `\?` | print methods |
-| `\l` or MySQL `SHOW DATABASES;` | list databases |
-| `\c database_name` or MySQL `use database_name;` | connect to a database |
-| `\d` or MySQL `SHOW TABLES;` | check which tables are present |
-| `\dt` | show tables ONLY, without `id_seq` |
-| PostgreSQL `\d second_table`, `\d+ second_table`; MySQL `DESCRIBE tablename` | check columns and details of a table in a database |
+| Command | Function | PostgreSQL | MySQL |
+| - | - | - |
+| List current dir | `\! cd` | |
+| List files in the current dir | `\! dir` | |
+| Import file | `\i file.sql` | |
+| Print methods | `\?` | |
+| List databases | `\l` | `SHOW DATABASES;` |
+| Connect to a database | `\c database_name` | `use database_name;` |
+| Show tables | `\d` | `SHOW TABLES;` |
+| Show tables ONLY, without `id_seq` | `\dt` | |
+| Check columns and details of a table in a database | `\d second_table`, `\d+ second_table` | `DESCRIBE tablename` |
 
 Specific to BigQuery:
 ```sql
