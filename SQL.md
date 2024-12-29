@@ -97,7 +97,7 @@ A few types of schema in a relational database:
 
 Basic commands: 
 | Command | Function | PostgreSQL | MySQL |
-| - | - | - |
+| - | - | - | - |
 | List current dir | `\! cd` | |
 | List files in the current dir | `\! dir` | |
 | Import file | `\i file.sql` | |
@@ -106,8 +106,10 @@ Basic commands:
 | Connect to a database | `\c database_name` | `use database_name;` |
 | Show tables | `\d` | `SHOW TABLES;` |
 | Show tables ONLY, without `id_seq` | `\dt` | |
-| Check columns and details of a table in a database | `\d second_table`, `\d+ second_table` | `DESCRIBE tablename`, `DESC table1` |
+| Describe table / Check columns and details of a table in a database | `\d second_table`, `\d+ second_table` | `DESCRIBE tablename`, `DESC table1` |
 | Show the supported character sets in your server | | `SHOW CHARACTER SET;` |
+| Connect to a database `database1` and format every output in XML | | | `sudo mysql -u root -p --xml database1` |
+| Check constraints of different tables and databases | | | `SELECT * FROM information_schema.TABLE_CONSTRAINTS;` |
 
 Specific to BigQuery:
 ```sql
@@ -232,7 +234,8 @@ CREATE TABLE table1(
   date_birth DATE NOT NULL,
   street VARCHAR(20),
   city VARCHAR(20),
-  country VARCHAR(20)
+  country VARCHAR(20),
+  eye_color ENUM('BR', 'BL', 'GR') -- can only take on values from the list
 );
 
 -- Rename a table
@@ -246,6 +249,7 @@ TRUNCATE table1, table2;
 
 -- Delete the table and all the rows inside it
 DROP TABLE table1;
+DROP TABLE table1, table2;
 DROP TABLE IF EXISTS table1;
 
 -- General form
@@ -300,8 +304,8 @@ Commands:
 
 Table:
 ```sql
-# Delete records from a table, but leave the table
-# DELETE - has a possible IF clause
+-- Delete records from a table, but leave the table
+-- DELETE - has a possible IF clause
 DELETE FROM table1;
 DELETE FROM table1 WHERE column1 = value; 
 ```
@@ -328,9 +332,9 @@ DELETE FROM table1;
 -- Delete a row in which column has the specified value
 DELETE FROM table1 WHERE column1='Value'; 
 
-## Update rows
+-- Update rows
 
-# Update values in a column - swap 'f' and 'm' values
+-- Update values in a column - swap 'f' and 'm' values
 UPDATE Salary SET sex = CASE WHEN sex = 'm' THEN 'f' ELSE 'm' END;
 
 ```
@@ -398,7 +402,7 @@ CREATE DATABASE database1 CHARACTER SET latin1;
 | `YEAR` | `YYYY` | |
 | `TIME` | `HHH:MM:SS` | |
 
-> Date is inserted as string in the format `YYYY-MM-DD`, e.g. `2020-03-23`.
+> Date is inserted as string in the format `YYYY-MM-DD`, e.g. `2020-03-23`. MySQL or other servers will automatically convert the string into a date, given that the format of the string matches that of the column in the temporal datatype
 
 ```sql
 -- Gives YYYY-MM-DD HH:MM:SS.MSMS
@@ -452,6 +456,26 @@ SELECT TO_CHAR(order_date, 'YYYY-MM')
 SELECT DATEDIFF('2024-12-31', '2024-01-01')
 ```
 
+MySQL string formats to date type, e.g. `str_to_date('DEC-21-1980', '%b-%d-%Y')`:
+| Formatter | Definition | Example |
+| - | - | - |
+| `%a` | The short weekday name | Sun, Mon, ... |
+| `%b` | The short month name | Jan, Feb, ... |
+| `%c` | The numeric month | (0..12) |
+| `%d` | The numeric day of the month | (00..31) |
+| `%f` | The number of microseconds | (000000..999999) |
+| `%H` | The hour of the day, in 24-hour format | (00..23) |
+| `%h` | The hour of the day, in 12-hour format | (01..12) |
+| `%i` | The minutes within the hour | (00..59) |
+| `%j` | The day of year | (001..366) |
+| `%M` | The full month name | (January..December) |
+| `%m` | The numeric month | |
+| `%p` | AM or PM | |
+| `%s` | The number of seconds | (00.59) |
+| `%W` | The full weekday name | (Sunday..Saturday) |
+| `%w` | The numeric day of the week | (0=Sunday..6=Saturday) |
+| `%Y` | The four-digit year | |
+
 Examples:
 ```sql
 -- return records where date equals to specified date
@@ -476,6 +500,15 @@ ORDER BY
 | Datatype | Description |
 | --- | --- |
 | `NULL` | Null. `column IS NULL`|
+
+```sql
+-- eye_color can take on any value within a specified list
+CREATE TABLE table1(
+  -- primary key column to automatically increment
+  id SERIAL PRIMARY KEY, -- BIGSERIAL NOT NULL PRIMARY KEY; 
+  eye_color ENUM('BR', 'BL', 'GR') -- can only take on values from the list
+);
+```
 
 ## Type casting
 
@@ -1143,6 +1176,15 @@ FROM (
 
 Constraints are used to limit the data types for specific columns.
 
+**Check all constraints for database `database1`, table `favorite_food`**
+```sql
+-- MySQL
+SELECT * FROM information_schema.TABLE_CONSTRAINTS 
+WHERE 
+	CONSTRAINT_SCHEMA = 'database1'
+	AND TABLE_NAME = 'favorite_food';
+```
+
 | Constraint | Meaning |
 | --- | --- |
 | **NOT NULL** | Values in this column have to be present, i.e. cannot be `NULL` |
@@ -1193,6 +1235,20 @@ ALTER TABLE table_name ADD FOREIGN KEY(column_name) REFERENCES referenced_table(
 ALTER TABLE character_actions ADD FOREIGN KEY(character_id) REFERENCES characters(character_id);
 ```
 
+```sql
+-- AUTO_INCREMENT
+-- Makes a column automatically populate with incrementing values (starting with 1) upon inserting new rows
+```sql
+-- MySQL
+CREATE TABLE person (
+  person_id SMALLINT UNSIGNED,
+  PRIMARY KEY (person_id)
+);
+SET foreign_key_checks=0;
+ALTER TABLE person MODIFY person_id SMALLINT UNSIGNED AUTO_INCREMENT;
+SET foreign_key_checks=1;
+```
+
 # Keys
 
 ## Primary key
@@ -1200,41 +1256,68 @@ ALTER TABLE character_actions ADD FOREIGN KEY(character_id) REFERENCES character
 Primary key:
 - Serves as a **unique identifier** for each record in a table;
 - IOW, it is an entry into the `Primary key` column that **inequivocally (uniquely)** identify each one row in a table, i.e. an ID for each data point / row.
+- Features:
+  - `Null` values are not accepted. 
+  - Are indexed automatically.
+  - If you manually tried inserting a row with a primary key that already exists in the table, it would lead to an error, as no duplicate primary keys are allowed;
+  - By definition, primary key has two constraints - NOT NULL and UNIQUE;
 
+An example of a column `person_id` that is a primary key:
+```txt
+<!-- MySQL -->
+Field      |Type                |Null|Key|Default|Extra         |
+-----------+--------------------+----+---+-------+--------------+
+person_id  |smallint unsigned   |NO  |PRI|       |auto_increment|
 
+<!-- PostgreSQL -->
+   Column    |         Type          | Collation | Nullable |                  Default
+-------------+-----------------------+-----------+----------+-------------------------------------------
+ person_id   | integer               |           | not null | nextval('person_person_id_seq'::regclass)
+```
 
-Features:
-- `Null` values are not accepted. 
-- Are indexed automatically.
-- If you manually tried inserting a row with a primary key that already exists in the table, it would lead to an error, as no duplicate primary keys are allowed;
-- By definition, primary key has two constraints - NOT NULL and UNIQUE;
-
-
+**Create a column with primary key that you manually have to enter**:
 ```sql
--- NOTE: NOT A GOOD PRACTICE, but an example. Create a column with primary key that you manually have to enter:
+-- NOTE: NOT A GOOD PRACTICE, but an example
+-- PostgreSQL
 CREATE TABLE sounds (sound_id INT PRIMARY KEY);
+```
 
--- You can create a table with a column with PRIMARY KEY constraint. As it is SERIAL, you don't need to specify it when inserting new rows - it will be created automatically as per the internal rules:
+**Create a table with PRIMARY KEY constraint**
+```sql
+-- You can create a table with a column with PRIMARY KEY constraint. 
+-- As it is also a  SERIAL, you don't need to specify it when inserting new rows - it will be created automatically as per the internal rules:
+
 -- PostgreSQL
 CREATE TABLE sounds (
   sound_id SERIAL PRIMARY KEY
 );
--- MySQL
-CREATE TABLE student (
-    student_id INT AUTO_INCREMENT PRIMARY KEY
-);
--- Or add a new column and set it up as a primary key
-ALTER TABLE moon ADD COLUMN moon_id SERIAL PRIMARY KEY;
 
--- Adding a new column and setting it up as a primary key can also be done in two steps:
+-- MySQL
+-- can be SMALLINT or INT
+CREATE TABLE person (
+  person_id SMALLINT UNSIGNED AUTO_INCREMENT,
+  PRIMARY KEY (person_id)
+);
+-- or if you want to name the constraint
+CREATE TABLE person (
+  person_id SMALLINT UNSIGNED AUTO_INCREMENT,
+  CONSTRAINT pk_person PRIMARY KEY (person_id)
+);
+```
+
+**Set a column as a primary key**
+```sql
+-- PostgreSQL
+-- Add a column and set it as primary key
+ALTER TABLE moon ADD COLUMN moon_id SERIAL PRIMARY KEY;
+-- or in two steps
 ALTER TABLE table_name ADD COLUMN column1 SERIAL;
 ALTER TABLE table1 ADD PRIMARY KEY (column1);
 ```
 
 
 
-
-If you want to alter the primary key, you can do it like this. Check first the details of a table with the command `\d characters`:
+If you want to alter the primary key, you can do it like this. Check first the details of a table:
 ```txt
 mario_database=> \d characters
                                              Table "public.characters"
@@ -1255,26 +1338,23 @@ Then drop contraint:
 ALTER TABLE characters DROP CONSTRAINT characters_pkey;
 ```
 
----
-
-Other commands:
-
-ALTER TABLE table_name ADD PRIMARY KEY(column1, column2); # create composite primary key (primary key from two columns)
-
-ALTER TABLE table1 DROP CONSTRAINT person_pkey # Drop primary key constraint
-
-
 ## Composite primary key 
 
+**Upon creation of the table**
 ```sql
+-- MySQL
 CREATE TABLE table1(
   person_id SMALLINT UNSIGNED,
   food VARCHAR(20),
   CONSTRAINT pk_favorite_food PRIMARY KEY (person_id, food)
 );
+```
 
+**Set few columns**
+```sql
+-- PostgreSQL
 -- Uses more than one column as a unique pair. 
-ALTER TABLE <table_name> ADD PRIMARY KEY(<column_name>, <column_name>);
+ALTER TABLE table_name ADD PRIMARY KEY(column1, column2); 
 ```
 
 ## Foreign key
@@ -1288,16 +1368,26 @@ ON DELETE SET NULL: if in the table 1 a row is deleted, then in the table 2 that
 
 ON DELETE CASCADE: if the row in the original table containing an id is deleted, then in a table referencing that table via a foreign key the entire row is deleted. 
 
+**Create foreign key upon creation of the table**
 ```sql
--- Create foreign key upon creation of the table
+-- PostgreSQL
 CREATE TABLE user_profiles (
-    profile_id INT PRIMARY KEY,
-    user_id INT UNIQUE,
-    profile_data VARCHAR(255),
-    FOREIGN KEY (user_id) REFERENCES users(user_id) -- ON DELETE SET NULL --or-- ON DELETE CASCADE
-
+  profile_id INT PRIMARY KEY,
+  user_id INT UNIQUE,
+  profile_data VARCHAR(255),
+  FOREIGN KEY (user_id) REFERENCES users(user_id) -- ON DELETE SET NULL --or-- ON DELETE CASCADE
 );
 
+-- MySQL
+-- Foreign key person_id in table favorite_food that references another table's person.person_id
+CREATE TABLE favorite_food (
+  person_id SMALLINT UNSIGNED,
+  CONSTRAINT fk_fav_food_person_id FOREIGN KEY (person_id) REFERENCES person (person_id) 
+);
+
+```
+
+```sql
 
 -- Create a new column with  the constraint of foreign key
 ALTER TABLE more_info 
@@ -1305,6 +1395,7 @@ ADD COLUMN character_id INT
 REFERENCES characters(character_id);
 
 -- You can set an existing column as a foreign key like this:
+-- PostgreSQL
 ALTER TABLE table_name 
 ADD FOREIGN KEY(column_name) 
 REFERENCES referenced_table(referenced_column)
