@@ -11,8 +11,11 @@
   - [DCL](#dcl)
   - [TCL](#tcl)
 - [Datatypes](#datatypes)
+  - [Character](#character)
+  - [Numeric](#numeric)
+  - [Temporal](#temporal)
+  - [other](#other)
   - [Type casting](#type-casting)
-  - [Date](#date)
   - [Array \> column etc.](#array--column-etc)
 - [SELECT statements](#select-statements)
   - [DISTINCT](#distinct)
@@ -103,7 +106,8 @@ Basic commands:
 | Connect to a database | `\c database_name` | `use database_name;` |
 | Show tables | `\d` | `SHOW TABLES;` |
 | Show tables ONLY, without `id_seq` | `\dt` | |
-| Check columns and details of a table in a database | `\d second_table`, `\d+ second_table` | `DESCRIBE tablename` |
+| Check columns and details of a table in a database | `\d second_table`, `\d+ second_table` | `DESCRIBE tablename`, `DESC table1` |
+| Show the supported character sets in your server | | `SHOW CHARACTER SET;` |
 
 Specific to BigQuery:
 ```sql
@@ -195,7 +199,7 @@ Commands:
 | **TRUNCATE** | **Deletes all the data / rows** and records from an existing table, including the allocated spaces for the records. Unlike the DROP command, it does not delete the table from the database. It works similarly to the DELETE statement without a WHERE clause; also TRUNCATE is faster than DELETE. |
 | **RENAME** | ... |
 
-Database commands:
+**Database commands**:
 ```sql
 CREATE DATABASE database1;
 
@@ -206,19 +210,30 @@ ALTER DATABASE first_database RENAME TO second_database;
 DROP DATABASE second_database;
 ```
 
-Table commands:
+**Table commands**:
+
+These are SQL schema statements for creating tables with specified schemas.
 ```sql
 -- General form
 CREATE TABLE table1(
-column1 DATATYPE CONSTRAINTS, 
-column2 DATATYPE CONSTRAINTS);
+  column1 DATATYPE CONSTRAINTS, 
+  column2 DATATYPE CONSTRAINTS
+);
 -- Create a new table
 CREATE TABLE IF NOT EXISTS tablename;
 -- Create an empty table
 CREATE TABLE table1();
 -- Some examples
-CREATE TABLE table1(id SERIAL PRIMARY KEY, first_name VARCHAR(50) NOT NULL, gender VARCHAR(7) NOT NULL, date_birth DATE NOT NULL);
-CREATE TABLE table1(id BIGSERIAL NOT NULL PRIMARY KEY);
+CREATE TABLE table1(
+  -- primary key column to automatically increment
+  id SERIAL PRIMARY KEY, -- BIGSERIAL NOT NULL PRIMARY KEY; 
+  first_name VARCHAR(50) NOT NULL, 
+  gender VARCHAR(7) NOT NULL, 
+  date_birth DATE NOT NULL,
+  street VARCHAR(20),
+  city VARCHAR(20),
+  country VARCHAR(20)
+);
 
 -- Rename a table
 ALTER TABLE table1 
@@ -338,44 +353,52 @@ Transaction Control Language:
 
 # Datatypes
 
-| Datatype | Description |
-| --- | --- |
-| `DATE` | YYYY-MM-DD |
-| `TIMESTAMP` | YYYY-MM-DD HH:MM:SS |
-| `INT` | Whole number. |
-| `SERIAL` | Auto-increments a number. The SERIAL type will make your column an INT with a NOT NULL constraint, and automatically increment the integer when a new row is added.  |
-| `BIGSERIAL` | Auto-increments a number |
-| `CHAR(30)` | String (specified length). The string has to be EXACTLY the specified length, in this case, 30 characters - no more, no less. *Note: use single quotes, not doublequotes*. If you need to use a single apostrophe as part of the string, use it two times to escape: `'O''Brien'` |
-| `VARCHAR(30)` | String (max length). The string can have a length up to the specified limit, such as 10, 20, 25 characters, but no more than 30 characters. *Note: use single quotes, not doublequotes* |
-| `FLOAT` | Float of varying number of points after decimal. | 
-| `NUMERIC(4, 1)` | Float with number of decimals (1). For MySQL, I think, it's `DECIMAL(10, 4)`|
-| `NULL` | Null. `column IS NULL`|
-| `BOOLEAN` | `TRUE`, `FALSE` |
+## Character
 
-## Type casting
+| Datatype | Description | Example |
+| - | - | - |
+| `CHAR(30)` | Fixed-length string. The string has to be EXACTLY the specified length, in this case, 30 characters - no more, no less. These are right-padded with spaces (to fill up the remaining characters not used by definition of a variable) and always consume the same number of bytes.| State abbreviations - all strings stored in the column are of the same length. |
+| `VARCHAR(30)` | Variable-length string. The string can have a length up to the specified limit, such as 10, 20, 25 characters, but no more than e.g. 30 characters. | Varchar is appropriate for free-form data entry, e.g. notes column to hold data about customer interactions with your company's customer service department.  |
+| MySQL `tinytext` (not used), `text` (not used), `mediumtext`, `longtext` | To store longer strings such as emails, XML documents. | mediumtext and longtext can be used for storing documents. |
 
-You can cast datatypes in the ways below:
+> Note 1: 
+> for character data types, use single quotes, not doublequotes. 
+> If you need to use a single apostrophe as part of the string, use it two times to escape: `'O''Brien'`
+
+> Note 2:
+> CHAR and VARCHAR are for storing relatively short text strings. For longer, use text data types
+
+Define character set:
 ```sql
--- data types: date, numeric, int, float
-SELECT 
-  whatever::date, 
-  whatever2::numeric
--- or
-round( SUM(rating::dec / position::dec)::dec / COUNT(rating)::dec, 2) AS quality
-
--- another way
-SELECT 
-  CAST(sss2.sku_id AS STRING),
-  CAST(age AS varchar)
+-- for a variable
+VARCHAR(20) CHARACTER SET latin1
+-- for the entire database
+CREATE DATABASE database1 CHARACTER SET latin1;
 ```
 
-Complex data types:
-```sql
--- List - usually used within a WHERE _ IN <list> clause
-('Value1', 'Value2', 'Value3')
-```
+## Numeric
 
-## Date
+| Datatype | Description | Example |
+| - | - | - |
+| `SERIAL` | Auto-increments a number upon inserting a new row. The SERIAL type will make your column an INT with a NOT NULL constraint, and automatically increment the integer when a new row is added. `BIGSERIAL` is the same but has a higher range of possible values.  |
+| `BOOLEAN` | `TRUE`, `FALSE` | A column indicating whether a customer order has been shipped |
+| `INT` | Whole number. MySQL also has `tinyint`, `smallint`, `mediumint`, `int`, `bigint` | |
+| `FLOAT` | Can be `FLOAT(p,s)`, where p is the total number of digits and s is number of allowable digits to the right of the decimal point. For MySQL, can be `FLOAT`, `FLOAT(p,s)`, and for even larger numbers `DOUBLE(p,s)`. | E.g. `FLOAT(4,2)` - handles 17.87, 8.19, but rounds 17.8675 to 17.87 and errors at attempt of storing 178.375 |
+
+> Note 1: 
+> The numeric data types can be defined as `unsigned`, meaning that they are greater than or equal to zero.
+
+## Temporal
+
+| Datatype | Description | Example |
+| - | - | - |
+| `DATETIME` | `YYYY-MM-DD HH:MM:SS` | Column to hold information about when a customer order was actually shipped. |
+| `TIMESTAMP` | Same information as DATETIME, but 1) is automatically populated with the current date/time by the MySQL server when a row is added or when a row is modified and 2) has a much smaller range of acceptable values. | A column that tracks when a user last modified a particular row in a table. |
+| `DATE` | `YYYY-MM-DD` | Column to hold the expected future shipping date of a customer order. An employee's birth date. |
+| `YEAR` | `YYYY` | |
+| `TIME` | `HHH:MM:SS` | |
+
+> Date is inserted as string in the format `YYYY-MM-DD`, e.g. `2020-03-23`.
 
 ```sql
 -- Gives YYYY-MM-DD HH:MM:SS.MSMS
@@ -446,8 +469,35 @@ SELECT * FROM notable_dates
 ORDER BY 
   EXTRACT(MONTH FROM date), 
   EXTRACT(DAY FROM date) DESC;
+```
 
+## other
 
+| Datatype | Description |
+| --- | --- |
+| `NULL` | Null. `column IS NULL`|
+
+## Type casting
+
+You can cast datatypes in the ways below:
+```sql
+-- data types: date, numeric, int, float
+SELECT 
+  whatever::date, 
+  whatever2::numeric
+-- or
+round( SUM(rating::dec / position::dec)::dec / COUNT(rating)::dec, 2) AS quality
+
+-- another way
+SELECT 
+  CAST(sss2.sku_id AS STRING),
+  CAST(age AS varchar)
+```
+
+Complex data types:
+```sql
+-- List - usually used within a WHERE _ IN <list> clause
+('Value1', 'Value2', 'Value3')
 ```
 
 ## Array > column etc.
@@ -1096,7 +1146,7 @@ Constraints are used to limit the data types for specific columns.
 | Constraint | Meaning |
 | --- | --- |
 | **NOT NULL** | Values in this column have to be present, i.e. cannot be `NULL` |
-| **CHECK** | Check for a specified condition. E.g. `constraint login_min_length check (char_length(login) >= 3)` - check the minimum length of a login field. |
+| **CHECK** | Check for a specified condition. E.g. `constraint login_min_length check (char_length(login) >= 3)` - check the minimum length of a login field. `eye_color CHAR(2) CHECK (eye_color IN ('BR', 'BL', 'GR'))` - check constraints that only three values are possible for this column. |
 | **DEFAULT** | Sets a default value for each row in a column |
 | **PRIMARY KEY** | Makes a specified column a `PRIMARY KEY` type. |
 | **FOREIGN KEY** | Makes a specified column an external key. E.g. `constraint user_uuid_foreign_key foreign key (user_uuid) references users (uuid) on update cascade on delete cascade` - обязывает содержать значение в user_uuid только для существующей записи в таблице users и автоматически обновится если оно будет изменено в таблице users, а так же заставит запись удалиться при удалении записи о пользователе |
@@ -1217,6 +1267,12 @@ ALTER TABLE table1 DROP CONSTRAINT person_pkey # Drop primary key constraint
 ## Composite primary key 
 
 ```sql
+CREATE TABLE table1(
+  person_id SMALLINT UNSIGNED,
+  food VARCHAR(20),
+  CONSTRAINT pk_favorite_food PRIMARY KEY (person_id, food)
+);
+
 -- Uses more than one column as a unique pair. 
 ALTER TABLE <table_name> ADD PRIMARY KEY(<column_name>, <column_name>);
 ```
