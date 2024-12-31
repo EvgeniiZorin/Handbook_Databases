@@ -1243,7 +1243,9 @@ WHERE surname = 'Jones';
 
 ## WHERE
 
-The WHERE clause is used in a SELECT statement to filter rows based on the specified *filter conditions* before the data is grouped or aggregated. It operates on individual rows and filters them based on the given conditions.
+The WHERE clause is used in a SELECT statement to filter rows based on the specified *filter conditions / statements* before the data is grouped or aggregated. It operates on individual rows and filters them based on the given conditions.
+
+- WHERE clause can have multiple filter conditions separated by the operators `AND` or `OR`
 
 `WHERE salary IS NOT NULL`
 
@@ -1712,6 +1714,11 @@ SELECT column1, column2 FROM table1 WHERE condition1 AND condition2 AND conditio
 WHERE NOT condition;
 ```
 
+A note about the NOT condition; the two statements below seem to be equivalent:
+```sql
+
+```
+
 ## Comparison operators
 
 Can be used for comparing numbers or strings. 
@@ -1720,11 +1727,15 @@ Can be used for comparing numbers or strings.
 | --- | -- |
 | `<`, `<=`, `>`, `>=` | |
 | `=` | equals |
-| `<>` | not equal |
+| `<>` | not equal. `WHERE name <> 'STEVEN'` |
+| `LIKE` | used for regex |
+| `IN` | if a value is contained within a list. |
+| `BETWEEN` | value is contained between two other values. |
 
 > Note: NULL value indicates an unavailable or unassigned value. The value NULL does not equal zero (0), nor does it equal a space (‘ ‘). Because the NULL value cannot be equal or unequal to any value, you cannot perform any comparison on this value by using operators such as ‘=’ or ‘<>’.
 >
 > Therefore, use `Column IS NULL` or NOT NULL
+
 
 ## Arithmetic operations
 
