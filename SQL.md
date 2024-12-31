@@ -37,11 +37,16 @@
       - [AVG](#avg)
       - [GROUP BY](#group-by)
       - [STRING\_AGG](#string_agg)
+  - [FROM](#from)
+    - [Types of tables](#types-of-tables)
+      - [Subquery](#subquery)
+      - [CTE](#cte)
+      - [Temporary tables](#temporary-tables)
+      - [Views](#views)
   - [WHERE](#where)
     - [REGEX](#regex)
   - [HAVING](#having)
   - [ORDER BY](#order-by)
-  - [WITH ... AS](#with--as)
   - [OFFSET](#offset)
   - [LIMIT](#limit)
   - [UNION](#union)
@@ -51,9 +56,6 @@
   - [Composite primary key](#composite-primary-key)
   - [Foreign key](#foreign-key)
 - [Trigger](#trigger)
-- [Query organisation](#query-organisation)
-  - [Subquery](#subquery)
-  - [CTE](#cte)
 - [Operators](#operators)
   - [Logical operators](#logical-operators)
   - [Comparison operators](#comparison-operators)
@@ -73,7 +75,7 @@
   - [Long -\> wide](#long---wide)
 - [Export query to CSV](#export-query-to-csv)
 - [Procedures](#procedures)
-- [Views](#views)
+- [Views](#views-1)
 - [Transaction](#transaction)
 - [Isolation levels](#isolation-levels)
 - [Denormalisation](#denormalisation)
@@ -456,6 +458,10 @@ SELECT TO_CHAR(order_date, 'YYYY-MM')
 -- DATEDIFF
 -- returns the number of days between two dates
 SELECT DATEDIFF('2024-12-31', '2024-01-01')
+
+-- MySQL
+-- if you have date containing minutes, hours, etc. apart from the date itself, you can filter only based on year,month,day like this:
+WHERE return_date = date('2005-07-05') 
 ```
 
 MySQL string formats to date type, e.g. `str_to_date('DEC-21-1980', '%b-%d-%Y')`:
@@ -1011,10 +1017,233 @@ SELECT STRING_AGG(CAST(emp_id AS VARCHAR), ' | ') -- VARCHAR for PostgreSQL and 
 FROM test.employee
 ```
 
+## FROM
+
+> The **FROM** clause defines the tables used by a query, along with the means of linking the tables together
+
+### Types of tables
+
+Different types of tables:
+- Permanent tables: created by the `CREATE TABLE` statement
+- Derived (subquery-generated) tables: rows returned by a subquery and held in memory
+- Temporary (volatile) tables: volatile data held in memory
+- Virtual table (view): created using the `CREATE VIEW` statement
+
+#### Subquery
+
+> a.k.a. subquery, nested query, inner query
+
+- Subqueries are embedded within another SQL query and are used when the result of one query depends on that of the other; 
+- Are powerful tools for performing complex data manipulations that require one or more intermediary steps
+- Types (depending on where / in which clause the subquery is located):
+  - SELECT subqueries
+  - FROM subqueries
+  - WHERE subqueries
+  - HAVING subqueries
+
+**SELECT subqueries**
+
+```sql
+-- General Form
+SELECT column1, column2, columnN,
+(SELECT agg_function(column) FROM table WHERE condition)
+FROM table
+```
+
+**FROM subqueries**
+
+Subqueries in the FROM clause create a temporary table that can be used for the main query. This allows
+the programmer to simplify the process by breaking the problem into smaller, more manageable parts.
+
+This subquery's data is held in memory for the duration of the entire query and then discarded.
+
+```sql
+-- General form
+-- This is the containing query
+SELECT employee, total_sales
+FROM (
+  -- This is the subquery
+  SELECT 
+    first_name || ' ' || last_name AS employee, 
+    SUM(sales) AS total_sales
+  FROM sales
+  GROUP BY employee
+) AS sales_summary -- alias of the subquery
+WHERE total_sales > 100000;
+```
+
+In this example, the subquery creates a temporary table aliased as `sales_summary`, which does the following:
+- Concatenates each employee’s first and last name (separated by a space). This concatenation is aliased as employee.
+- Calculates the total sales for each employee.
+- Groups the total_sales by employee.
+
+**WHERE subqueries**
+
+Subqueries in the WHERE clause are used to filter rows based on conditions detailed in a subquery.
+
+This method is useful when you don’t already have access to the condition on which you want to filter your query.
+
+Scalar example: 
+```sql
+-- Suppose that we have a table called employees with employee_id, first_name, last_name, salary, and department_id columns. If we want to find all employees who earn more than the average salary, we can use a subquery:
+SELECT first_name, last_name, salary
+FROM employees
+WHERE salary > (SELECT AVG(salary) FROM employees);
+```
+
+Non-scalar example:
+```sql
+-- Suppose that we are using the same dataset as before with the first_name, last_name, and salary fields. We want to return the first name, last name, and salary of employees whose first name begins with the letter 'J':
+SELECT first_name, last_name, salary
+FROM employees
+WHERE salary > ANY (SELECT salary FROM employees WHERE first_name LIKE 'J%');
+```
+
+**HAVING subqueries**
+
+The HAVING clause is used to filter the results of a GROUP BY query based on conditions involving
+aggregate functions. The subquery is executed for each group and filters the groups based on the
+specified condition.
+
+```sql
+SELECT CustomerID, AVG(TotalAmount) AS AverageTotalAmount
+FROM Orders
+GROUP BY CustomerID
+HAVING AVG(TotalAmount) > (SELECT AVG(TotalAmount)
+FROM Orders);
+```
+
+---
+
+Using multiple SELECT statements, where the output of one query gets passed on to another query. 
+
+```sql
+-- Find names of all employees who have sold over 30,000 to a single client
+SELECT employee.first_name, employee.last_name
+FROM employee
+WHERE employee.emp_id IN (
+    SELECT works_with.emp_id
+    FROM works_with
+    WHERE works_with.total_sales > 30000
+);
+
+-- Find all clients who are handled by the branch that Michael Scott manages
+SELECT client.client_name
+FROM client
+WHERE branch_id = (
+    SELECT employee.branch_id
+    FROM employee
+    WHERE employee.first_name = 'Michael' AND employee.last_name = 'Scott'
+);
+```
+
+
+Use IDs from one table to use in querying another table
+```sql
+SELECT column1 as 'Column 1' FROM table1 WHERE table1.id NOT IN (SELECT customer_id FROM table2);
+```
+
+#### CTE
+
+CTE, common table expressions
+
+CTEs are similar to subqueries. 
+
+CTEs are also temporary tables typically that are formulated at the beginning of a
+query and only exist during the execution of the query. This means that CTEs cannot be used in other
+queries beyond the one in which you are using the CTE.
+While CTEs and subqueries are both used in similar circumstances (such as when you need to produce
+an intermediary result), there are a couple of factors that tip off CTEs:
+• They are typically created at the beginning of a query using the WITH operator
+• They are followed by a query that queries the CTE
+Alternatively, subqueries are a query within a query, nested within one of a query’s clauses.
+
+```sql
+WITH 
+alias AS (
+  -- <Put query here>
+), 
+alias2 AS (
+  -- <put query here>
+)
+-- ... <Query that queries the alias>
+
+-- A more concrete example
+WITH customer_totals AS (
+  SELECT CustomerID, SUM(TotalAmount) AS total_sales
+  FROM Orders
+  GROUP BY CustomerID
+)
+SELECT c.CustomerID, c.total_sales, o.avg_order_amount
+FROM customer_totals c
+JOIN (
+  SELECT CustomerID, AVG(TotalAmount) AS avg_order_amount
+  FROM Orders GROUP BY CustomerID )
+ON c.CustomerID = o.CustomerID;
+```
+
+```sql
+-- Example
+WITH a1 AS (
+	SELECT
+		bs.branch_id,
+		bs.branch_name,
+		COUNT(bs.mgr_id)
+	FROM employees_db.public.branch bs
+	INNER JOIN employees_db.public.branch_supplier bs2 
+	ON bs.branch_id = bs2.branch_id 
+	
+	GROUP BY 
+		bs.branch_id, 
+		bs.branch_name
+)
+SELECT * FROM a1
+```
+
+#### Temporary tables
+
+The tables appear like permanent tables, but any data inserted into this table will disappear at some point, e.g. at the end of a transaction or when the database connection session is closed.
+
+```sql
+-- MySQL
+CREATE TEMPORARY TABLE temp1
+(
+  person_id SMALLINT(5),
+  first_name VARCHAR(45),
+  last_name VARCHAR(45)
+);
+INSERT INTO temp1
+SELECT actor_id, first_name, last_name
+FROM table1
+WHERE last_name LIKE '%J';
+```
+
+#### Views
+
+It is a query that is stored in the data dictionary. 
+- It looks and acts like a table, but there is no data associated with a view; when you issue a query against a view, your query is merged with the view definition to create a final query to be executed.
+- It is like a saved query for later use;
+
+```sql
+-- First you create a view
+CREATE VIEW cust_vw AS
+SELECT 
+  person_id, 
+  name, 
+  surname,
+  height
+FROM person;
+-- Then later, you can issue queries against a view
+SELECT 
+  name,
+  surname
+FROM cust_vw
+WHERE surname = 'Jones';
+```
 
 ## WHERE
 
-The WHERE clause is used in a SELECT statement to filter rows based on specified conditions before the data is grouped or aggregated. It operates on individual rows and filters them based on the given conditions.
+The WHERE clause is used in a SELECT statement to filter rows based on the specified *filter conditions* before the data is grouped or aggregated. It operates on individual rows and filters them based on the given conditions.
 
 `WHERE salary IS NOT NULL`
 
@@ -1023,6 +1252,10 @@ The WHERE clause is used in a SELECT statement to filter rows based on specified
 WHERE 
   column1 != 2 
   OR column2 IS NULL
+--
+WHERE 
+  (surname = 'Jones' AND age > 17)
+  OR (surname = 'Wilkinson' AND age > 50)
 
 -- IS
 age IS NOT NULL
@@ -1112,13 +1345,33 @@ In order to use HAVING, you also need:
 - A GROUP BY clause
 - An aggregation in your SELECT section (SUM, MIN, MAX, etc.)
 
+```sql
+SELECT 
+  p.name,
+  p.surname,
+  COUNT(*)
+FROM person p
+INNER JOIN transactions t
+ON p.id = t.person_id
+GROUP BY 
+  name, 
+  surname
+HAVING COUNT(*) >= 40
+```
+
 ## ORDER BY
+
+> If you have multiple columns in your ORDER BY clause, the order in which columns appear there matter, as one row might appear before the other if you order by multiple columns in different order.
 
 ```sql
 -- General form
 SELECT column1, column2, ..., columnN
 FROM table_name
-ORDER BY column1 [ASC|DESC], column2 [ASC|DESC], ... columnN [ASC|DESC];
+ORDER BY 
+  column1 [ASC|DESC], 
+  column2 [ASC|DESC], 
+  ... 
+  columnN [ASC|DESC];
 
 -- Examples
 SELECT *
@@ -1135,26 +1388,17 @@ ORDER BY n_companies DESC
 LIMIT 10
 ```
 
-
-## WITH ... AS
-
+You can also sort the columns using the **numeric placeholders**:
 ```sql
-WITH a1 AS (
-	SELECT
-		bs.branch_id,
-		bs.branch_name,
-		COUNT(bs.mgr_id)
-	FROM employees_db.public.branch bs
-	INNER JOIN employees_db.public.branch_supplier bs2 
-	ON bs.branch_id = bs2.branch_id 
-	
-	GROUP BY 
-		bs.branch_id, 
-		bs.branch_name
-)
-
-SELECT * FROM a1
+SELECT 
+  name,
+  surname,
+  age,
+  birthday
+FROM person
+ORDER BY 3 DESC; -- order the table using the third element in the SELECT clause
 ```
+
 
 ## OFFSET 
 
@@ -1444,154 +1688,6 @@ CREATE
     END$$
 DELIMITER ;
 -- Now, every time a row is added to the table `employee`, a row is added into the table `trigger_test` saying `added new employee`
-```
-
-# Query organisation
-
-## Subquery
-
-> a.k.a. subquery, nested query, inner query
-
-- Subqueries are embedded within another SQL query and are used when the result of one query depends on that of the other; 
-- Are powerful tools for performing complex data manipulations that require one or more intermediary steps
-- Types (depending on where / in which clause the subquery is located):
-  - SELECT subqueries
-  - FROM subqueries
-  - WHERE subqueries
-  - HAVING subqueries
-
-**SELECT subqueries**
-
-```sql
--- General Form
-SELECT column1, column2, columnN,
-(SELECT agg_function(column) FROM table WHERE condition)
-FROM table
-```
-
-**FROM subqueries**
-
-Subqueries in the FROM clause create a temporary table that can be used for the main query. This allows
-the programmer to simplify the process by breaking the problem into smaller, more manageable parts.
-
-```sql
--- General form
-SELECT employee, total_sales
-FROM (SELECT first_name || ' ' || last_name as employee, SUM(sales) as
-total_sales
-FROM sales
-GROUP BY employee) as sales_summary
-WHERE total_sales > 100000;
-```
-
-In this example, the subquery creates a temporary table aliased as `sales_summary`, which does the following:
-- Concatenates each employee’s first and last name (separated by a space). This concatenation is aliased as employee.
-- Calculates the total sales for each employee.
-- Groups the total_sales by employee.
-
-**WHERE subqueries**
-
-Subqueries in the WHERE clause are used to filter rows based on conditions detailed in a subquery.
-
-This method is useful when you don’t already have access to the condition on which you want to filter your query.
-
-Scalar example: 
-```sql
--- Suppose that we have a table called employees with employee_id, first_name, last_name, salary, and department_id columns. If we want to find all employees who earn more than the average salary, we can use a subquery:
-SELECT first_name, last_name, salary
-FROM employees
-WHERE salary > (SELECT AVG(salary) FROM employees);
-```
-
-Non-scalar example:
-```sql
--- Suppose that we are using the same dataset as before with the first_name, last_name, and salary fields. We want to return the first name, last name, and salary of employees whose first name begins with the letter 'J':
-SELECT first_name, last_name, salary
-FROM employees
-WHERE salary > ANY (SELECT salary FROM employees WHERE first_name LIKE 'J%');
-```
-
-**HAVING subqueries**
-
-The HAVING clause is used to filter the results of a GROUP BY query based on conditions involving
-aggregate functions. The subquery is executed for each group and filters the groups based on the
-specified condition.
-
-```sql
-SELECT CustomerID, AVG(TotalAmount) AS AverageTotalAmount
-FROM Orders
-GROUP BY CustomerID
-HAVING AVG(TotalAmount) > (SELECT AVG(TotalAmount)
-FROM Orders);
-```
-
----
-
-Using multiple SELECT statements, where the output of one query gets passed on to another query. 
-
-```sql
--- Find names of all employees who have sold over 30,000 to a single client
-SELECT employee.first_name, employee.last_name
-FROM employee
-WHERE employee.emp_id IN (
-    SELECT works_with.emp_id
-    FROM works_with
-    WHERE works_with.total_sales > 30000
-);
-
--- Find all clients who are handled by the branch that Michael Scott manages
-SELECT client.client_name
-FROM client
-WHERE branch_id = (
-    SELECT employee.branch_id
-    FROM employee
-    WHERE employee.first_name = 'Michael' AND employee.last_name = 'Scott'
-);
-```
-
-
-Use IDs from one table to use in querying another table
-```sql
-SELECT column1 as 'Column 1' FROM table1 WHERE table1.id NOT IN (SELECT customer_id FROM table2);
-```
-
-## CTE
-
-CTE, common table expressions
-
-CTEs are similar to subqueries. 
-
-CTEs are also temporary tables typically that are formulated at the beginning of a
-query and only exist during the execution of the query. This means that CTEs cannot be used in other
-queries beyond the one in which you are using the CTE.
-While CTEs and subqueries are both used in similar circumstances (such as when you need to produce
-an intermediary result), there are a couple of factors that tip off CTEs:
-• They are typically created at the beginning of a query using the WITH operator
-• They are followed by a query that queries the CTE
-Alternatively, subqueries are a query within a query, nested within one of a query’s clauses.
-
-```sql
-WITH 
-alias AS (
-  -- <Put query here>
-), 
-alias2 AS (
-  -- <put query here>
-)
--- ... <Query that queries the alias>
-
--- A more concrete example
-WITH customer_totals AS (
-  SELECT CustomerID, SUM(TotalAmount) AS total_sales
-  FROM Orders
-  GROUP BY CustomerID
-)
-SELECT c.CustomerID, c.total_sales, o.avg_order_amount
-FROM customer_totals c
-JOIN (
-  SELECT CustomerID, AVG(TotalAmount) AS avg_order_amount
-  FROM Orders GROUP BY CustomerID )
-ON c.CustomerID = o.CustomerID;
 ```
 
 # Operators
