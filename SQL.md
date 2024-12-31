@@ -17,24 +17,26 @@
   - [other](#other)
   - [Type casting](#type-casting)
   - [Array \> column etc.](#array--column-etc)
-- [SELECT statements](#select-statements)
-  - [DISTINCT](#distinct)
-  - [TRIM](#trim)
-  - [COALESCE](#coalesce)
-  - [UPPER](#upper)
-  - [ROUND](#round)
-  - [EXCEPT](#except)
-  - [CONCAT](#concat)
-  - [Random sampling](#random-sampling)
-  - [CASE WHEN](#case-when)
-  - [Aggregate statements](#aggregate-statements)
-    - [COUNT](#count)
-    - [SUM](#sum)
-    - [MIN/MAX](#minmax)
-    - [AVG](#avg)
-    - [GROUP BY](#group-by)
-    - [STRING\_AGG](#string_agg)
-- [Clauses](#clauses)
+- [Query clauses](#query-clauses)
+  - [Aliases](#aliases)
+  - [SELECT](#select)
+    - [Built-in functions](#built-in-functions)
+    - [DISTINCT](#distinct)
+    - [TRIM](#trim)
+    - [COALESCE](#coalesce)
+    - [UPPER](#upper)
+    - [ROUND](#round)
+    - [EXCEPT](#except)
+    - [CONCAT](#concat)
+    - [Random sampling](#random-sampling)
+    - [CASE WHEN](#case-when)
+    - [Aggregate statements](#aggregate-statements)
+      - [COUNT](#count)
+      - [SUM](#sum)
+      - [MIN/MAX](#minmax)
+      - [AVG](#avg)
+      - [GROUP BY](#group-by)
+      - [STRING\_AGG](#string_agg)
   - [WHERE](#where)
     - [REGEX](#regex)
   - [HAVING](#having)
@@ -566,7 +568,19 @@ where emp_id in (
 -- make a database selection as a name
 ```
 
-# SELECT statements
+# Query clauses
+
+Query clauses:
+- select
+- from
+- where
+- group by
+- having
+- order by
+
+Each clause has keywords / statements, e.g. clause SELECT has statements such as DISTINCT etc.
+
+## Aliases
 
 ```sql
 -- General syntax
@@ -585,15 +599,28 @@ FROM Orders o
 RIGHT JOIN Customers c 
 ON o.CustomerId = c.CustomerId
 
--- When aliasing, we can either use AS or omit it
--- (albeit it is preferable to use the AS statement)
+-- When aliasing, we can either use the keyword AS or omit it
+-- (albeit it is preferable to use the AS keyword)
 SELECT column1 AS alias1 
 -- or
 SELECT column1 alias1
-
 ```
 
-## DISTINCT
+## SELECT
+
+### Built-in functions
+
+For the sample built-in functions below you don't even need a WHERE clause:
+
+```sql
+SELECT 
+  version(),
+  user(),
+  database()
+;
+```
+
+### DISTINCT
 
 ```sql
 -- Only print unique values from the column
@@ -623,7 +650,7 @@ SELECT DISTINCT column1, column2
 --         3|Writing Utensils|
 ```
 
-## TRIM
+### TRIM
 
 Removes spaces or specified characters from both ends of a string.
 
@@ -631,7 +658,7 @@ Removes spaces or specified characters from both ends of a string.
 SELECT TRIM(name) FROM employees;
 ```
 
-## COALESCE
+### COALESCE
 
 Return the first non-null value in a list of columns. If all the values in the list of columns are NULL, then the function returns NULL
 
@@ -655,7 +682,7 @@ FROM student s
 SELECT COALESCE(column1, 'Entry not found') FROM table1;
 ```
 
-## UPPER
+### UPPER
 
 ```sql
 SELECT UPPER(name)
@@ -666,13 +693,13 @@ SELECT CONCAT(
 ) AS name
 ```
 
-## ROUND
+### ROUND
 
 ```sql
 SELECT ROUND(AVG(column1))
 ```
 
-## EXCEPT
+### EXCEPT
 
 This function doesn't work in PostgreSQL. Works in BigQuery.
 
@@ -684,7 +711,7 @@ FROM student s
 
 ```
 
-## CONCAT
+### CONCAT
 
 Concatenate two columns:
 ```sql
@@ -696,7 +723,7 @@ FROM employee;
 ```
 
 
-## Random sampling
+### Random sampling
 
 https://render.com/blog/postgresql-random-samples-big-tables
 
@@ -744,7 +771,7 @@ WHERE last_name = 'Wayne'
 
 ```
 
-## CASE WHEN
+### CASE WHEN
 
 Creating a new column / field based on a condition for the other columns. 
 
@@ -796,7 +823,7 @@ ON e.emp_id = nt.emp_id
 GROUP BY sex
 ```
 
-## Aggregate statements
+### Aggregate statements
 
 > Note: aggregate functions such as AVG, MIN, and MAX cannot be used in a WHERE clause directly - they have to be wrapped in a subquery.
 
@@ -814,7 +841,7 @@ FROM table1
 GROUP BY 1 2 ORDER BY 2 DESC
 ```
 
-### COUNT
+#### COUNT
 
 ```sql
 -- COUNT
@@ -833,7 +860,7 @@ SELECT COUNT(DISTINCT(sex)) FROM employee;
 SUM(CASE WHEN state='approved' THEN 1 ELSE 0 END)
 ```
 
-### SUM
+#### SUM
 
 ```sql
 -- SUM
@@ -843,7 +870,7 @@ SELECT SUM(column1)
 SELECT SUM(total_sales), emp_id FROM works_with GROUP BY emp_id;
 ```
 
-### MIN/MAX
+#### MIN/MAX
 
 ```sql
 -- MIN, MAX
@@ -861,14 +888,14 @@ FROM employees
 WHERE salary < (SELECT MAX(salary) FROM employees);
 ```
 
-### AVG
+#### AVG
 
 ```sql
 -- AVG
 SELECT AVG(column1) 
 ```
 
-### GROUP BY 
+#### GROUP BY 
 
 ```sql
 -- GROUP BY
@@ -936,7 +963,7 @@ SELECT super_id, COUNT(DISTINCT(emp_id)) FROM employee GROUP BY super_id;
 - `select major_id, count(*) from students group by major_id;` count unique values in column 'major_id'
 - `select major_id, min(gpa) from students group by major_id;` view min value in each group within column major_id
 
-### STRING_AGG
+#### STRING_AGG
 ```sql
 -- STRING_AGG to concatenate strings
 -- Below, the ORDER BY within the agg function is optional - it's just to sort the concatenated names lexicographically within each concatenation group
@@ -984,7 +1011,6 @@ SELECT STRING_AGG(CAST(emp_id AS VARCHAR), ' | ') -- VARCHAR for PostgreSQL and 
 FROM test.employee
 ```
 
-# Clauses
 
 ## WHERE
 
