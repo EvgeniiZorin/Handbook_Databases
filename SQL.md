@@ -14,6 +14,7 @@
   - [Character](#character)
   - [Numeric](#numeric)
   - [Temporal](#temporal)
+  - [NULL](#null)
   - [other](#other)
   - [Type casting](#type-casting)
   - [Array \> column etc.](#array--column-etc)
@@ -51,7 +52,6 @@
   - [LIMIT](#limit)
   - [UNION](#union)
 - [Constraints](#constraints)
-- [Keys](#keys)
   - [Primary key](#primary-key)
   - [Composite primary key](#composite-primary-key)
   - [Foreign key](#foreign-key)
@@ -70,6 +70,7 @@
   - [Full (outer) join](#full-outer-join)
   - [Multi-table joins](#multi-table-joins)
   - [Self join](#self-join)
+  - [Cartesian product](#cartesian-product)
 - [Pivot](#pivot)
   - [Wide -\> long](#wide---long)
   - [Long -\> wide](#long---wide)
@@ -100,8 +101,8 @@ A few types of schema in a relational database:
 - Snowflake schema
 
 Basic commands: 
-| Command | Function | PostgreSQL | MySQL |
-| - | - | - | - |
+| Command | PostgreSQL | MySQL |
+| - | - | - |
 | List current dir | `\! cd` | |
 | List files in the current dir | `\! dir` | |
 | Import file | `\i file.sql` | |
@@ -438,8 +439,10 @@ SELECT NOW()::TIME
 -- An example
 (NOW()::DATE + INTERVAL '10 MONTHS')::DATE
 
+
 -- EXTRACT: Extracting fields: DAY, DOW, MONTH, YEAR, CENTURY
 -- EXTRACT can be used in SELECT and WHERE
+-- PostgreSQL
 EXTRACT (YEAR FROM NOW())
 SELECT YEAR(NOW()), MONTH(NOW()), DAY(NOW()), HOUR(NOW()), MINUTE(NOW()), SECOND(NOW())
 -- Select month of February
@@ -447,6 +450,8 @@ SELECT * FROM notable_dates WHERE EXTRACT (MONTH FROM date1) = 02
 -- Compare two years
 WHERE EXTRACT(YEAR FROM date1) < EXTRACT(YEAR FROM CURRENT_DATE())
 WHERE EXTRACT(YEAR FROM e.birth_date) IN (1967, 1961)
+-- MySQL
+WHERE YEAR(date1) = 2004 -- or '2004'
 
 -- Select a part of a date
 -- year, month, day, hour, minute, second
@@ -502,6 +507,19 @@ ORDER BY
   EXTRACT(MONTH FROM date), 
   EXTRACT(DAY FROM date) DESC;
 ```
+
+## NULL
+
+Different meanings / contexts of NULL:
+- Not applicable: employee ID column for a transaction that took place at an ATM machine
+- Value not yet known: federal ID is not known at the time a customer row is created
+- Value undefined: when an account is created for a product that has not yet been added to the database
+
+Rules:
+- An expression can *be* null, but it can never *equal* null: 
+  - ❌ `WHERE return_date = NULL` does not return any rows
+  - ✅ `WHERE return_date IS NULL` or `IS NOT NULL`
+- Two nulls are never equal to each other
 
 ## other
 
@@ -1264,15 +1282,18 @@ age IS NOT NULL
 
 -- IN
 -- values are in a list
-column1 IN ('Value1', 'Value2', 'Value3')
+column1 IN ('Value1', 'Value2', 'Value3') -- or NOT IN
 
--- BETWEEN
--- Between two numbers
+
+-- BETWEEN (PostgreSQL, MySQL)
+-- Inclusive between <lower limit> and <upper limit>; >= lower_limit AND <= upper_limit
 age BETWEEN 25 AND 30
 -- Values between two dates
-date BETWEEN DATE '1999-01-01' AND '2015-01-01'
+date BETWEEN '1999-01-01' AND '2015-01-01' -- between 1991-01-01 00:00:00 (midnight) and 2015-01-01 00:00:00 (midnight)
 -- Values alphabetically between two strings
 column1 BETWEEN 'Alpha' AND 'Beta'
+-- Include names like 'FARNELL', 'FENNEL', 'FRANKLIN', 'FRAZIER'
+column1 BETWEEN 'FA' and 'FRB' -- if you put 'FR' instead of 'FRB', it won't include 'FRANKLIN' and 'FRAZIER'
 
 -- Odd number
 MOD(columnName, 2) <> 0
@@ -1281,6 +1302,17 @@ MOD(columnName, 2) = 0
 ```
 
 ### REGEX
+
+First, very basic regex functions:
+
+```sql
+-- LEFT
+-- PostgreSQL, MySQL
+-- Match last names that begin with 'Q'
+WHERE LEFT(last_name, 1) = 'Q' 
+-- Match last names that begin with 'Qu'
+WHERE LEFT(last_name, 2) = 'Qu'
+```
 
 There are two ways of writing regular expressions in SQL:
 - `LIKE`: simplified REGEXP; is not as powerful, but typically faster than regular expressions.
@@ -1295,9 +1327,9 @@ FROM courses
 WHERE course LIKE '_lgorithms';
 ```
 
-| Sign | Meaning |
+| Wildcard character | Meaning |
 | --- | --- |
-| `%` | any character, any number of times |
+| `%` | any character, any number of times (including 0) |
 | `_` | exactly 1 character |
 
 These are used with the SQL keyword `LIKE`
@@ -1318,6 +1350,8 @@ LIKE '_e%'
 LIKE '% %'
 -- Value ends with '.com'
 LIKE '%.com';
+-- last_name like MATTHEWS, WALTERS, WATTS
+LIKE '_A_T%S'
 -- negative LIKE
 NOT LIKE '_lgorithms';
 -- case-insensitive
@@ -1521,7 +1555,6 @@ ALTER TABLE person MODIFY person_id SMALLINT UNSIGNED AUTO_INCREMENT;
 SET foreign_key_checks=1;
 ```
 
-# Keys
 
 ## Primary key
 
@@ -1634,7 +1667,9 @@ ALTER TABLE table_name ADD PRIMARY KEY(column1, column2);
 A foreign key:
 - Field in a table that references the primary key of another table
 - Makes a connection between two tables via their joint column. 
-- Enforce data integrity, making sure the data confirms to some rules when it is added to the DB.
+- Enforce data integrity, making sure the data confirms to some rules when it is added to the DB. More specifically, it *verifies that the values in one table exist in another table.*
+- It is NOT necessary to have a foreign key constraint in place in order to join two tables
+- A table might include a *self-referencing foreign key*, which means that it includes a column that points to the primary key within the same table; for example, a table about movies, where each movie has a `film_id`, can contain column `prequel_film_id` which points to the film's parent `film_id`
 
 ON DELETE SET NULL: if in the table 1 a row is deleted, then in the table 2 that references that first table via foreign key the corresponding value is set to NULL;
 
@@ -1786,7 +1821,7 @@ SELECT employee_id, if(employee_id % 2 = 1 AND name NOT LIKE 'M%', salary, 0) AS
 
 # Joins
 
-JOIN is a command for linking rows from two or more tables based on a column common for all of them. 
+JOIN is a command for linking rows from two or more tables based on a column common for all of them, using the subclause `ON`.
 
 | Type | Explanation |
 | - | - |
@@ -1834,6 +1869,7 @@ Table `course`:
 |         1 |          2|
 |         2 |          1|
 |         3 |         10|
+
 
 ## ON...AND vs ON...WHERE
 
@@ -1936,11 +1972,11 @@ ORDER BY post.post_id, post_comment_id
 
 **USING**
 
+if a column used for join has the same name, USING can be used where you don't specify the table it is coming from;
+
 the USING clause: shorthand form: `USING a`, `USING (a, b)` - where if you are joining on multiple columns you just write them in a tuple where each element is separated by a coma
 
 USING -any columns mentioned in the USING list will appear in the joined list only once with an unqualified name
-
-if a column used for join has the same name, USING can be used where you don't specify the table it is coming from;
 
 ```sql
 SELECT
@@ -1948,7 +1984,8 @@ SELECT
   title,
   review
 FROM post
-INNER JOIN post_comment USING(post_id)
+INNER JOIN post_comment 
+  USING(post_id)
 ORDER BY post_id, post_comment_id
 ```
 
@@ -2139,9 +2176,41 @@ INNER JOIN Orders o ON c.CustomerID = o.CustomerID
 LEFT JOIN Products p ON o.ProductID = p.ProductID;
 ```
 
+The join order does not matter! All the variations below will return the same result, but thw rows might be in different order:
+```sql
+SELECT 
+  c.first_name,
+  c.last_name,
+  ct.city
+
+-- variation 1
+FROM customer c
+INNER JOIN address a
+  ON c.address_id = a.address_id
+INNER JOIN city ct
+  ON a.city_id = ct.city_id
+
+-- variation 2
+FROM city ct
+INNER JOIN address a
+  ON a.city_id = ct.city_id
+INNER JOIN customer c
+  ON c.address_id = a.address_id
+
+-- variation 3
+FROM address a
+INNER JOIN city ct
+  ON a.city_id = ct.city_id
+INNER JOIN customer c
+  ON c.address_id = a.address_id
+```
+
 ## Self join
 
 Joining a table with itself. Can utilise inner, left, right, or full outer joins. 
+
+Why?
+- Some tables might include a self-referencing foreign key, which means that it includes a column that points to the primary key within the same table
 
 For example, let's consider the following table. 
 | id | name  | salary | managerId |
@@ -2152,19 +2221,53 @@ For example, let's consider the following table.
 | 4  | Max   | 90000  | null      |
 
 We can join each employee with their manager:
-| name1 | salary1 | name2 | salary2 |
-| ----- | ------- | ----- | ------- |
-| Joe   | 70000   | Sam   | 60000   |
-| Henry | 80000   | Max   | 90000   |
+| employee_name | employee_salary | manager_name | manager_salary |
+| ------------- | --------------- | ------------ | -------------- |
+| Joe           | 70000           | Sam          | 60000          |
+| Henry         | 80000           | Max          | 90000          |
 
 This can be done by using the following command:
 ```sql
-SELECT e1.name AS name1, e1.salary AS salary1, e2.name AS name2, e2.salary AS salary2
+SELECT 
+  e1.name AS employee_name, 
+  e1.salary AS employee_salary, 
+  e2.name AS manager_name, 
+  e2.salary AS manager_salary
 FROM Employee e1
-JOIN Employee e2 -- basically inner join
+INNER JOIN Employee e2 
+-- using self-referencing foreign key managerId
 ON e1.managerId = e2.id
 ```
 
+Another example - return all addresses that are in the same city:
+```sql
+SELECT 
+	a1.address AS address1,
+	a2.address AS address2,
+	a1.city_id 
+FROM address AS a1
+INNER JOIN address AS a2
+	ON a1.city_id = a2.city_id
+-- here you use `<` to prevent duplication. If you use `<>` instead, you will get duplication like addressA, addressB, same city and addressB, addressA, same city
+WHERE a1.address < a2.address;
+```
+
+## Cartesian product 
+
+Cartesian product (a.k.a. cross join) is when you join two tables without specifying how to join them, which generates every permutation of the two tables. 
+
+> This join type is used rarely
+
+For example, in this case you join two tables without specifying a condition:
+- `SELECT COUNT(*) FROM customer` - $599$ rows
+- `SELECT COUNT(*) FROM payment` - $16044$ rows
+- `SELECT COUNT(*) FROM customer INNER JOIN payment` - $599 * 16044 = 9610356$ rows
+```sql
+SELECT 
+  *
+FROM customer 
+INNER JOIN payment;
+```
 
 # Pivot
 
