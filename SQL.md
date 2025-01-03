@@ -50,16 +50,16 @@
   - [ORDER BY](#order-by)
   - [OFFSET](#offset)
   - [LIMIT](#limit)
-  - [UNION](#union)
 - [Constraints](#constraints)
   - [Primary key](#primary-key)
   - [Composite primary key](#composite-primary-key)
   - [Foreign key](#foreign-key)
 - [Trigger](#trigger)
 - [Operators](#operators)
-  - [Logical operators](#logical-operators)
-  - [Comparison operators](#comparison-operators)
-  - [Arithmetic operations](#arithmetic-operations)
+  - [Logical](#logical)
+  - [Comparison](#comparison)
+  - [Arithmetic](#arithmetic)
+  - [Set](#set)
 - [IF conditions](#if-conditions)
 - [Joins](#joins)
   - [ON...AND vs ON...WHERE](#onand-vs-onwhere)
@@ -71,6 +71,7 @@
   - [Multi-table joins](#multi-table-joins)
   - [Self join](#self-join)
   - [Cartesian product](#cartesian-product)
+- [Set operations](#set-operations)
 - [Pivot](#pivot)
   - [Wide -\> long](#wide---long)
   - [Long -\> wide](#long---wide)
@@ -1444,40 +1445,6 @@ Skip $n$ rows.
 
 show n first rows.
 
-## UNION
-
-UNION combines the results from several SELECT statements.
-
-Rule:
-- You have to have the same number of columns in the two statements that are joined by the `UNION` statement
-- The columns being concatenated have to have the same data type
-
-```sql
--- Return a list of employee names and then branch names located below the first list
-SELECT first_name -- can also specify the name of the common column, e.g. `AS name_of_the_union_column`
-FROM employee 
-UNION 
-SELECT branch_name 
-FROM branch;
-
--- Find a list of all clients and branch suppliers ids
-SELECT client_name, branch_id -- to increase clarity, can specify the table: `client.branch_id`
-FROM client 
-UNION
-SELECT supplier_name, branch_id -- same: `branch_supplier.branch_id`
-FROM branch_supplier;
-
--- Get distinct values from two columns - emp_id and is_married
-SELECT DISTINCT (a1.emp_marr_vals)
-FROM (
-	SELECT emp_id AS emp_marr_vals
-	FROM newtable
-	UNION 
-	SELECT is_married
-	FROM newtable
-) AS a1
-```
-
 # Constraints
 
 Constraints are used to limit the data types for specific columns.
@@ -1731,7 +1698,7 @@ DELIMITER ;
 
 Operators are usually used with a WHERE statement. 
 
-## Logical operators
+## Logical
 
 | Operator | Meaning |
 | - | - |
@@ -1754,7 +1721,7 @@ A note about the NOT condition; the two statements below seem to be equivalent:
 
 ```
 
-## Comparison operators
+## Comparison
 
 Can be used for comparing numbers or strings. 
 
@@ -1772,7 +1739,7 @@ Can be used for comparing numbers or strings.
 > Therefore, use `Column IS NULL` or NOT NULL
 
 
-## Arithmetic operations
+## Arithmetic
 
 ```sql
 SELECT 10 + 2;
@@ -1806,6 +1773,27 @@ SELECT MAX(column1)
 SELECT ROUND( (SUM(comparison)::numeric / COUNT(comparison)::numeric) * 100 , 2 ) AS immediate_percentage
 ```
 
+## Set
+
+> To read more on set operations, see the section **Set operations**
+
+| Operator | Explanation |
+| - | - |
+| `UNION` | Combine all the rows from two or more sets. Sort the combined set and remove duplicates. |
+| `UNION ALL` | Like UNION, but does not sort the combined set and does not remove duplicates. Thus, the number of rows in the final data set always equals to the sum of the number of rows in the sets being combined. |
+| `INTERSECT` | Performs intersection. If the two queries in a compound query return non-overlapping data sets, the intersection will be an empty set. Removes duplicate rows in the overlapping region. |
+| `INTERSECT ALL` | Same as INTERSECT but doesn't remove the duplicates in the overlapping region. |
+| `EXCEPT` | Performs the EXCEPT set operation - returns the first result set minus any overlap with the second result set. Removes all occurrences of duplicate data from set A. |
+| `EXCEPT ALL` | Same as EXCEPT but removes only one occurrence of duplicate data from set A for every occurrence in set B. | 
+
+Examples:
+```sql
+-- Set A: {10, 10, 10, 11, 12}
+-- Set B: {10, 10}
+
+-- A except B: {11, 12}
+-- A except all B: {10, 11, 12}
+```
 
 # IF conditions
 
@@ -2267,6 +2255,66 @@ SELECT
   *
 FROM customer 
 INNER JOIN payment;
+```
+
+# Set operations
+
+You perform a set operation by placing a set operator between two `select` statements
+
+Example:
+```sql
+SELECT ...
+FROM table1
+WHERE ...
+UNION -- UNION ALL, INTERSECT, INTERSECT ALL, EXCEPT
+SELECT ...
+FROM table2
+WHERE ...
+```
+
+UNION combines the results from several SELECT statements.
+
+Rule:
+- The two statements / tables / data sets that are joined by the `UNION` statement MUST have the same number of columns
+- The columns being concatenated MUST have the same data type
+
+```sql
+-- Return a list of employee names and then branch names located below the first list
+SELECT first_name -- can also specify the name of the common column, e.g. `AS name_of_the_union_column`
+FROM employee 
+UNION -- can also be UNION ALL
+SELECT branch_name 
+FROM branch
+
+-- You can also include ORDER BY, but it has to come after the last query AND you have to sort it by the names of the first query
+SELECT 
+  a.first_name AS fname,
+  a.last_name AS lname
+FROM actor a
+UNION ALL
+SELECT 
+  c.first_name,
+  c.last_name
+FROM customer c
+ORDER BY lname, fname
+;
+
+-- Find a list of all clients and branch suppliers ids
+SELECT client_name, branch_id -- to increase clarity, can specify the table: `client.branch_id`
+FROM client 
+UNION
+SELECT supplier_name, branch_id -- same: `branch_supplier.branch_id`
+FROM branch_supplier;
+
+-- Get distinct values from two columns - emp_id and is_married
+SELECT DISTINCT (a1.emp_marr_vals)
+FROM (
+	SELECT emp_id AS emp_marr_vals
+	FROM newtable
+	UNION 
+	SELECT is_married
+	FROM newtable
+) AS a1
 ```
 
 # Pivot
