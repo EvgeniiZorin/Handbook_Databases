@@ -13,6 +13,7 @@
 - [Datatypes](#datatypes)
   - [Character](#character)
   - [Numeric](#numeric)
+    - [Round](#round)
   - [Temporal](#temporal)
   - [NULL](#null)
   - [Type casting](#type-casting)
@@ -22,16 +23,8 @@
   - [Aliases](#aliases)
   - [SELECT](#select)
     - [Built-in functions](#built-in-functions)
-    - [String manipulation](#string-manipulation)
-      - [CHAR](#char)
-      - [LENGTH](#length)
-      - [TRIM](#trim)
-      - [UPPER](#upper)
-    - [Workings with numbers](#workings-with-numbers)
-      - [Rounding](#rounding)
     - [DISTINCT](#distinct)
     - [COALESCE](#coalesce)
-    - [ROUND](#round)
     - [EXCEPT](#except)
     - [CONCAT](#concat)
     - [Random sampling](#random-sampling)
@@ -44,6 +37,7 @@
       - [MIN/MAX](#minmax)
       - [AVG](#avg)
       - [GROUP BY](#group-by)
+        - [WHERE vs HAVING](#where-vs-having)
       - [STRING\_AGG](#string_agg)
   - [FROM](#from)
     - [Types of tables](#types-of-tables)
@@ -53,7 +47,6 @@
       - [Views](#views)
   - [WHERE](#where)
     - [LIKE, REGEX](#like-regex)
-  - [HAVING](#having)
   - [ORDER BY](#order-by)
   - [OFFSET](#offset)
   - [LIMIT](#limit)
@@ -388,6 +381,64 @@ VARCHAR(20) CHARACTER SET latin1
 CREATE DATABASE database1 CHARACTER SET latin1;
 ```
 
+**SUBSTRING**
+- MySQL, PostgreSQL
+- For slicing
+- Indexes in SQL start with 1
+```sql
+-- Select substring from index 5 to index 10
+SELECT SUBSTRING('yes hello world', 5, 5); -- returns 'hello'
+```
+
+**CHAR**
+
+> Works for MySQL and PostgreSQL
+
+Returns the ASCII code / number for a character
+
+```sql
+SELECT ASCII('ñ') -- for instance, in character set UTF-8 it's a character 195
+```
+
+**LENGTH**
+
+> Works for MySQL and PostgreSQL
+>
+> Works only with string / character data types
+
+For a specified column, returns the string length of each row
+
+```sql
+SELECT LENGTH(name)
+FROM person;
+-- returns:
+-- length| -- int data type
+-- ------+
+--      9|
+--      2|
+--      5|
+--      5|
+```
+
+**TRIM**
+
+Removes spaces or specified characters from both ends of a string.
+
+```sql
+SELECT TRIM(name) FROM employees;
+```
+
+**UPPER**
+
+```sql
+SELECT UPPER(name)
+-- Capitalise the first letter only
+SELECT CONCAT(
+  UPPER(SUBSTRING(name,1,1)),
+  LOWER(SUBSTRING(name, 2, LENGTH(name) - 1))
+) AS name
+```
+
 ## Numeric
 
 | Datatype | Description | Example |
@@ -400,19 +451,65 @@ CREATE DATABASE database1 CHARACTER SET latin1;
 > Note 1: 
 > The numeric data types can be defined as `unsigned`, meaning that they are greater than or equal to zero.
 
+```sql
+-- | `POW(2, 3)` | Power; in this example, 2^3. Works in PostgreSQL, MySQL. |
+-- | `MOD(<number_to_round/column>, <number-by-which-to-divide>)` | Modulo: check the remainder of the division. In this case, remainder is zero if the number is even. E.g. `MOD(3, 2)`, `MOD(column1, 2)`. Works in MySQL and PostgreSQL. |
+-- | `exp(x)` | Calculate the e^x |
+-- | `ln(x)` | Calculate the natural log of x |
+-- | `sqrt(x)` | Calculate the square root of x |
+
+-- In a column 'comparison' with binary values (0 and 1), calculate percentage that all ones make from the total amount
+SELECT ROUND( (SUM(comparison)::numeric / COUNT(comparison)::numeric) * 100 , 2 ) AS immediate_percentage
+
+-- SIGN
+-- Show the sign of the signed number
+-- `1` if positive, `-1` if negative, and `0` if the number is a zero.
+SELECT
+  balance,
+  SIGN(balance) AS sign
+FROM account
+-- | balance | sign |
+-- | - | - |
+-- | 102.21 | 1 |
+-- | 0 | 0 |
+-- | -122 | -1 |
+
+-- ABS
+-- Shows the absolute value of a signed number
+SELECT ABS(balance) FROM account
+```
+
+### Round
+
+Controlling number precision:
+| Operator | Description |
+| - | - |
+| `ROUND(<number/column-to-round>)` | Round a value to the nearest whole number. |
+| `ROUND(<number_to_round/column>, <decimals_places>)`. | Round a value / column to the nearest number with the specified precision after decimal point. Example: `ROUND(15.51235312, 2)` rounds to 15.51. |
+| `FLOOR(5.1)` | Round DOWN a value. E.g. `FLOOR(7.1)`, `FLOOR(7.9)` produces 7. |
+| `CEIL(5.9)` | Round UP a value. E.g. `CEIL(7.1)`, `CEIL(7.9)` produces 8. |
+
 ## Temporal
 
 | Datatype | Description | Example |
 | - | - | - |
-| `TIMESTAMP` 
-
-| `DATETIME` | `YYYY-MM-DD HH:MM:SS` | Column to hold information about when a customer order was actually shipped. |
-| `TIMESTAMP` | Same information as DATETIME, but 1) is automatically populated with the current date/time by the MySQL server when a row is added or when a row is modified and 2) has a much smaller range of acceptable values. | A column that tracks when a user last modified a particular row in a table. |
+| `TIMESTAMP` | Used by MySQL, PostgreSQL. Date format: `YYYY-MM-DD HH:MM:SS.MSS`. The TIMESTAMP data type has a range of '1970-01-01 00:00:01' UTC to '2038-01-09 03:14:07' UTC. It has varying properties, depending on the MySQL version and the SQL mode the server is running in. | A column that tracks when a user last modified a particular row in a table. |
+| `DATETIME` | MySQL. Date format is like TIMESTAMP.  The DATETIME type is used when you need values that contain both date and time information. MySQL retrieves and displays DATETIME values in 'YYYY-MM-DD HH:MM:SS' format. The supported range is '1000-01-01 00:00:00' to '9999-12-31 23:59:59'. | |
 | `DATE` | `YYYY-MM-DD` | Column to hold the expected future shipping date of a customer order. An employee's birth date. |
 | `YEAR` | `YYYY` | |
 | `TIME` | `HHH:MM:SS` | |
 
 > Date is inserted as string in the format `YYYY-MM-DD`, e.g. `2020-03-23`. MySQL or other servers will automatically convert the string into a date, given that the format of the string matches that of the column in the temporal datatype
+
+To automatically populate a table with the date that a record was inserted:
+```sql
+-- PostgreSQL, MySQL
+CREATE TABLE table1 (
+	name TEXT, 
+--	date TIMESTAMP
+	date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
 
 Different ways of writing time:
 | Date | Example |
@@ -456,24 +553,52 @@ SELECT NOW();
 -- Get years of a person from his birthday
 SELECT AGE(NOW(), date_of_birth);
 -- Get current date; returns 2022-03-16
+-- MySQL, CURDATE(); PostgreSQL, doesn't exist
 SELECT CURDATE()
-select CURRENT_DATE() -- or CURRENT_DATE -- returns '2024-11-21'
--- Get current time
+-- PostgreSQL, CURRENT_DATE;
+-- MySQL, CURRENT_DATE or CURRENT_DATE()
+select CURRENT_DATE() -- returns '2024-11-21'
+-- Get current time; format `11:34:22`
 SELECT CURTIME()
--- returns current date formatted as UNIX
+SELECT CURRENT_TIME()
+-- Get current timestamp
+SELECT CURRENT_TIMESTAMP
+-- returns current date formatted as UNIX time
 select UNIX_TIMESTAMP()
+```
 
--- INTERVAL: 'YEARS', 'MONTHS', 'DAYS'
--- This is used to add time period to dates
--- Time a year ago
+**INTERVAL**
+- Is used to add time period to dates
+- Used by PostgreSQL, MySQL
+- Interval types (note: in PostgreSQL, can write as singular or plural - DAY or DAYS; in MySQL, only as singular - DAY): `second`, `minute`, `hour`, `day`, `month`, `year`, `minute_second`, `hour_second`, `year_month`
+
+```sql
+-- Current date + 5 days
+-- PostgreSQL 
+SELECT CURRENT_DATE + INTERVAL '5 DAY'
+-- MySQL
+SELECT CURRENT_DATE() + INTERVAL 5 DAY;
+SELECT DATE_ADD(CURRENT_DATE(), INTERVAL 5 DAY);
+-- Time a year ago: 
 NOW() - INTERVAL '1 YEAR';
 -- Select birthdays between 1977-05-04 and 30 days before that
 SELECT * FROM personal_data 
 WHERE birthday < '1977-05-04'::date 
 AND birthday > '1977-05-04'::date - INTERVAL '30 DAYS';
 
+-- Add 3 hours, 27 minutes, and 11 seconds to the current timestamp
+-- MySQL
+SELECT DATE_ADD(CURRENT_TIMESTAMP(), INTERVAL '3:27:11' HOUR_SECOND)
+-- PostgreSQL
+SELECT CURRENT_TIMESTAMP + INTERVAL '3:27:11' HOUR_SECOND;
+-- MySQL: add 9 years and 11 months to a birth_date
+UPDATE employee
+SET birth_date = DATE_ADD(birth_date, INTERVAL '9-11' YEAR_MONTH)
+WHERE emp_id = 123;
+```
 
-
+**Other**
+```sql
 -- Typecasting
 -- YYYY-MM-DD
 SELECT NOW()::DATE
@@ -482,11 +607,33 @@ SELECT NOW()::TIME
 -- An example
 (NOW()::DATE + INTERVAL '10 MONTHS')::DATE
 
+-- STR_TO_DATE()
+-- Change string format to specified datetime format
+-- MySQL
+-- Returns DATETIME, DATE, or TIME value depending on the contents of the format string
+SELECT STR_TO_DATE('September 17, 2019', '%M %d, %Y'); -- generates DATE format: `YYYY-MM-DD`
+```
 
+**DAYNAME()**
+- MySQL
+- Extracts an entity from a date
+- *Instead of this, it is better to use EXTRACT*
+```sql
+SELECT DAYNAME('2019-09-18') -- > Wednesday
+```
+
+**EXTRACT**
+- Extracts fields: DAY, DOW, MONTH, YEAR, CENTURY
+- EXTRACT can be used in SELECT and WHERE
+- PostgreSQL, MySQL
+```sql
 -- EXTRACT: Extracting fields: DAY, DOW, MONTH, YEAR, CENTURY
 -- EXTRACT can be used in SELECT and WHERE
 -- PostgreSQL
 EXTRACT (YEAR FROM NOW())
+-- MySQL
+EXTRACT(YEAR FROM CURRENT_DATE())
+-- MySQL
 SELECT YEAR(NOW()), MONTH(NOW()), DAY(NOW()), HOUR(NOW()), MINUTE(NOW()), SECOND(NOW())
 -- Select month of February
 SELECT * FROM notable_dates WHERE EXTRACT (MONTH FROM date1) = 02
@@ -495,7 +642,9 @@ WHERE EXTRACT(YEAR FROM date1) < EXTRACT(YEAR FROM CURRENT_DATE())
 WHERE EXTRACT(YEAR FROM e.birth_date) IN (1967, 1961)
 -- MySQL
 WHERE YEAR(date1) = 2004 -- or '2004'
+```
 
+```sql
 -- Select a part of a date
 -- year, month, day, hour, minute, second
 SELECT date_part('year', (SELECT date_column_name))
@@ -504,8 +653,12 @@ SELECT date_part('year', (SELECT date_column_name))
 SELECT TO_CHAR(order_date, 'YYYY-MM')
 
 -- DATEDIFF
--- returns the number of days between two dates
-SELECT DATEDIFF('2024-12-31', '2024-01-01')
+-- MySQL
+-- returns the number of full days between two dates
+-- ignores the time of day in its arguments
+SELECT DATEDIFF('2019-09-03', '2019-06-21') -- > 74
+SELECT DATEDIFF('2019-09-03 23:59:59', '2019-06-21 00:00:01') -- > 74
+SELECT DATEDIFF('2019-06-21', '2019-09-03') -- > -74
 
 -- MySQL
 -- if you have date containing minutes, hours, etc. apart from the date itself, you can filter only based on year,month,day like this:
@@ -515,22 +668,22 @@ WHERE return_date = date('2005-07-05')
 MySQL string formats to date type, e.g. `str_to_date('DEC-21-1980', '%b-%d-%Y')`:
 | Formatter | Definition | Example |
 | - | - | - |
-| `%a` | The short weekday name | Sun, Mon, ... |
+| `%Y` | The four-digit year | |
+| `%y` | The two-digit year | |
+| `%M` | The full month name | (January..December) |
+| `%m` | The numeric month | (0..12) |
 | `%b` | The short month name | Jan, Feb, ... |
-| `%c` | The numeric month | (0..12) |
-| `%d` | The numeric day of the month | (00..31) |
-| `%f` | The number of microseconds | (000000..999999) |
+| `%W` | The full weekday name | (Sunday..Saturday) |
+| `%w` | The numeric day of the week | (0=Sunday..6=Saturday) |
+| `%a` | The short weekday name | Sun, Mon, ... |
+| `%d` | The numeric day of the month | (01..31) |
+| `%j` | The day of year | (001..366) |
 | `%H` | The hour of the day, in 24-hour format | (00..23) |
 | `%h` | The hour of the day, in 12-hour format | (01..12) |
 | `%i` | The minutes within the hour | (00..59) |
-| `%j` | The day of year | (001..366) |
-| `%M` | The full month name | (January..December) |
-| `%m` | The numeric month | |
-| `%p` | AM or PM | |
 | `%s` | The number of seconds | (00.59) |
-| `%W` | The full weekday name | (Sunday..Saturday) |
-| `%w` | The numeric day of the week | (0=Sunday..6=Saturday) |
-| `%Y` | The four-digit year | |
+| `%f` | The number of microseconds | (000000..999999) |
+| `%p` | AM or PM | |
 
 Examples:
 ```sql
@@ -578,7 +731,8 @@ round( SUM(rating::dec / position::dec)::dec / COUNT(rating)::dec, 2) AS quality
 -- another way
 SELECT 
   CAST(sss2.sku_id AS STRING),
-  CAST(age AS varchar)
+  CAST(age AS varchar),
+  CAST('123' AS SIGNED INTEGER)
 ```
 
 Complex data types:
@@ -752,100 +906,6 @@ SELECT
 ;
 ```
 
-### String manipulation
-
-#### CHAR
-
-> Works for MySQL and PostgreSQL
-
-Returns the ASCII code / number for a character
-
-```sql
-SELECT ASCII('ñ') -- for instance, in character set UTF-8 it's a character 195
-```
-
-
-#### LENGTH
-
-> Works for MySQL and PostgreSQL
->
-> Works only with string / character data types
-
-For a specified column, returns the string length of each row
-
-```sql
-SELECT LENGTH(name)
-FROM person;
--- returns:
--- length| -- int data type
--- ------+
---      9|
---      2|
---      5|
---      5|
-```
-
-#### TRIM
-
-Removes spaces or specified characters from both ends of a string.
-
-```sql
-SELECT TRIM(name) FROM employees;
-```
-
-#### UPPER
-
-```sql
-SELECT UPPER(name)
--- Capitalise the first letter only
-SELECT CONCAT(
-  UPPER(SUBSTRING(name,1,1)),
-  LOWER(SUBSTRING(name, 2, LENGTH(name) - 1))
-) AS name
-```
-
-### Workings with numbers
-
-```sql
--- | `POW(2, 3)` | Power; in this example, 2^3. Works in PostgreSQL, MySQL. |
--- | `MOD(<number_to_round/column>, <number-by-which-to-divide>)` | Modulo: check the remainder of the division. In this case, remainder is zero if the number is even. E.g. `MOD(3, 2)`, `MOD(column1, 2)`. Works in MySQL and PostgreSQL. |
--- | `exp(x)` | Calculate the e^x |
--- | `ln(x)` | Calculate the natural log of x |
--- | `sqrt(x)` | Calculate the square root of x |
-
--- In a column 'comparison' with binary values (0 and 1), calculate percentage that all ones make from the total amount
-SELECT ROUND( (SUM(comparison)::numeric / COUNT(comparison)::numeric) * 100 , 2 ) AS immediate_percentage
-
--- SIGN
--- Show the sign of the signed number
--- `1` if positive, `-1` if negative, and `0` if the number is a zero.
-SELECT
-  balance,
-  SIGN(balance) AS sign
-FROM account
--- | balance | sign |
--- | - | - |
--- | 102.21 | 1 |
--- | 0 | 0 |
--- | -122 | -1 |
-
--- ABS
--- Shows the absolute value of a signed number
-SELECT ABS(balance) FROM account
-```
-
-
-#### Rounding
-
-Controlling number precision:
-| Operator | Description |
-| - | - |
-| `ROUND(<number/column-to-round>)` | Round a value to the nearest whole number. |
-| `ROUND(<number_to_round/column>, <decimals_places>)`. | Round a value / column to the nearest number with the specified precision after decimal point. Example: `ROUND(15.51235312, 2)` rounds to 15.51. |
-| `FLOOR(5.1)` | Round DOWN a value. E.g. `FLOOR(7.1)`, `FLOOR(7.9)` produces 7. |
-| `CEIL(5.9)` | Round UP a value. E.g. `CEIL(7.1)`, `CEIL(7.9)` produces 8. |
-
-
 ### DISTINCT
 
 ```sql
@@ -898,12 +958,6 @@ FROM student s
 
 -- in this case get a value for NULL values
 SELECT COALESCE(column1, 'Entry not found') FROM table1;
-```
-
-### ROUND
-
-```sql
-SELECT ROUND(AVG(column1))
 ```
 
 ### EXCEPT
@@ -1089,21 +1143,28 @@ FROM employee;
 
 ### Aggregate statements
 
+Aggregate statements / functions can be used in two ways:
+- Implicit groups: there is no GROUP BY clause, so all rows are considered
+- Explicit groups: used with GROUP BY clause. You specify over which group of rows the aggregated functions should be applied.
+
 > Note: aggregate functions such as AVG, MIN, and MAX cannot be used in a WHERE clause directly - they have to be wrapped in a subquery.
 
 ```sql
 -- General form
-SELECT column1, column2, columnN aggregate_function(columnX)
-FROM table
-GROUP BY columns(s);
-
-SELECT column1, aggregate_function(column2) AS alias
-
---- we can use order of the tables in the filter statement - you basically substitute the names of columns in the filter statement with their ordinal number (index in the order of mention)
-SELECT column1, column2, column3
+-- On their own
+SELECT 
+  aggregate_function(column1) AS alias
 FROM table1
-GROUP BY 1 2 ORDER BY 2 DESC
+
+-- With GROUP BY
+SELECT 
+  column1, 
+  aggregate_function(column2)
+FROM table1
+GROUP BY column1;
 ```
+
+> Note: COUNT(*) counts all values including NULL; COUNT(column1), SUM(column1), MAX(column1), AVG(column1) do NOT count NULL;
 
 #### COUNT
 
@@ -1161,10 +1222,27 @@ SELECT AVG(column1)
 
 #### GROUP BY 
 
+> Note: you can either use WHERE or HAVING in GROUP BY for filtering. Please see the respective section for the differences.
+
+Can be:
+- Single-column grouping: `GROUP BY column1`
+- Multicolumn grouping: `GROUP BY column1, column2`
+
 ```sql
 -- GROUP BY
+--- we can use order of the tables in the filter statement - you basically substitute the names of columns in the filter statement with their ordinal number (index in the order of mention)
+SELECT 
+  column1, 
+  column2, 
+  COUNT(column3)
+FROM table1
+GROUP BY 1 2 
+ORDER BY 2 DESC
+
 -- Find out the total salary paid out by each department
-SELECT department_id, SUM(salary) as total_salary
+SELECT 
+  department_id, 
+  SUM(salary) as total_salary
 FROM employees
 GROUP BY department_id;
 -- Group by can be used with joins:
@@ -1174,6 +1252,42 @@ INNER JOIN Transactions t
 ON u.account = t.account
 GROUP BY u.name
 HAVING SUM(t.amount) > 10000
+
+-- You can also group based on values generated by expressions
+SELECT
+  EXTRACT(YEAR FROM rental_date) AS year,
+  COUNT(*) AS how_many
+FROM rental
+GROUP BY EXTRACT(YEAR FROM rental_date)
+
+-- WITH ROLLUP
+-- also show total counts (shown as NULL) for each subgroup
+-- is used in multicolumn grouping
+SELECT 
+	fa.actor_id,
+	f.rating,
+	COUNT(*)
+FROM film_actor fa
+INNER JOIN film f
+ON fa.film_id = f.film_id 
+GROUP BY fa.actor_id, f.rating WITH ROLLUP 
+ORDER BY 1, 2;
+-- below we can see that for actor_id=1, total count is 19, and it also shows subcounts for each rating for this actor_id
+-- actor_id|rating|COUNT(*)|
+-- --------+------+--------+
+--         |      |    5462|
+--        1|      |      19|
+--        1|G     |       4|
+--        1|NC-17 |       5|
+--        1|PG    |       6|
+--        1|PG-13 |       1|
+--        1|R     |       3|
+--        2|      |      25|
+--        2|G     |       7|
+--        2|NC-17 |       8|
+--        2|PG    |       6|
+--        2|PG-13 |       2|
+--        2|R     |       2|
 
 -- Note: order of GROUP BY doesn't matter - the final numbers will remain the sum, just the order will change
 -- https://www.kaggle.com/discussions/getting-started/100307
@@ -1197,19 +1311,6 @@ SELECT 2, 1, SUM(sale)
 FROM table1
 GROUP BY 2, 1
 -- they will produce the same calculations, just in different order
-
--- HAVING clause
--- The HAVING clause was added to SQL to filter the results of the GROUP BY clause since WHERE does not work with aggregated results. The syntax for the HAVING clause is as follows:
--- The HAVING clause is used in combination with the GROUP BY clause in a SELECT statement to filter rows based on specified conditions after the data is grouped and aggregated. It operates on the result of the grouping operation and filters the aggregated data.
-SELECT column1, aggregate_function(column2)
-FROM table
-GROUP BY column1
-HAVING aggregated_condition;
--- Find out which departments have a total salary payout greater than 50,000
-SELECT department_id, SUM(salary) as total_salary
-FROM employees
-GROUP BY department_id
-HAVING SUM(salary) > 50000;
 ```
 
 ```sql
@@ -1226,6 +1327,86 @@ SELECT super_id, COUNT(DISTINCT(emp_id)) FROM employee GROUP BY super_id;
 - `GROUP BY column1 HAVING COUNT(*) > 5` only group those values whose count is > 5
 - `select major_id, count(*) from students group by major_id;` count unique values in column 'major_id'
 - `select major_id, min(gpa) from students group by major_id;` view min value in each group within column major_id
+
+##### WHERE vs HAVING
+
+WHERE vs HAVING:
+- WHERE is used for filtering rows BEFORE any grouping or aggregation. Therefore, you cannot filter in your WHERE statements based on aggregate functions, as they haven't been generated yet
+- HAVING is used for filtering rows AFTER any grouping or aggregation.
+
+Example:
+```sql
+SELECT * FROM client;
+-- client_id|branch_id|
+-- ---------+---------+
+--       400|        2|
+--       401|        2|
+--       402|        3|
+--       403|        3|
+--       404|        2|
+--       405|        3|
+--       406|        2|
+
+SELECT 
+	branch_id,
+	COUNT(*) AS clients_per_branch
+FROM client
+WHERE client_id <> 405
+GROUP BY branch_id;
+-- branch_id|clients_per_branch|
+-- ---------+------------------+
+--         3|                 2|
+--         2|                 4|
+
+SELECT 
+	branch_id,
+	COUNT(*) AS clients_per_branch
+FROM client 
+GROUP BY branch_id
+HAVING COUNT(*) = 4;
+-- branch_id|clients_per_branch|
+-- ---------+------------------+
+--         2|                 4|
+```
+
+If you have both a WHERE clause and a HAVING clause in your query, WHERE will execute first.
+
+In order to use HAVING, you also need:
+- A GROUP BY clause
+- An aggregation in your SELECT section (SUM, MIN, MAX, etc.)
+
+```sql
+SELECT 
+  p.name,
+  p.surname,
+  COUNT(*)
+FROM person p
+INNER JOIN transactions t
+ON p.id = t.person_id
+GROUP BY 
+  name, 
+  surname
+HAVING COUNT(*) >= 40
+```
+
+
+```sql
+-- HAVING clause
+-- The HAVING clause was added to SQL to filter the results of the GROUP BY clause since WHERE does not work with aggregated results. The syntax for the HAVING clause is as follows:
+-- The HAVING clause is used in combination with the GROUP BY clause in a SELECT statement to filter rows based on specified conditions after the data is grouped and aggregated. It operates on the result of the grouping operation and filters the aggregated data.
+SELECT column1, aggregate_function(column2)
+FROM table
+GROUP BY column1
+HAVING aggregated_condition;
+-- Find out which departments have a total salary payout greater than 50,000
+SELECT 
+  department_id,
+  COUNT(*) AS number_of_employees, -- also can be `COUNT(employee_id) AS number_of_employees` 
+  SUM(salary) as total_salary
+FROM employees
+GROUP BY department_id
+HAVING SUM(salary) > 50000;
+```
 
 #### STRING_AGG
 ```sql
@@ -1612,33 +1793,6 @@ SELECT * FROM table1 WHERE name ~ '^Grandfather.+|.+parents.+'
 -- Entries start with a vowel
 SELECT DISTINCT(CITY) FROM STATION WHERE CITY ~ '^[AEIOUaeiou].*';
 SELECT DISTINCT(CITY) FROM STATION WHERE CITY REGEXP '^[aeiou]';
-```
-
-
-## HAVING
-
-WHERE is used for filtering rows BEFORE any grouping or aggregation.
-
-HAVING is used for filtering rows AFTER any grouping or aggregation.
-
-If you have both a WHERE clause and a HAVING clause in your query, WHERE will execute first.
-
-In order to use HAVING, you also need:
-- A GROUP BY clause
-- An aggregation in your SELECT section (SUM, MIN, MAX, etc.)
-
-```sql
-SELECT 
-  p.name,
-  p.surname,
-  COUNT(*)
-FROM person p
-INNER JOIN transactions t
-ON p.id = t.person_id
-GROUP BY 
-  name, 
-  surname
-HAVING COUNT(*) >= 40
 ```
 
 ## ORDER BY
