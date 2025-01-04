@@ -15,22 +15,29 @@
   - [Numeric](#numeric)
   - [Temporal](#temporal)
   - [NULL](#null)
-  - [other](#other)
   - [Type casting](#type-casting)
   - [Array \> column etc.](#array--column-etc)
+- [Operators](#operators)
 - [Query clauses](#query-clauses)
   - [Aliases](#aliases)
   - [SELECT](#select)
     - [Built-in functions](#built-in-functions)
+    - [String manipulation](#string-manipulation)
+      - [CHAR](#char)
+      - [LENGTH](#length)
+      - [TRIM](#trim)
+      - [UPPER](#upper)
+    - [Workings with numbers](#workings-with-numbers)
+      - [Rounding](#rounding)
     - [DISTINCT](#distinct)
-    - [TRIM](#trim)
     - [COALESCE](#coalesce)
-    - [UPPER](#upper)
     - [ROUND](#round)
     - [EXCEPT](#except)
     - [CONCAT](#concat)
     - [Random sampling](#random-sampling)
     - [CASE WHEN](#case-when)
+    - [QUOTE](#quote)
+    - [LIKE, REGEXP](#like-regexp)
     - [Aggregate statements](#aggregate-statements)
       - [COUNT](#count)
       - [SUM](#sum)
@@ -45,7 +52,7 @@
       - [Temporary tables](#temporary-tables)
       - [Views](#views)
   - [WHERE](#where)
-    - [REGEX](#regex)
+    - [LIKE, REGEX](#like-regex)
   - [HAVING](#having)
   - [ORDER BY](#order-by)
   - [OFFSET](#offset)
@@ -55,11 +62,6 @@
   - [Composite primary key](#composite-primary-key)
   - [Foreign key](#foreign-key)
 - [Trigger](#trigger)
-- [Operators](#operators)
-  - [Logical](#logical)
-  - [Comparison](#comparison)
-  - [Arithmetic](#arithmetic)
-  - [Set](#set)
 - [IF conditions](#if-conditions)
 - [Joins](#joins)
   - [ON...AND vs ON...WHERE](#onand-vs-onwhere)
@@ -102,7 +104,7 @@ A few types of schema in a relational database:
 - Snowflake schema
 
 Basic commands: 
-| Command | PostgreSQL | MySQL |
+| Command | PostgreSQL psql ; general | MySQL |
 | - | - | - |
 | List current dir | `\! cd` | |
 | List files in the current dir | `\! dir` | |
@@ -112,7 +114,7 @@ Basic commands:
 | Connect to a database | `\c database_name` | `use database_name;` |
 | Show tables | `\d` | `SHOW TABLES;` |
 | Show tables ONLY, without `id_seq` | `\dt` | |
-| Describe table / Check columns and details of a table in a database | `\d second_table`, `\d+ second_table` | `DESCRIBE tablename`, `DESC table1` |
+| Describe table / Check columns and details of a table in a database | `\d second_table`, `\d+ second_table` ; `SELECT column_name, data_type, character_maximum_length, column_default, is_nullable FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name = 'sample1';` | `DESCRIBE tablename`, `DESC table1` |
 | Show the supported character sets in your server | | `SHOW CHARACTER SET;` |
 | Connect to a database `database1` and format every output in XML | | | `sudo mysql -u root -p --xml database1` |
 | Check constraints of different tables and databases | | | `SELECT * FROM information_schema.TABLE_CONSTRAINTS;` |
@@ -367,13 +369,13 @@ Transaction Control Language:
 
 | Datatype | Description | Example |
 | - | - | - |
-| `CHAR(30)` | Fixed-length string. The string has to be EXACTLY the specified length, in this case, 30 characters - no more, no less. These are right-padded with spaces (to fill up the remaining characters not used by definition of a variable) and always consume the same number of bytes.| State abbreviations - all strings stored in the column are of the same length. |
+| `CHAR(30)` | Fixed-length, blank-padded strings. <br> The string has to be EXACTLY the specified length, in this case, 30 characters - no more, no less. These are right-padded with spaces (to fill up the remaining characters not used by definition of a variable) and always consume the same number of bytes.| State abbreviations - all strings stored in the column are of the same length. |
 | `VARCHAR(30)` | Variable-length string. The string can have a length up to the specified limit, such as 10, 20, 25 characters, but no more than e.g. 30 characters. | Varchar is appropriate for free-form data entry, e.g. notes column to hold data about customer interactions with your company's customer service department.  |
-| MySQL `tinytext` (not used), `text` (not used), `mediumtext`, `longtext` | To store longer strings such as emails, XML documents. | mediumtext and longtext can be used for storing documents. |
+| PostgreSQL `text` ; MySQL `tinytext`, `text`, `mediumtext`, `longtext` | To store longer strings such as emails, XML documents. | Note: in MySQL, `tinytext` and `text` aren't normally used. Instead, you can see more often the use of mediumtext and longtext that can be used for storing documents. |
 
 > Note 1: 
 > for character data types, use single quotes, not doublequotes. 
-> If you need to use a single apostrophe as part of the string, use it two times to escape: `'O''Brien'`
+> If you need to use a single apostrophe as part of the string, use it two times to escape, e.g. to write a string `O'Brien` you can escape like this: `'O''Brien'`
 
 > Note 2:
 > CHAR and VARCHAR are for storing relatively short text strings. For longer, use text data types
@@ -402,6 +404,8 @@ CREATE DATABASE database1 CHARACTER SET latin1;
 
 | Datatype | Description | Example |
 | - | - | - |
+| `TIMESTAMP` 
+
 | `DATETIME` | `YYYY-MM-DD HH:MM:SS` | Column to hold information about when a customer order was actually shipped. |
 | `TIMESTAMP` | Same information as DATETIME, but 1) is automatically populated with the current date/time by the MySQL server when a row is added or when a row is modified and 2) has a much smaller range of acceptable values. | A column that tracks when a user last modified a particular row in a table. |
 | `DATE` | `YYYY-MM-DD` | Column to hold the expected future shipping date of a customer order. An employee's birth date. |
@@ -410,7 +414,43 @@ CREATE DATABASE database1 CHARACTER SET latin1;
 
 > Date is inserted as string in the format `YYYY-MM-DD`, e.g. `2020-03-23`. MySQL or other servers will automatically convert the string into a date, given that the format of the string matches that of the column in the temporal datatype
 
+Different ways of writing time:
+| Date | Example |
+| - | - |
+| `YYYY` | 2014 |
+| `MM` | 01 to 12 |
+| `DD` | 01 to 31 |
+| `HH` | Hour: 00 to 23 |
+| `HHH` | Hours (elapsed): -838 to 838 |
+| `MI` | Minute: 00 to 59 |
+| `SS` | Seconds: 00 to 59 |
+
+**Time zones**
+
 ```sql
+-- Give current UTC time
+-- MySQL
+SELECT utc_timestamp();
+
+-- Check time zone settings - global time zone and session time zone
+-- SYSTEM = server is using the time zone setting from the server on which the database resides
+-- MySQL
+SELECT @@global.time_zone, @@session.time_zone
+-- Set time zone
+SET time_zone = 'Europe/Zurich';
+-- PostgreSQL
+SHOW timezone;
+SELECT current_setting('TIMEZONE');
+```
+
+**General**
+
+```sql
+-- Update a date for a row
+UPDATE rental
+SET return_date = '2019-09-17' -- or '2019-09-17 15:30:00'
+WHERE rental_id = 99999;
+
 -- Gives YYYY-MM-DD HH:MM:SS.MSMS
 SELECT NOW();
 -- Get years of a person from his birthday
@@ -431,6 +471,8 @@ NOW() - INTERVAL '1 YEAR';
 SELECT * FROM personal_data 
 WHERE birthday < '1977-05-04'::date 
 AND birthday > '1977-05-04'::date - INTERVAL '30 DAYS';
+
+
 
 -- Typecasting
 -- YYYY-MM-DD
@@ -522,21 +564,6 @@ Rules:
   - ✅ `WHERE return_date IS NULL` or `IS NOT NULL`
 - Two nulls are never equal to each other
 
-## other
-
-| Datatype | Description |
-| --- | --- |
-| `NULL` | Null. `column IS NULL`|
-
-```sql
--- eye_color can take on any value within a specified list
-CREATE TABLE table1(
-  -- primary key column to automatically increment
-  id SERIAL PRIMARY KEY, -- BIGSERIAL NOT NULL PRIMARY KEY; 
-  eye_color ENUM('BR', 'BL', 'GR') -- can only take on values from the list
-);
-```
-
 ## Type casting
 
 You can cast datatypes in the ways below:
@@ -593,6 +620,86 @@ where emp_id in (
 -- make a database selection as a name
 ```
 
+# Operators
+
+Operators can be used in SELECT and WHERE statements. 
+
+**Logical operators**
+
+| Operator | Meaning |
+| - | - |
+| `AND` | Shows data if all the conditions separated by `AND` are TRUE. |
+| `OR` | Shows data if any of the conditions separated by `OR` is TRUE. |
+| `NOT` | Shows data if the condition after `NOT` is not true. |
+| `BETWEEN ... AND ...` | Return values that are between the two values. `WHERE salary BETWEEN 5000 AND 10000` |
+| `IN` | TRUE if the operand is equal to one of a list of expressions |
+| `LIKE` | TRUE if the operand matches a pattern |
+
+Some examples:
+```sql
+SELECT 
+  column1, 
+  column2 
+FROM table1 
+WHERE 
+  condition1 AND condition2 AND NOT condition3
+;
+```
+
+**Comparison operators**
+
+Can be used for comparing numbers or strings. 
+
+| Operator | Meaning |
+| --- | -- |
+| `<`, `<=`, `>`, `>=` | |
+| `=` | equals |
+| `<>` | not equal. `WHERE name <> 'STEVEN'` |
+| `LIKE`, `~`, `REGEXP` | used for regex |
+| `IN` | if a value is contained within a list. |
+| `BETWEEN` | value is contained between two other values. |
+
+> Note: NULL value indicates an unavailable or unassigned value. The value NULL does not equal zero (0), nor does it equal a space (‘ ‘). Because the NULL value cannot be equal or unequal to any value, you cannot perform any comparison on this value by using operators such as ‘=’ or ‘<>’.
+>
+> Therefore, use `Column IS NULL` or NOT NULL
+
+**Arithmetic operators**
+
+| Operator | Meaning |
+| --- | --- |
+| `-`, `+`, `*`, `/` | |
+| `^` | power. Works in PostgreSQL. |
+| `%` | modulo |
+
+Examples:
+```sql
+SELECT 10 + 2;
+SELECT (100 * 20) / 10;
+SELECT column1 * 10;
+```
+
+**Set operators**
+
+> To read more on set operations, see the section **Set operations**
+
+| Operator | Explanation |
+| - | - |
+| `UNION` | Combine all the rows from two or more sets. Sort the combined set and remove duplicates. |
+| `UNION ALL` | Like UNION, but does not sort the combined set and does not remove duplicates. Thus, the number of rows in the final data set always equals to the sum of the number of rows in the sets being combined. |
+| `INTERSECT` | Performs intersection. If the two queries in a compound query return non-overlapping data sets, the intersection will be an empty set. Removes duplicate rows in the overlapping region. |
+| `INTERSECT ALL` | Same as INTERSECT but doesn't remove the duplicates in the overlapping region. |
+| `EXCEPT` | Performs the EXCEPT set operation - returns the first result set minus any overlap with the second result set. Removes all occurrences of duplicate data from set A. |
+| `EXCEPT ALL` | Same as EXCEPT but removes only one occurrence of duplicate data from set A for every occurrence in set B. | 
+
+Examples:
+```sql
+-- Set A: {10, 10, 10, 11, 12}
+-- Set B: {10, 10}
+
+-- A except B: {11, 12}
+-- A except all B: {10, 11, 12}
+```
+
 # Query clauses
 
 Query clauses:
@@ -645,6 +752,100 @@ SELECT
 ;
 ```
 
+### String manipulation
+
+#### CHAR
+
+> Works for MySQL and PostgreSQL
+
+Returns the ASCII code / number for a character
+
+```sql
+SELECT ASCII('ñ') -- for instance, in character set UTF-8 it's a character 195
+```
+
+
+#### LENGTH
+
+> Works for MySQL and PostgreSQL
+>
+> Works only with string / character data types
+
+For a specified column, returns the string length of each row
+
+```sql
+SELECT LENGTH(name)
+FROM person;
+-- returns:
+-- length| -- int data type
+-- ------+
+--      9|
+--      2|
+--      5|
+--      5|
+```
+
+#### TRIM
+
+Removes spaces or specified characters from both ends of a string.
+
+```sql
+SELECT TRIM(name) FROM employees;
+```
+
+#### UPPER
+
+```sql
+SELECT UPPER(name)
+-- Capitalise the first letter only
+SELECT CONCAT(
+  UPPER(SUBSTRING(name,1,1)),
+  LOWER(SUBSTRING(name, 2, LENGTH(name) - 1))
+) AS name
+```
+
+### Workings with numbers
+
+```sql
+-- | `POW(2, 3)` | Power; in this example, 2^3. Works in PostgreSQL, MySQL. |
+-- | `MOD(<number_to_round/column>, <number-by-which-to-divide>)` | Modulo: check the remainder of the division. In this case, remainder is zero if the number is even. E.g. `MOD(3, 2)`, `MOD(column1, 2)`. Works in MySQL and PostgreSQL. |
+-- | `exp(x)` | Calculate the e^x |
+-- | `ln(x)` | Calculate the natural log of x |
+-- | `sqrt(x)` | Calculate the square root of x |
+
+-- In a column 'comparison' with binary values (0 and 1), calculate percentage that all ones make from the total amount
+SELECT ROUND( (SUM(comparison)::numeric / COUNT(comparison)::numeric) * 100 , 2 ) AS immediate_percentage
+
+-- SIGN
+-- Show the sign of the signed number
+-- `1` if positive, `-1` if negative, and `0` if the number is a zero.
+SELECT
+  balance,
+  SIGN(balance) AS sign
+FROM account
+-- | balance | sign |
+-- | - | - |
+-- | 102.21 | 1 |
+-- | 0 | 0 |
+-- | -122 | -1 |
+
+-- ABS
+-- Shows the absolute value of a signed number
+SELECT ABS(balance) FROM account
+```
+
+
+#### Rounding
+
+Controlling number precision:
+| Operator | Description |
+| - | - |
+| `ROUND(<number/column-to-round>)` | Round a value to the nearest whole number. |
+| `ROUND(<number_to_round/column>, <decimals_places>)`. | Round a value / column to the nearest number with the specified precision after decimal point. Example: `ROUND(15.51235312, 2)` rounds to 15.51. |
+| `FLOOR(5.1)` | Round DOWN a value. E.g. `FLOOR(7.1)`, `FLOOR(7.9)` produces 7. |
+| `CEIL(5.9)` | Round UP a value. E.g. `CEIL(7.1)`, `CEIL(7.9)` produces 8. |
+
+
 ### DISTINCT
 
 ```sql
@@ -675,14 +876,6 @@ SELECT DISTINCT column1, column2
 --         3|Writing Utensils|
 ```
 
-### TRIM
-
-Removes spaces or specified characters from both ends of a string.
-
-```sql
-SELECT TRIM(name) FROM employees;
-```
-
 ### COALESCE
 
 Return the first non-null value in a list of columns. If all the values in the list of columns are NULL, then the function returns NULL
@@ -707,17 +900,6 @@ FROM student s
 SELECT COALESCE(column1, 'Entry not found') FROM table1;
 ```
 
-### UPPER
-
-```sql
-SELECT UPPER(name)
--- Capitalise the first letter only
-SELECT CONCAT(
-  UPPER(SUBSTRING(name,1,1)),
-  LOWER(SUBSTRING(name, 2, LENGTH(name) - 1))
-) AS name
-```
-
 ### ROUND
 
 ```sql
@@ -738,6 +920,10 @@ FROM student s
 
 ### CONCAT
 
+Features:
+- Can handle any expression that returns a string
+- In MySQL, will convert numbers, dates to string format
+
 Concatenate two columns:
 ```sql
 SELECT first_name || '-' || last_name AS column_name
@@ -745,6 +931,10 @@ FROM employee;
 -- or
 SELECT CONCAT( first_name, '-', last_name )
 FROM employee;
+
+-- Update a table's column by concatenating a string at the end
+UPDATE table1
+SET col1 = CONCAT(col1, ' additional string')
 ```
 
 
@@ -846,6 +1036,55 @@ FROM employee e
 INNER JOIN newtable nt
 ON e.emp_id = nt.emp_id 
 GROUP BY sex
+```
+
+### QUOTE
+
+> This function is MySQL only.
+
+Place quotes around results of the query AND adds escape characters (to single quotes / apostrophes). Can be used with any data type.
+
+```sql
+SELECT QUOTE(person_id) FROM person
+-- output:
+-- QUOTE(person_id)|
+-- ---------------+
+-- '58'           |
+-- '92'           |
+-- '182'          |
+-- '118'          |
+```
+
+### LIKE, REGEXP
+
+> `LIKE` Works for MySQL, PostgreSQL
+
+The regex statement `LIKE` in the `SELECT` clause will return a boolean mask for whether a column matches that regexp.
+
+```sql
+SELECT 
+  first_name,
+  first_name LIKE 'A%' AS starts_with_a
+  -- MySQL:      alternatively you can use: `first_name REGEXP '^A.*' AS starts_with_a`
+  -- PostgreSQL: alternatively you can use: `first_name ~ '^A.*' AS starts_with_a`
+FROM employee;
+-- returns for MySQL
+-- first_name|starts_with_a| -- bigint
+-- ----------+-------------+
+-- David     |0            |
+-- Angela    |1            |
+-- Kelly     |0            |
+-- Stanley   |0            |
+-- Andy      |1            |
+
+-- returns for PostgreSQL
+-- first_name|starts_with_a| -- bool
+-- ----------+-------------+
+-- David     |false        |
+-- Angela    |true         |
+-- Kelly     |false        |
+-- Stanley   |false        |
+-- Andy      |true         |
 ```
 
 ### Aggregate statements
@@ -1302,24 +1541,28 @@ MOD(columnName, 2) <> 0
 MOD(columnName, 2) = 0
 ```
 
-### REGEX
+### LIKE, REGEX
 
-First, very basic regex functions:
+There are two ways of writing regular expressions in SQL:
+- `LIKE`: simplified REGEXP; is not as powerful, but typically faster than regular expressions.
+- `~` or `REGEXP`: True REGEXP
+
+First, very basic regex functions `LEFT`:
+
+**LEFT**
+
+> Works for PostgreSQL, MySQL
 
 ```sql
--- LEFT
--- PostgreSQL, MySQL
 -- Match last names that begin with 'Q'
 WHERE LEFT(last_name, 1) = 'Q' 
 -- Match last names that begin with 'Qu'
 WHERE LEFT(last_name, 2) = 'Qu'
 ```
 
-There are two ways of writing regular expressions in SQL:
-- `LIKE`: simplified REGEXP; is not as powerful, but typically faster than regular expressions.
-- `~`: True REGEXP
-
 **LIKE**
+
+> Works for MySQL, PostgreSQL
 
 General form:
 ```sql
@@ -1361,6 +1604,8 @@ ILIKE, NOT ILIKE
 ```
 
 **REGEXP**
+
+> MySQL: `REGEXP` ; PostgreSQL: `~`
 
 ```sql
 SELECT * FROM table1 WHERE name ~ '^Grandfather.+|.+parents.+'
@@ -1692,107 +1937,6 @@ CREATE
     END$$
 DELIMITER ;
 -- Now, every time a row is added to the table `employee`, a row is added into the table `trigger_test` saying `added new employee`
-```
-
-# Operators
-
-Operators are usually used with a WHERE statement. 
-
-## Logical
-
-| Operator | Meaning |
-| - | - |
-| `AND` | Shows data if all the conditions separated by `AND` are TRUE. |
-| `OR` | Shows data if any of the conditions separated by `OR` is TRUE. |
-| `NOT` | Shows data if the condition after `NOT` is not true. |
-| `BETWEEN ... AND ...` | Return values that are between the two values. `WHERE salary BETWEEN 5000 AND 10000` |
-| `IN` | TRUE if the operand is equal to one of a list of expressions |
-| `LIKE` | TRUE if the operand matches a pattern |
-
-Some examples:
-```sql
-SELECT column1, column2 FROM table1 WHERE condition1 AND condition2 AND condition3;
-
-WHERE NOT condition;
-```
-
-A note about the NOT condition; the two statements below seem to be equivalent:
-```sql
-
-```
-
-## Comparison
-
-Can be used for comparing numbers or strings. 
-
-| Operator | Meaning |
-| --- | -- |
-| `<`, `<=`, `>`, `>=` | |
-| `=` | equals |
-| `<>` | not equal. `WHERE name <> 'STEVEN'` |
-| `LIKE` | used for regex |
-| `IN` | if a value is contained within a list. |
-| `BETWEEN` | value is contained between two other values. |
-
-> Note: NULL value indicates an unavailable or unassigned value. The value NULL does not equal zero (0), nor does it equal a space (‘ ‘). Because the NULL value cannot be equal or unequal to any value, you cannot perform any comparison on this value by using operators such as ‘=’ or ‘<>’.
->
-> Therefore, use `Column IS NULL` or NOT NULL
-
-
-## Arithmetic
-
-```sql
-SELECT 10 + 2;
-ROUND(column1, decimalplaces); 
-```
-| Operator | Meaning |
-| --- | --- |
-| `-`, `+`, `*`, `/` | |
-| `^` | power |
-| `%` | modulo |
-| `MIN(column1)` | minimum value of a column |
-| `SUM(column1)` | sum of all values in a column |
-| `AVG(column1)` | average of a column's values |
-| `CEIL(5.9)`, `FLOOR(5.1)` | round up a value |
-| `ROUND(<number_to_round>, <decimals_places>)` or `round(15.51235312, 2)` | round a value to the nearest whole number |
-| `COUNT(*)` | count number of rows |
-| `mod(column1,2)` | Check the remainder of the division. In this case, remainder is zero if the number is even. |
-
-
-
-Examples: 
-- `SELECT column1 * 10`
-- `SELECT MAX(column1)`
-
-```sql
--- Examples
-SELECT column1 * 10
-SELECT MAX(column1)
-
--- In a column 'comparison' with binary values (0 and 1), calculate percentage that all ones make from the total amount
-SELECT ROUND( (SUM(comparison)::numeric / COUNT(comparison)::numeric) * 100 , 2 ) AS immediate_percentage
-```
-
-## Set
-
-> To read more on set operations, see the section **Set operations**
-
-| Operator | Explanation |
-| - | - |
-| `UNION` | Combine all the rows from two or more sets. Sort the combined set and remove duplicates. |
-| `UNION ALL` | Like UNION, but does not sort the combined set and does not remove duplicates. Thus, the number of rows in the final data set always equals to the sum of the number of rows in the sets being combined. |
-| `INTERSECT` | Performs intersection. If the two queries in a compound query return non-overlapping data sets, the intersection will be an empty set. Removes duplicate rows in the overlapping region. |
-| `INTERSECT ALL` | Same as INTERSECT but doesn't remove the duplicates in the overlapping region. |
-| `EXCEPT` | Performs the EXCEPT set operation - returns the first result set minus any overlap with the second result set. Removes all occurrences of duplicate data from set A. |
-| `EXCEPT ALL` | Same as EXCEPT but removes only one occurrence of duplicate data from set A for every occurrence in set B. | 
-
-Examples:
-```sql
--- Set A: {10, 10, 10, 11, 12}
--- Set B: {10, 10}
-
--- A except B: {11, 12}
--- A except all B: {10, 11, 12}
 ```
 
 # IF conditions
@@ -2258,6 +2402,8 @@ INNER JOIN payment;
 ```
 
 # Set operations
+
+> Also see the `set operator` in the `operators` section
 
 You perform a set operation by placing a set operator between two `select` statements
 
