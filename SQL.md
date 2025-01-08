@@ -65,7 +65,7 @@
   - [Full (outer) join](#full-outer-join)
   - [Multi-table joins](#multi-table-joins)
   - [Self join](#self-join)
-  - [Cartesian product](#cartesian-product)
+  - [Cross join](#cross-join)
 - [Set operations](#set-operations)
 - [Pivot](#pivot)
   - [Wide -\> long](#wide---long)
@@ -787,7 +787,10 @@ Operators can be used in SELECT and WHERE statements.
 | `NOT` | Shows data if the condition after `NOT` is not true. |
 | `BETWEEN ... AND ...` | Return values that are between the two values. `WHERE salary BETWEEN 5000 AND 10000` |
 | `IN` | TRUE if the operand is equal to one of a list of expressions |
+| `NOT IN` | Opposite of `IN`. *Note: it is an alias for `<> ALL`* |
 | `LIKE` | TRUE if the operand matches a pattern |
+| `ALL` | *Difficult to understand* - make comparisons between a single value and every value in a set. *Note: `<> ALL` is equivalent to `NOT IN`* |
+| `ANY` | Like ALL but it returns TRUE as soon as a single comparison is favorable. *Note: `= ANY` is equivalent to `IN`* |
 
 Some examples:
 ```sql
@@ -798,6 +801,60 @@ FROM table1
 WHERE 
   condition1 AND condition2 AND NOT condition3
 ;
+
+-- ALL
+-- EXAMPLE 1: Find all customers who have never gotten a free film rental
+SELECT
+  first_name,
+  last_name
+FROM customer
+WHERE customer_id <> ALL ( -- it works just like `WHERE customer_id NOT IN (`, but the latter is much easier to understand
+  SELECT customer_id
+  FROM payment
+  WHERE amount = 0
+);
+
+-- EXAMPLE 2:
+-- 2. The containing query returns all customers whose total number of films rentals exceeds any of the North American customers
+SELECT customer_id, count(*)
+FROM rental r 
+GROUP BY customer_id 
+HAVING COUNT(*) > ALL (
+	-- 1. Subquery returns (in one multi-rowed column) the total number of film rentals for all customers in North America 
+	SELECT COUNT(*)
+	FROM rental r
+	INNER JOIN customer c
+	ON r.customer_id = c.customer_id 
+	INNER JOIN address a
+	ON c.address_id = a.address_id 
+	INNER JOIN city ct 
+	ON a.city_id = ct.city_id 
+	INNER JOIN country co 
+	ON ct.country_id = co.country_id 
+	WHERE co.country IN ('United States', 'Mexico', 'Canada')
+	GROUP BY r.customer_id
+);
+
+-- ANY
+-- EXAMPLE 1: Find all customers whose total film rental payments exceed the total payments for all customers in Bolivia, Paraguay, or Chile
+SELECT customer_id, SUM(amount)
+FROM payment
+GROUP BY customer_id
+HAVING SUM(amount) > ANY (
+  SELECT SUM(p.amount)
+  FROM payment p
+  INNER JOIN customer c
+  ON p.customer_id = c.customer_id
+  INNER JOIN address a
+  ON c.address_id = a.address_id
+  INNER JOIN city ct 
+  ON a.city_id = ct.city_id
+  INNER JOIN country co
+  ON ct.country_id = co.country_id
+  WHERE co.country IN ('Bolivia', 'Paraguay', 'Chile')
+  GROUP BY co.country
+)
+
 ```
 
 **Comparison operators**
@@ -1472,13 +1529,51 @@ Different types of tables:
 
 > a.k.a. subquery, nested query, inner query
 
-- Subqueries are embedded within another SQL query and are used when the result of one query depends on that of the other; 
+- Subqueries are embedded within another SQL query (called the *containing statement*) and are used when the result of one query depends on that of the other; 
 - Are powerful tools for performing complex data manipulations that require one or more intermediary steps
-- Types (depending on where / in which clause the subquery is located):
-  - SELECT subqueries
-  - FROM subqueries
-  - WHERE subqueries
-  - HAVING subqueries
+
+**Types (depending on their relation to the containing query)**:
+- Noncorrelated subqueries: <u>may be executed alone</u> and does not reference anything from the containing statement 
+  ```sql
+  -- Find all cities that are not in India
+  SELECT 
+    city_id, 
+    city
+  FROM city
+  WHERE 
+    country_id <> (
+      SELECT
+        country_id
+      FROM country
+      WHERE country = 'India'
+    );
+  ```
+- Correlated subqueries
+
+
+> Note: a subquery can return multicolumn and multirow table:
+```sql
+SELECT 
+  actor_id, 
+  film_id
+FROM film_actor
+WHERE (actor_id, film_id) IN (
+  SELECT
+    a.actor_id,
+    f.film_id
+  FROM actor a
+  CROSS JOIN film f
+  WHERE 
+    a.last_name = 'MONROE'
+    AND f.rating = 'PG'
+);
+```
+
+**Types (depending on where / in which clause the subquery is located)**:
+- SELECT subqueries
+- FROM subqueries
+- WHERE subqueries
+- HAVING subqueries
 
 **SELECT subqueries**
 
@@ -2538,7 +2633,7 @@ INNER JOIN address AS a2
 WHERE a1.address < a2.address;
 ```
 
-## Cartesian product 
+## Cross join
 
 Cartesian product (a.k.a. cross join) is when you join two tables without specifying how to join them, which generates every permutation of the two tables. 
 
@@ -2549,11 +2644,60 @@ For example, in this case you join two tables without specifying a condition:
 - `SELECT COUNT(*) FROM payment` - $16044$ rows
 - `SELECT COUNT(*) FROM customer INNER JOIN payment` - $599 * 16044 = 9610356$ rows
 ```sql
-SELECT 
-  *
-FROM customer 
-INNER JOIN payment;
+SELECT * FROM customer INNER JOIN payment;
+-- can also be written as:
+SELECT * FROM customer CROSS JOIN payment;
+-- or
+SELECT * FROM customer, payment;
+
+-- an example: a CROSS JOIN below behaves just like a normal INNER JOIN. So the two statements below are equivalent:
+SELECT * FROM customer c CROSS JOIN payment p WHERE c.customer_id = p.customer_id
+SELECT * FROM customer c INNER JOIN payment p ON c.customer_id = p.customer_id
 ```
+
+```sql
+-- Identify all cases where an actor named Monroe appeared in a PG film
+-- (All of the queries below result in the same output)
+-- var 1
+SELECT 
+  actor_id, 
+  film_id
+FROM film_actor
+WHERE (actor_id, film_id) IN (
+  SELECT
+    a.actor_id,
+    f.film_id
+  FROM actor a
+  CROSS JOIN film f
+  WHERE 
+    a.last_name = 'MONROE'
+    AND f.rating = 'PG'
+);
+
+-- var2
+SELECT 
+	fa.actor_id,
+	fa.film_id
+FROM film_actor fa 
+INNER JOIN actor a 
+ON fa.actor_id = a.actor_id 
+INNER JOIN film f
+ON fa.film_id = f.film_id 
+WHERE 
+	a.last_name = 'MONROE'
+	AND f.rating = 'PG';
+
+-- var3
+SELECT 
+  fa.actor_id, 
+  fa.film_id
+FROM film_actor fa
+WHERE 
+  fa.actor_id IN (SELECT actor_id FROM actor WHERE last_name = 'MONROE')
+  AND fa.film_id IN (SELECT film_id FROM film WHERE rating='PG');
+```
+
+> When CROSS JOIN is used with a WHERE clause, it behaves like INNER JOIN, filtering the results based on specific conditions
 
 # Set operations
 
