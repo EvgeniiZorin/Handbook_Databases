@@ -40,16 +40,18 @@
         - [WHERE vs HAVING](#where-vs-having)
       - [STRING\_AGG](#string_agg)
   - [FROM](#from)
-    - [Types of tables](#types-of-tables)
-      - [Subquery](#subquery)
-      - [CTE](#cte)
-      - [Temporary tables](#temporary-tables)
-      - [Views](#views)
   - [WHERE](#where)
     - [LIKE, REGEX](#like-regex)
   - [ORDER BY](#order-by)
   - [OFFSET](#offset)
   - [LIMIT](#limit)
+- [Types of tables](#types-of-tables)
+  - [Subquery](#subquery)
+    - [Types of correlation](#types-of-correlation)
+    - [Types of location](#types-of-location)
+  - [CTE](#cte)
+  - [Temporary tables](#temporary-tables)
+  - [Views](#views)
 - [Constraints](#constraints)
   - [Primary key](#primary-key)
   - [Composite primary key](#composite-primary-key)
@@ -785,7 +787,7 @@ Operators can be used in SELECT and WHERE statements.
 | `AND` | Shows data if all the conditions separated by `AND` are TRUE. |
 | `OR` | Shows data if any of the conditions separated by `OR` is TRUE. |
 | `NOT` | Shows data if the condition after `NOT` is not true. |
-| `BETWEEN ... AND ...` | Return values that are between the two values. `WHERE salary BETWEEN 5000 AND 10000` |
+| `BETWEEN ... AND ...` | Return values that are (inclusively) between the two values. `WHERE salary BETWEEN 500 AND 1000`. So `salary BETWEEN 500 AND 1000` is equivalent to `salary >= 500 AND salary <= 1000` |
 | `IN` | TRUE if the operand is equal to one of a list of expressions |
 | `NOT IN` | Opposite of `IN`. *Note: it is an alias for `<> ALL`* |
 | `LIKE` | TRUE if the operand matches a pattern |
@@ -1517,263 +1519,7 @@ FROM test.employee
 
 > The **FROM** clause defines the tables used by a query, along with the means of linking the tables together
 
-### Types of tables
-
-Different types of tables:
-- Permanent tables: created by the `CREATE TABLE` statement
-- Derived (subquery-generated) tables: rows returned by a subquery and held in memory
-- Temporary (volatile) tables: volatile data held in memory
-- Virtual table (view): created using the `CREATE VIEW` statement
-
-#### Subquery
-
-> a.k.a. subquery, nested query, inner query
-
-- Subqueries are embedded within another SQL query (called the *containing statement*) and are used when the result of one query depends on that of the other; 
-- Are powerful tools for performing complex data manipulations that require one or more intermediary steps
-
-**Types (depending on their relation to the containing query)**:
-- Noncorrelated subqueries: <u>may be executed alone</u> and does not reference anything from the containing statement 
-  ```sql
-  -- Find all cities that are not in India
-  SELECT 
-    city_id, 
-    city
-  FROM city
-  WHERE 
-    country_id <> (
-      SELECT
-        country_id
-      FROM country
-      WHERE country = 'India'
-    );
-  ```
-- Correlated subqueries
-
-
-> Note: a subquery can return multicolumn and multirow table:
-```sql
-SELECT 
-  actor_id, 
-  film_id
-FROM film_actor
-WHERE (actor_id, film_id) IN (
-  SELECT
-    a.actor_id,
-    f.film_id
-  FROM actor a
-  CROSS JOIN film f
-  WHERE 
-    a.last_name = 'MONROE'
-    AND f.rating = 'PG'
-);
-```
-
-**Types (depending on where / in which clause the subquery is located)**:
-- SELECT subqueries
-- FROM subqueries
-- WHERE subqueries
-- HAVING subqueries
-
-**SELECT subqueries**
-
-```sql
--- General Form
-SELECT column1, column2, columnN,
-(SELECT agg_function(column) FROM table WHERE condition)
-FROM table
-```
-
-**FROM subqueries**
-
-Subqueries in the FROM clause create a temporary table that can be used for the main query. This allows
-the programmer to simplify the process by breaking the problem into smaller, more manageable parts.
-
-This subquery's data is held in memory for the duration of the entire query and then discarded.
-
-```sql
--- General form
--- This is the containing query
-SELECT employee, total_sales
-FROM (
-  -- This is the subquery
-  SELECT 
-    first_name || ' ' || last_name AS employee, 
-    SUM(sales) AS total_sales
-  FROM sales
-  GROUP BY employee
-) AS sales_summary -- alias of the subquery
-WHERE total_sales > 100000;
-```
-
-In this example, the subquery creates a temporary table aliased as `sales_summary`, which does the following:
-- Concatenates each employee’s first and last name (separated by a space). This concatenation is aliased as employee.
-- Calculates the total sales for each employee.
-- Groups the total_sales by employee.
-
-**WHERE subqueries**
-
-Subqueries in the WHERE clause are used to filter rows based on conditions detailed in a subquery.
-
-This method is useful when you don’t already have access to the condition on which you want to filter your query.
-
-Scalar example: 
-```sql
--- Suppose that we have a table called employees with employee_id, first_name, last_name, salary, and department_id columns. If we want to find all employees who earn more than the average salary, we can use a subquery:
-SELECT first_name, last_name, salary
-FROM employees
-WHERE salary > (SELECT AVG(salary) FROM employees);
-```
-
-Non-scalar example:
-```sql
--- Suppose that we are using the same dataset as before with the first_name, last_name, and salary fields. We want to return the first name, last name, and salary of employees whose first name begins with the letter 'J':
-SELECT first_name, last_name, salary
-FROM employees
-WHERE salary > ANY (SELECT salary FROM employees WHERE first_name LIKE 'J%');
-```
-
-**HAVING subqueries**
-
-The HAVING clause is used to filter the results of a GROUP BY query based on conditions involving
-aggregate functions. The subquery is executed for each group and filters the groups based on the
-specified condition.
-
-```sql
-SELECT CustomerID, AVG(TotalAmount) AS AverageTotalAmount
-FROM Orders
-GROUP BY CustomerID
-HAVING AVG(TotalAmount) > (SELECT AVG(TotalAmount)
-FROM Orders);
-```
-
----
-
-Using multiple SELECT statements, where the output of one query gets passed on to another query. 
-
-```sql
--- Find names of all employees who have sold over 30,000 to a single client
-SELECT employee.first_name, employee.last_name
-FROM employee
-WHERE employee.emp_id IN (
-    SELECT works_with.emp_id
-    FROM works_with
-    WHERE works_with.total_sales > 30000
-);
-
--- Find all clients who are handled by the branch that Michael Scott manages
-SELECT client.client_name
-FROM client
-WHERE branch_id = (
-    SELECT employee.branch_id
-    FROM employee
-    WHERE employee.first_name = 'Michael' AND employee.last_name = 'Scott'
-);
-```
-
-
-Use IDs from one table to use in querying another table
-```sql
-SELECT column1 as 'Column 1' FROM table1 WHERE table1.id NOT IN (SELECT customer_id FROM table2);
-```
-
-#### CTE
-
-CTE, common table expressions
-
-CTEs are similar to subqueries. 
-
-CTEs are also temporary tables typically that are formulated at the beginning of a
-query and only exist during the execution of the query. This means that CTEs cannot be used in other
-queries beyond the one in which you are using the CTE.
-While CTEs and subqueries are both used in similar circumstances (such as when you need to produce
-an intermediary result), there are a couple of factors that tip off CTEs:
-• They are typically created at the beginning of a query using the WITH operator
-• They are followed by a query that queries the CTE
-Alternatively, subqueries are a query within a query, nested within one of a query’s clauses.
-
-```sql
-WITH 
-alias AS (
-  -- <Put query here>
-), 
-alias2 AS (
-  -- <put query here>
-)
--- ... <Query that queries the alias>
-
--- A more concrete example
-WITH customer_totals AS (
-  SELECT CustomerID, SUM(TotalAmount) AS total_sales
-  FROM Orders
-  GROUP BY CustomerID
-)
-SELECT c.CustomerID, c.total_sales, o.avg_order_amount
-FROM customer_totals c
-JOIN (
-  SELECT CustomerID, AVG(TotalAmount) AS avg_order_amount
-  FROM Orders GROUP BY CustomerID )
-ON c.CustomerID = o.CustomerID;
-```
-
-```sql
--- Example
-WITH a1 AS (
-	SELECT
-		bs.branch_id,
-		bs.branch_name,
-		COUNT(bs.mgr_id)
-	FROM employees_db.public.branch bs
-	INNER JOIN employees_db.public.branch_supplier bs2 
-	ON bs.branch_id = bs2.branch_id 
-	
-	GROUP BY 
-		bs.branch_id, 
-		bs.branch_name
-)
-SELECT * FROM a1
-```
-
-#### Temporary tables
-
-The tables appear like permanent tables, but any data inserted into this table will disappear at some point, e.g. at the end of a transaction or when the database connection session is closed.
-
-```sql
--- MySQL
-CREATE TEMPORARY TABLE temp1
-(
-  person_id SMALLINT(5),
-  first_name VARCHAR(45),
-  last_name VARCHAR(45)
-);
-INSERT INTO temp1
-SELECT actor_id, first_name, last_name
-FROM table1
-WHERE last_name LIKE '%J';
-```
-
-#### Views
-
-It is a query that is stored in the data dictionary. 
-- It looks and acts like a table, but there is no data associated with a view; when you issue a query against a view, your query is merged with the view definition to create a final query to be executed.
-- It is like a saved query for later use;
-
-```sql
--- First you create a view
-CREATE VIEW cust_vw AS
-SELECT 
-  person_id, 
-  name, 
-  surname,
-  height
-FROM person;
--- Then later, you can issue queries against a view
-SELECT 
-  name,
-  surname
-FROM cust_vw
-WHERE surname = 'Jones';
-```
+To see which types of tables you can use in your FROM clause, see the `Types of tables` section.
 
 ## WHERE
 
@@ -1938,6 +1684,376 @@ Skip $n$ rows.
 ## LIMIT
 
 show n first rows.
+
+# Types of tables
+
+Different types of tables:
+- Permanent tables: created by the `CREATE TABLE` statement
+- Derived (subquery-generated) tables: rows returned by a subquery and held in memory
+- Temporary (volatile) tables: volatile data held in memory
+- Virtual table (view): created using the `CREATE VIEW` statement
+
+## Subquery
+
+> a.k.a. subquery, nested query, inner query
+
+- Subqueries are embedded within another SQL query (called the *containing statement*) and are used when the result of one query depends on that of the other; 
+- Are powerful tools for performing complex data manipulations that require one or more intermediary steps
+- **Scalar subqueries** are queries that only return a single value. More specifically, this means if you execute a scalar subquery, it would return one column value of one specific row. 
+- **Non-scalar subqueries**, however, can return single or multiple rows and may contain multiple columns.
+
+Subqueries can be used to **generate new data**:
+```sql
+-- query
+SELECT 'Small Fry' name, 0 low_limit, 74.99 high_limit
+UNION ALL
+SELECT 'Average Joes' name, 75 low_limit, 149.99 high_limit
+UNION ALL
+SELECT 'Heavy Hitters' name, 150 low_limit, 99999.99 high_limit;
+-- generates the following temporary data
+-- name         |low_limit|high_limit|
+-- -------------+---------+----------+
+-- Small Fry    |        0|     74.99|
+-- Average Joes |       75|    149.99|
+-- Heavy Hitters|      150|  99999.99|
+
+-- you can subsequently make operations with this synthetic generated data
+SELECT COUNT(*)
+FROM (
+	SELECT 'Small Fry' name, 0 low_limit, 74.99 high_limit
+	UNION ALL
+	SELECT 'Average Joes' name, 75 low_limit, 149.99 high_limit
+	UNION ALL
+	SELECT 'Heavy Hitters' name, 150 low_limit, 99999.99 high_limit
+) sq
+
+```
+
+### Types of correlation
+
+(depending on their relation to the containing query):
+- Noncorrelated subqueries
+- Correlated subqueries
+
+**Noncorrelated subqueries**: 
+
+<u>May be executed alone</u> and do not reference anything from the containing statement 
+
+```sql
+-- Find all cities that are not in India
+SELECT 
+  city_id, 
+  city
+FROM city
+WHERE 
+  country_id <> (
+    SELECT
+      country_id
+    FROM country
+    WHERE country = 'India'
+  );
+```
+
+**Correlated subqueries**:
+
+These subqueries reference one or more columns from the containing query statement
+
+```sql
+SELECT 
+  с.first_name, 
+  c.last_name 
+FROM customer c
+WHERE 20 = (
+  SELECT count(*) 
+  FROM rental r
+  WHERE r.customer_id = c.customer_id
+);
+
+
+-- an operator that is used a lot for correlated subqueries is EXIST
+-- find all clients who rented at least one movie before 25 may 2005
+SELECT 
+  с.first_name, 
+  c.last_name
+FROM customer c
+WHERE EXISTS (
+  SELECT 1 
+  FROM rental r
+  WHERE 
+    r.customer_id = c.customer_id
+  AND date(r.rental date) < '2005-05-25'
+);
+
+-- Correlated subquery that is used for changing the column last_update in the table 'customer'
+UPDATE customer с
+SET с.last_update = (
+  SELECT max(г.rental_date) 
+  FROM rental r
+  WHERE r.customer_id = c.customer_id
+);
+```
+
+
+> Note: a subquery can return multicolumn and multirow table:
+```sql
+SELECT 
+  actor_id, 
+  film_id
+FROM film_actor
+WHERE (actor_id, film_id) IN (
+  SELECT
+    a.actor_id,
+    f.film_id
+  FROM actor a
+  CROSS JOIN film f
+  WHERE 
+    a.last_name = 'MONROE'
+    AND f.rating = 'PG'
+);
+```
+
+### Types of location
+
+**Types (depending on where / in which clause the subquery is located)**:
+- SELECT subqueries
+- FROM subqueries
+- WHERE subqueries
+- HAVING subqueries
+
+**SELECT subqueries**
+
+```sql
+-- General Form
+SELECT column1, column2, columnN,
+(SELECT agg_function(column) FROM table WHERE condition)
+FROM table
+```
+
+**FROM subqueries**
+
+Subqueries in the FROM clause create a temporary table that can be used for the main query. This allows
+the programmer to simplify the process by breaking the problem into smaller, more manageable parts.
+
+This subquery's data is held in memory for the duration of the entire query and then discarded.
+
+```sql
+-- General form
+-- This is the containing query
+SELECT employee, total_sales
+FROM (
+  -- This is the subquery
+  SELECT 
+    first_name || ' ' || last_name AS employee, 
+    SUM(sales) AS total_sales
+  FROM sales
+  GROUP BY employee
+) AS sales_summary -- alias of the subquery
+WHERE total_sales > 100000;
+```
+
+In this example, the subquery creates a temporary table aliased as `sales_summary`, which does the following:
+- Concatenates each employee’s first and last name (separated by a space). This concatenation is aliased as employee.
+- Calculates the total sales for each employee.
+- Groups the total_sales by employee.
+
+**WHERE subqueries**
+
+Subqueries in the WHERE clause are used to filter rows based on conditions detailed in a subquery.
+
+This method is useful when you don’t already have access to the condition on which you want to filter your query.
+
+Scalar example: 
+```sql
+-- Suppose that we have a table called employees with employee_id, first_name, last_name, salary, and department_id columns. If we want to find all employees who earn more than the average salary, we can use a subquery:
+SELECT first_name, last_name, salary
+FROM employees
+WHERE salary > (SELECT AVG(salary) FROM employees);
+
+-- Find all clients who are handled by the branch that Michael Scott manages
+SELECT client.client_name
+FROM client
+WHERE branch_id = (
+    SELECT employee.branch_id
+    FROM employee
+    WHERE employee.first_name = 'Michael' AND employee.last_name = 'Scott'
+);
+```
+
+Non-scalar example:
+```sql
+-- Suppose that we are using the same dataset as before with the first_name, last_name, and salary fields. We want to return the first name, last name, and salary of employees whose first name begins with the letter 'J':
+SELECT first_name, last_name, salary
+FROM employees
+WHERE salary > ANY (SELECT salary FROM employees WHERE first_name LIKE 'J%');
+
+-- Find names of all employees who have sold over 30,000 to a single client
+SELECT employee.first_name, employee.last_name
+FROM employee
+WHERE employee.emp_id IN (
+    SELECT works_with.emp_id
+    FROM works_with
+    WHERE works_with.total_sales > 30000
+);
+```
+
+**HAVING subqueries**
+
+The HAVING clause is used to filter the results of a GROUP BY query based on conditions involving
+aggregate functions. The subquery is executed for each group and filters the groups based on the
+specified condition.
+
+```sql
+SELECT CustomerID, AVG(TotalAmount) AS AverageTotalAmount
+FROM Orders
+GROUP BY CustomerID
+HAVING AVG(TotalAmount) > (SELECT AVG(TotalAmount)
+FROM Orders);
+```
+
+## CTE
+
+CTE, common table expressions
+- CTEs are, in a sense, are like *named subqueries*
+- They make a query more readable and allow each CTE communicate / query other CTEs
+
+
+CTEs are also temporary tables typically that are formulated at the beginning of a
+query and only exist during the execution of the query. This means that CTEs cannot be used in other
+queries beyond the one in which you are using the CTE.
+While CTEs and subqueries are both used in similar circumstances (such as when you need to produce
+an intermediary result), there are a couple of factors that tip off CTEs:
+• They are typically created at the beginning of a query using the WITH operator
+• They are followed by a query that queries the CTE
+Alternatively, subqueries are a query within a query, nested within one of a query’s clauses.
+
+```sql
+WITH 
+alias AS (
+  -- <Put query here>
+), 
+alias2 AS (
+  -- <put query here>
+)
+-- ... <Query that queries the alias>
+SELECT *
+FROM alias
+INNER JOIN alias2 
+ON alias.id = alias2.id
+
+-- A more concrete example
+WITH customer_totals AS (
+  SELECT CustomerID, SUM(TotalAmount) AS total_sales
+  FROM Orders
+  GROUP BY CustomerID
+)
+SELECT c.CustomerID, c.total_sales, o.avg_order_amount
+FROM customer_totals c
+JOIN (
+  SELECT CustomerID, AVG(TotalAmount) AS avg_order_amount
+  FROM Orders GROUP BY CustomerID )
+ON c.CustomerID = o.CustomerID;
+
+-- an example
+WITH actors_s AS (
+  SELECT 
+    actor_id, 
+    first_name, 
+    last_name
+  FROM actor
+  WHERE last name LIKE 'S%'
+),
+actors_s_pg AS (
+  SELECT 
+    s.actor_id, 
+    s.first_name, 
+    s.last_name,
+    f.film_id, 
+    f.title
+  -- this CTE references another CTE actors_s
+  FROM actors_s s
+  INNER JOIN film_actor fa
+  ON s.actor_id = fa.actor__id
+  INNER JOIN film f
+  ON f.film_id = fa.film_id
+  WHERE f.rating = 'PG'
+),
+actors_s_pg_revenue AS (
+  SELECT spg.first_name, spg.last_name, p.amount
+  FROM actors_s_pg spg
+  INNER JOIN inventory i
+  ON i.film_id = spg.film_id
+  INNER JOIN rental r
+  ON i.inventory_id = r.inventory_id
+  INNER JOIN payment p
+  ON r.rental_id = p.rental_id
+) -- end of the WITH statement
+SELECT 
+  spg_rev.first_name, 
+  spg_rev.last_name,
+  sum(spg_rev.amount) tot_revenue
+FROM actors_s_pg_revenue spg_rev
+GROUP BY spg_rev.first_name, spg_rev.last_name
+ORDER BY 3 desc;
+```
+
+```sql
+-- Example
+WITH a1 AS (
+	SELECT
+		bs.branch_id,
+		bs.branch_name,
+		COUNT(bs.mgr_id)
+	FROM employees_db.public.branch bs
+	INNER JOIN employees_db.public.branch_supplier bs2 
+	ON bs.branch_id = bs2.branch_id 
+	
+	GROUP BY 
+		bs.branch_id, 
+		bs.branch_name
+)
+SELECT * FROM a1
+```
+
+## Temporary tables
+
+The tables appear like permanent tables, but any data inserted into this table will disappear at some point, e.g. at the end of a transaction or when the database connection session is closed.
+
+```sql
+-- MySQL
+CREATE TEMPORARY TABLE temp1
+(
+  person_id SMALLINT(5),
+  first_name VARCHAR(45),
+  last_name VARCHAR(45)
+);
+INSERT INTO temp1
+SELECT actor_id, first_name, last_name
+FROM table1
+WHERE last_name LIKE '%J';
+```
+
+## Views
+
+It is a query that is stored in the data dictionary. 
+- It looks and acts like a table, but there is no data associated with a view; when you issue a query against a view, your query is merged with the view definition to create a final query to be executed.
+- It is like a saved query for later use;
+
+```sql
+-- First you create a view
+CREATE VIEW cust_vw AS
+SELECT 
+  person_id, 
+  name, 
+  surname,
+  height
+FROM person;
+-- Then later, you can issue queries against a view
+SELECT 
+  name,
+  surname
+FROM cust_vw
+WHERE surname = 'Jones';
+```
 
 # Constraints
 
@@ -2170,6 +2286,8 @@ REFERENCES referenced_table(referenced_column)
 ON DELETE SET NULL -- optional option
 ;
 ```
+
+
 
 # Trigger
 
