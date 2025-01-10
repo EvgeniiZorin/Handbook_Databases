@@ -19,6 +19,11 @@
   - [Type casting](#type-casting)
   - [Array \> column etc.](#array--column-etc)
 - [Operators](#operators)
+  - [Logical](#logical)
+  - [Comparison](#comparison)
+  - [Arithmetic](#arithmetic)
+  - [Set](#set)
+    - [UNION](#union)
 - [Query clauses](#query-clauses)
   - [Aliases](#aliases)
   - [SELECT](#select)
@@ -47,6 +52,7 @@
   - [LIMIT](#limit)
 - [Types of tables](#types-of-tables)
   - [Subquery](#subquery)
+    - [Generate temporary data](#generate-temporary-data)
     - [Types of correlation](#types-of-correlation)
     - [Types of location](#types-of-location)
   - [CTE](#cte)
@@ -61,14 +67,14 @@
 - [Joins](#joins)
   - [ON...AND vs ON...WHERE](#onand-vs-onwhere)
   - [ON vs USING](#on-vs-using)
-  - [Inner joins](#inner-joins)
+  - [Inner join](#inner-join)
   - [Left (outer) join](#left-outer-join)
   - [Right (outer) join](#right-outer-join)
   - [Full (outer) join](#full-outer-join)
   - [Multi-table joins](#multi-table-joins)
   - [Self join](#self-join)
   - [Cross join](#cross-join)
-- [Set operations](#set-operations)
+  - [Natural join](#natural-join)
 - [Pivot](#pivot)
   - [Wide -\> long](#wide---long)
   - [Long -\> wide](#long---wide)
@@ -780,7 +786,7 @@ where emp_id in (
 
 Operators can be used in SELECT and WHERE statements. 
 
-**Logical operators**
+## Logical 
 
 | Operator | Meaning |
 | - | - |
@@ -859,7 +865,7 @@ HAVING SUM(amount) > ANY (
 
 ```
 
-**Comparison operators**
+## Comparison
 
 Can be used for comparing numbers or strings. 
 
@@ -876,7 +882,7 @@ Can be used for comparing numbers or strings.
 >
 > Therefore, use `Column IS NULL` or NOT NULL
 
-**Arithmetic operators**
+## Arithmetic
 
 | Operator | Meaning |
 | --- | --- |
@@ -891,7 +897,7 @@ SELECT (100 * 20) / 10;
 SELECT column1 * 10;
 ```
 
-**Set operators**
+## Set 
 
 > To read more on set operations, see the section **Set operations**
 
@@ -912,6 +918,68 @@ Examples:
 -- A except B: {11, 12}
 -- A except all B: {10, 11, 12}
 ```
+
+### UNION
+
+You perform a set operation by placing a set operator between two `select` statements
+
+Example:
+```sql
+SELECT ...
+FROM table1
+WHERE ...
+UNION -- UNION ALL, INTERSECT, INTERSECT ALL, EXCEPT
+SELECT ...
+FROM table2
+WHERE ...
+```
+
+UNION combines the results from several SELECT statements.
+
+Rule:
+- The two statements / tables / data sets that are joined by the `UNION` statement MUST have the same number of columns
+- The columns being concatenated MUST have the same data type
+
+```sql
+-- Return a list of employee names and then branch names located below the first list
+SELECT first_name -- can also specify the name of the common column, e.g. `AS name_of_the_union_column`
+FROM employee 
+UNION -- can also be UNION ALL
+SELECT branch_name 
+FROM branch
+
+-- You can also include ORDER BY, but it has to come after the last query AND you have to sort it by the names of the first query
+SELECT 
+  a.first_name AS fname,
+  a.last_name AS lname
+FROM actor a
+UNION ALL
+SELECT 
+  c.first_name,
+  c.last_name
+FROM customer c
+ORDER BY lname, fname
+;
+
+-- Find a list of all clients and branch suppliers ids
+SELECT client_name, branch_id -- to increase clarity, can specify the table: `client.branch_id`
+FROM client 
+UNION
+SELECT supplier_name, branch_id -- same: `branch_supplier.branch_id`
+FROM branch_supplier;
+
+-- Get distinct values from two columns - emp_id and is_married
+SELECT DISTINCT (a1.emp_marr_vals)
+FROM (
+	SELECT emp_id AS emp_marr_vals
+	FROM newtable
+	UNION 
+	SELECT is_married
+	FROM newtable
+) AS a1
+```
+
+UNION can also be used to generate synthetic data. See `Types of tables/Subquery/Generate temporary data`
 
 # Query clauses
 
@@ -1223,9 +1291,12 @@ FROM table1
 GROUP BY column1;
 ```
 
-> Note: COUNT(*) counts all values including NULL; COUNT(column1), SUM(column1), MAX(column1), AVG(column1) do NOT count NULL;
-
 #### COUNT
+
+> Note: COUNT(*) counts all values including NULL; 
+> 
+> COUNT(column1), SUM(column1), MAX(column1), AVG(column1) count all values EXCEPT FOR NULL;
+
 
 ```sql
 -- COUNT
@@ -1702,7 +1773,12 @@ Different types of tables:
 - **Scalar subqueries** are queries that only return a single value. More specifically, this means if you execute a scalar subquery, it would return one column value of one specific row. 
 - **Non-scalar subqueries**, however, can return single or multiple rows and may contain multiple columns.
 
+
+### Generate temporary data
+
 Subqueries can be used to **generate new data**:
+
+**Generating a (relatively) small dataset**
 ```sql
 -- query
 SELECT 'Small Fry' name, 0 low_limit, 74.99 high_limit
@@ -1726,7 +1802,94 @@ FROM (
 	UNION ALL
 	SELECT 'Heavy Hitters' name, 150 low_limit, 99999.99 high_limit
 ) sq
+```
 
+**Generate a larger dataset**
+```sql
+-- Generate a column with increasing numbers from 0 to 399 (in total 400 rows)
+-- MySQL
+SELECT 
+	ones.num + tens.num + hundreds.num AS a
+FROM
+(
+	SELECT 0 num UNION ALL
+	SELECT 1 num UNION ALL
+	SELECT 2 num UNION ALL
+	SELECT 3 num UNION ALL
+	SELECT 4 num UNION ALL
+	SELECT 5 num UNION ALL
+	SELECT 6 num UNION ALL
+	SELECT 7 num UNION ALL
+	SELECT 8 num UNION ALL
+	SELECT 9 num 
+) AS ones
+CROSS JOIN
+(
+	SELECT 0 num UNION ALL
+	SELECT 10 num UNION ALL
+	SELECT 20 num UNION ALL
+	SELECT 30 num UNION ALL
+	SELECT 40 num UNION ALL
+	SELECT 50 num UNION ALL
+	SELECT 60 num UNION ALL
+	SELECT 70 num UNION ALL
+	SELECT 80 num UNION ALL
+	SELECT 90 num 
+) AS tens
+CROSS JOIN
+(
+	SELECT 0 num UNION ALL
+	SELECT 100 num UNION ALL
+	SELECT 200 num UNION ALL
+	SELECT 300 num 
+) AS hundreds
+ORDER BY a
+;
+
+-- Generate a row for every day in the year 2020
+-- MySQL
+-- This approach automatically includes the extra leap day (February 29)
+SELECT 
+	DATE_ADD(
+		'2020-01-01', 
+		INTERVAL (ones.num + tens.num + hundreds.num) DAY
+	) AS dt
+FROM
+(
+	SELECT 0 num UNION ALL
+	SELECT 1 num UNION ALL
+	SELECT 2 num UNION ALL
+	SELECT 3 num UNION ALL
+	SELECT 4 num UNION ALL
+	SELECT 5 num UNION ALL
+	SELECT 6 num UNION ALL
+	SELECT 7 num UNION ALL
+	SELECT 8 num UNION ALL
+	SELECT 9 num 
+) AS ones
+CROSS JOIN
+(
+	SELECT 0 num UNION ALL
+	SELECT 10 num UNION ALL
+	SELECT 20 num UNION ALL
+	SELECT 30 num UNION ALL
+	SELECT 40 num UNION ALL
+	SELECT 50 num UNION ALL
+	SELECT 60 num UNION ALL
+	SELECT 70 num UNION ALL
+	SELECT 80 num UNION ALL
+	SELECT 90 num 
+) AS tens
+CROSS JOIN
+(
+	SELECT 0 num UNION ALL
+	SELECT 100 num UNION ALL
+	SELECT 200 num UNION ALL
+	SELECT 300 num 
+) AS hundreds
+WHERE DATE_ADD('2020-01-01', INTERVAL(ones.num + tens.num + hundreds.num) DAY) < '2021-01-01'
+ORDER BY dt
+;
 ```
 
 ### Types of correlation
@@ -2488,7 +2651,7 @@ INNER JOIN post_comment
 ORDER BY post_id, post_comment_id
 ```
 
-## Inner joins
+## Inner join
 
 > `INNER JOIN` can also be written as `JOIN`
 
@@ -2544,17 +2707,24 @@ Will keep the unrelated data from the left (the first) table. Left join gets all
 
 <img src="Media/left_outer_join.png" alt="left (outer) join" width="300">
 
+> can be written as LEFT JOIN, LEFT OUTER JOIN
+>
+> the keyword "LEFT" indicates that the table on the left side of the join is responsible for determining the number of rows in the result set, whereas the table on the right side is used to provide column values whenever a match is found
+
 Command:
 ```sql
-SELECT * FROM student LEFT JOIN course ON student.student_id = course.student_id;
+SELECT * 
+FROM student 
+LEFT JOIN course 
+ON student.student_id = course.student_id;
 ```
 Output:
 | student_id |     name     | age | course_id | student_id|
-|:----|:----|:----|:----|:----|
+|:----       |:----         |:----|:----      |:----      |
 |          1 | John Stramer |  50 |         1 |          1|
 |          2 | John Wick    |  35 |         1 |          2|
 |          1 | John Stramer |  50 |         2 |          1|
-|          3 | Jack Bauer   |  45 |         NULL | NULL |
+|          3 | Jack Bauer   |  45 |      NULL |      NULL |
 
 
 More examples:
@@ -2566,7 +2736,7 @@ SELECT * FROM person LEFT JOIN car ON car.id = person.car_id WHERE car.* IS NULL
 
 > Note: we can change the join type from LEFT JOIN to RIGHT JOIN and vise versa as long as we also change the order of the tables
 >
-> For example, these two statements should return the same result:
+> For example, these two statements return the same result:
 >
 > SELECT o.OrderId, o.OrderDate, c.CustomerId, c.FirstName, c.LastName, c.Country
 > FROM Customers c
@@ -2817,66 +2987,17 @@ WHERE
 
 > When CROSS JOIN is used with a WHERE clause, it behaves like INNER JOIN, filtering the results based on specific conditions
 
-# Set operations
+## Natural join
 
-> Also see the `set operator` in the `operators` section
+> This join type sucks and should be avoided
 
-You perform a set operation by placing a set operator between two `select` statements
-
-Example:
-```sql
-SELECT ...
-FROM table1
-WHERE ...
-UNION -- UNION ALL, INTERSECT, INTERSECT ALL, EXCEPT
-SELECT ...
-FROM table2
-WHERE ...
-```
-
-UNION combines the results from several SELECT statements.
-
-Rule:
-- The two statements / tables / data sets that are joined by the `UNION` statement MUST have the same number of columns
-- The columns being concatenated MUST have the same data type
+Join where the columns on which to join are determined automatically using the identical names of the columns in the tables to be joined.
 
 ```sql
--- Return a list of employee names and then branch names located below the first list
-SELECT first_name -- can also specify the name of the common column, e.g. `AS name_of_the_union_column`
-FROM employee 
-UNION -- can also be UNION ALL
-SELECT branch_name 
-FROM branch
-
--- You can also include ORDER BY, but it has to come after the last query AND you have to sort it by the names of the first query
 SELECT 
-  a.first_name AS fname,
-  a.last_name AS lname
-FROM actor a
-UNION ALL
-SELECT 
-  c.first_name,
-  c.last_name
+  c.first_name, c.last_name, date(r.rental_date)
 FROM customer c
-ORDER BY lname, fname
-;
-
--- Find a list of all clients and branch suppliers ids
-SELECT client_name, branch_id -- to increase clarity, can specify the table: `client.branch_id`
-FROM client 
-UNION
-SELECT supplier_name, branch_id -- same: `branch_supplier.branch_id`
-FROM branch_supplier;
-
--- Get distinct values from two columns - emp_id and is_married
-SELECT DISTINCT (a1.emp_marr_vals)
-FROM (
-	SELECT emp_id AS emp_marr_vals
-	FROM newtable
-	UNION 
-	SELECT is_married
-	FROM newtable
-) AS a1
+NATURAL JOIN rental r
 ```
 
 # Pivot
