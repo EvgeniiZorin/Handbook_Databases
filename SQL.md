@@ -22,6 +22,7 @@
   - [Logical](#logical)
   - [Comparison](#comparison)
   - [Arithmetic](#arithmetic)
+    - [Divide by zero](#divide-by-zero)
   - [Set](#set)
     - [UNION](#union)
 - [Query clauses](#query-clauses)
@@ -33,7 +34,6 @@
     - [EXCEPT](#except)
     - [CONCAT](#concat)
     - [Random sampling](#random-sampling)
-    - [CASE WHEN](#case-when)
     - [QUOTE](#quote)
     - [LIKE, REGEXP](#like-regexp)
     - [Aggregate statements](#aggregate-statements)
@@ -58,6 +58,10 @@
   - [CTE](#cte)
   - [Temporary tables](#temporary-tables)
   - [Views](#views)
+- [Conditional logic](#conditional-logic)
+  - [CASE WHEN](#case-when)
+    - [in select](#in-select)
+    - [in update](#in-update)
 - [Constraints](#constraints)
   - [Primary key](#primary-key)
   - [Composite primary key](#composite-primary-key)
@@ -897,6 +901,24 @@ SELECT (100 * 20) / 10;
 SELECT column1 * 10;
 ```
 
+### Divide by zero
+
+To prevent an error when dividing by zero, you case use CASE WHEN statement
+```sql
+SELECT
+  c.first_name,
+  c.last_name,
+  SUM(p.amount) AS tot_payment_amt,
+  COUNT(p.amount) AS num_payments,
+  SUM(p.amount) / CASE WHEN COUNT(p.amount) = 0 THEN 1 ELSE COUNT(p.amount) END AS avg_payment
+FROM customer AS s
+LEFT OUTER JOIN payment AS p
+ON c.customer_id = p.customer_id
+GROUP BY 
+  c.first_name,
+  c.last_name
+```
+
 ## Set 
 
 > To read more on set operations, see the section **Set operations**
@@ -1165,58 +1187,6 @@ WHERE last_name = 'Wayne'
 
 -- To first filter and then do sampling you can do this, you can create a temporary table but I don't know how to do it: https://dba.stackexchange.com/questions/258271/perform-tablesample-with-where-clause-in-postgresql#:~:text=However%20you%20can%20work%20around%20this%20if%20you%20really%20want%20to%20use%20the%20tablesample%20attribute%20by%20creating%20a%20temporary%20table%20(or%20similar)%20based%20on%20your%20conditional%20query.
 
-```
-
-### CASE WHEN
-
-Creating a new column / field based on a condition for the other columns. 
-
-```sql
--- General view
-CASE WHEN
-condition1 THEN result1
-WHEN condition2 THEN result2
-WHEN conditionN THEN resultN
-ELSE else_result
-END AS alias;
-```
-
-Here is an example where we create a new field that will detail if a student passed or failed, based on their scores:
-```sql
-SELECT 
-  student_id, 
-  student_name, 
-  exam_score,
-  CASE WHEN exam_score >= 60 THEN 'Pass' ELSE 'Fail' END AS result
-FROM students;
-```
-
-```sql
--- CASE WHEN can be used within a aggregate function
--- For example, take values where rating < 3 as 1 (otherwise, take as 0), and sum them - that counts how many ratings there are with a value of less than 3
-SUM(case when rating < 3 then 1 else 0 end)
-
--- An example: multiply by -1 if another column says "Buy", else take the original value
-SELECT stock_name, 
-    CASE
-        WHEN operation = 'Buy' THEN price * -1 
-        ELSE price
-        END AS capital_proc
-    FROM Stocks
-```
-
-Another example of multiple filters:
-```sql
-SELECT 
-	sex,
-	count(*) AS count1,
-	sum(is_married) AS count_married,
-	sum(CASE WHEN e.birth_date > '1980-01-01' THEN 1 ELSE 0 END) AS count_older_1980,
-	sum(CASE WHEN e.birth_date < '1970-01-01' THEN 1 ELSE 0 END) AS count_younger_1970
-FROM employee e
-INNER JOIN newtable nt
-ON e.emp_id = nt.emp_id 
-GROUP BY sex
 ```
 
 ### QUOTE
@@ -2218,6 +2188,123 @@ FROM cust_vw
 WHERE surname = 'Jones';
 ```
 
+# Conditional logic
+
+## CASE WHEN
+
+Creating a new column / field based on a condition for the other columns. 
+
+> In SQL, conditional logic is executed by the `case` expression, which can be used in SELECT, INSERT, UPDATE, and DELETE statements.
+
+Features:
+- In the CASE expression, the clauses are evaluated from top to bottom in order
+- CASE expressions may return any type of expression, including subqueries
+
+**Types of CASE statements**:
+1. Searched case expressions
+   1. Can specify any condition - range, inequality, multipart conditions;
+  ```sql
+  CASE 
+    WHEN category.name IN ('Children', 'Family', 'Sports', 'Animation') THEN 'All ages'
+    WHEN category.name = 'Horror' THEN 'Adult'
+    WHEN category.name IN ('Music', 'Games') THEN 'Teens'
+    ELSE 'Other'
+  END
+  ```
+1. Simple case expressions
+   1. Less flexible than searched case expression
+   2. Simpler 
+   3. only supports one type of condition
+  ```sql
+  CASE category.name
+    WHEN 'Children' THEN 'All ages'
+    WHEN 'Family' THEN 'All ages'
+    WHEN 'Sports' THEN 'All ages'
+    WHEN 'Animation' THEN 'All ages'
+    WHEN 'Horror' THEN 'Adult'
+    WHEN 'Music' THEN 'Teens'
+    WHEN 'Games' THEN 'Teens'
+    ELSE 'Other'
+  END
+  ```
+
+```sql
+-- General view
+CASE 
+  WHEN condition1 THEN result1
+  WHEN condition2 THEN result2
+  WHEN conditionN THEN resultN
+  ELSE else_result
+END AS alias;
+```
+
+### in select
+
+Here is an example where we create a new field that will detail if a student passed or failed, based on their scores:
+```sql
+SELECT 
+  student_id, 
+  student_name, 
+  exam_score,
+  CASE 
+    WHEN exam_score >= 60 THEN 'Pass' 
+    ELSE 'Fail' 
+  END AS result
+FROM students;
+```
+
+```sql
+-- CASE WHEN can be used within a aggregate function
+-- For example, take values where rating < 3 as 1 (otherwise, take as 0), and sum them - that counts how many ratings there are with a value of less than 3
+SUM(case when rating < 3 then 1 else 0 end)
+
+-- An example: multiply by -1 if another column says "Buy", else take the original value
+SELECT stock_name, 
+    CASE
+        WHEN operation = 'Buy' THEN price * -1 
+        ELSE price
+        END AS capital_proc
+    FROM Stocks
+```
+
+Another example of multiple filters:
+```sql
+SELECT 
+	sex,
+	count(*) AS count1,
+	sum(is_married) AS count_married,
+	sum(CASE WHEN e.birth_date > '1980-01-01' THEN 1 ELSE 0 END) AS count_older_1980,
+	sum(CASE WHEN e.birth_date < '1970-01-01' THEN 1 ELSE 0 END) AS count_younger_1970
+FROM employee e
+INNER JOIN newtable nt
+ON e.emp_id = nt.emp_id 
+GROUP BY sex
+```
+
+Can use CASE WHEN for handling null values
+```sql
+CASE WHEN a.address IS NULL THEN 'unknown' ELSE a.address END address
+```
+
+### in update
+
+> conditional updates
+
+```sql
+-- A script that runs every week that sets the `customer.active` column to 0 for any customers who haven't rented a film in the last 90 days
+UPDATE customer
+SET active = 
+  CASE
+    WHEN 90 <= (SELECT datediff(now(), max(rental_date))
+                FROM rental r
+                WHERE r.customer_id = customer.customer_id) 
+    THEN 0
+    ELSE 1
+    END
+WHERE active = 1;
+```
+
+
 # Constraints
 
 Constraints are used to limit the data types for specific columns.
@@ -3084,6 +3171,53 @@ FROM Department
 GROUP BY id
 ORDER BY id ASC
 ```
+
+-------------------------------------------------------------------------------------------
+
+Another example:
+```sql
+-- table `film`
+-- title           |rating|
+-- ----------------+------+
+-- ACADEMY DINOSAUR|PG    |
+-- ACE GOLDFINGER  |G     |
+-- ADAPTATION HOLES|NC-17 |
+-- AFFAIR PREJUDICE|G     |
+-- AFRICAN EGG     |G     |
+-- AGENT TRUMAN    |PG    |
+-- AIRPLANE SIERRA |PG-13 |
+-- AIRPORT POLLOCK |R     |
+-- ALABAMA DEVIL   |PG-13 |
+-- ALADDIN CALENDAR|NC-17 |
+
+-- You can create a table like this:
+SELECT
+  rating,
+  COUNT(*)
+FROM film
+GROUP BY rating;
+-- rating|count(*)|
+-- ------+--------+
+-- PG    |     194|
+-- G     |     178|
+-- NC-17 |     210|
+-- PG-13 |     223|
+-- R     |     195|
+
+-- If you wanted the same result but having a table with a single row and five columns (one for each rating):
+SELECT 
+	SUM(CASE WHEN film.rating = 'G' THEN 1 ELSE 0 END) AS 'G',
+	SUM(CASE WHEN film.rating = 'PG' THEN 1 ELSE 0 END) AS 'PG',
+	SUM(CASE WHEN film.rating = 'PG-13' THEN 1 ELSE 0 END) AS 'PG_13',
+	SUM(CASE WHEN film.rating = 'R' THEN 1 ELSE 0 END) AS 'R',
+	SUM(CASE WHEN film.rating = 'NC-17' THEN 1 ELSE 0 END) AS 'NC_17'
+FROM film;
+-- G  |PG |PG_13|R  |NC_17|
+-- ---+---+-----+---+-----+
+-- 178|194|  223|195|  210|
+```
+
+In MySQL, you can use the pivot clauses.
 
 # Export query to CSV
 
