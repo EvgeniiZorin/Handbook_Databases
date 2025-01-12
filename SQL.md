@@ -66,6 +66,9 @@
   - [Primary key](#primary-key)
   - [Composite primary key](#composite-primary-key)
   - [Foreign key](#foreign-key)
+  - [UNIQUE](#unique)
+  - [CHECK](#check)
+  - [others](#others)
 - [Trigger](#trigger)
 - [IF conditions](#if-conditions)
 - [Joins](#joins)
@@ -88,7 +91,8 @@
 - [Transaction](#transaction)
   - [Locking](#locking)
   - [auto-commit vs manual commit](#auto-commit-vs-manual-commit)
-- [Isolation levels](#isolation-levels)
+  - [Isolation levels](#isolation-levels)
+- [Index](#index)
 - [Denormalisation](#denormalisation)
 - [Relationships](#relationships)
   - [One-to-one](#one-to-one)
@@ -2309,7 +2313,7 @@ WHERE active = 1;
 
 # Constraints
 
-Constraints are used to limit the data types for specific columns.
+Constraints are a restriction placed on one or more columns of a table.
 
 **Check all constraints for database `database1`, table `favorite_food`**
 ```sql
@@ -2320,70 +2324,27 @@ WHERE
 	AND TABLE_NAME = 'favorite_food';
 ```
 
-| Constraint | Meaning |
-| --- | --- |
-| **NOT NULL** | Values in this column have to be present, i.e. cannot be `NULL` |
-| **CHECK** | Check for a specified condition. E.g. `constraint login_min_length check (char_length(login) >= 3)` - check the minimum length of a login field. `eye_color CHAR(2) CHECK (eye_color IN ('BR', 'BL', 'GR'))` - check constraints that only three values are possible for this column. |
-| **DEFAULT** | Sets a default value for each row in a column |
-| **PRIMARY KEY** | Makes a specified column a `PRIMARY KEY` type. |
-| **FOREIGN KEY** | Makes a specified column an external key. E.g. `constraint user_uuid_foreign_key foreign key (user_uuid) references users (uuid) on update cascade on delete cascade` - обязывает содержать значение в user_uuid только для существующей записи в таблице users и автоматически обновится если оно будет изменено в таблице users, а так же заставит запись удалиться при удалении записи о пользователе |
-| **REFERENCES table(column)** | Make a foreign key referencing another table |
-| **BIGSERIAL** | Integer that auto-increments |
-| **BOOLEAN** | True / False, 'Yes' / 'No' |
-| **UNIQUE** | Values in this column must be unique for each data point |
-
-Examples:
+Constraints can be created at the time of creation of the associated table:
 ```sql
--- Add a NOT NULL constraint to the foreign key column, so that there will be no Null rows
-ALTER TABLE table_name ALTER COLUMN column_name SET NOT NULL;
+-- example for MySQL table
+CREATE TABLE customer (
+  customer_id SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  store_id TINYINT UNSIGNED NOT NULL,
+  first_name VARCHAR(45) NOT NULL,
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  create_date DATETIME NOT NULL,
+  last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  -- primary key constraint
+  PRIMARY KEY (customer_id),
+  -- indexes
+  KEY idx_fk_store_id (store_id),
+  KEY idx_fk_address_id (address_id),
+  KEY idx_last_name (last_name),
+  -- foreign key
+  CONSTRAINT fk_customer_address FOREIGN KEY (address_id)
+    REFERENCES address (address_id) ON DELETE RESTRICT ON UPDATE CASCADE
+)ENGINE=InnoDB DEFAULT CHARSET=utf8;
 ```
-
-UNIQUE - makes sure that only unique values can be added in a column
-```sql
-ALTER TABLE table1 ADD CONSTRAINT constraint_name_here UNIQUE (column1) # Custom constraint name
-# or
-ALTER TABLE table1 ADD UNIQUE (column1) # Constraint name defined by psql
-```
-
-DEFAULT - specify a default value for a column
-```sql
-CREATE TABLE table1 (column1 INT DEFAULT 'undecided')
-```
-
-CHECK - a column can only accept specific values
-```sql
-ALTER TABLE table1 ADD CONSTRAINT constraint_name CHECK (column1='Male' OR column1='Female');
-```
-
-CONFLICT (CONSTRAINT) MANAGEMENT
-```sql
-ON CONFLICT (column1) DO NOTHING;
-INSERT INTO ... VALUES ... ON CONFLICT (column1) DO UPDATE SET column1 = EXCLUDED.column1; # If an entry exists, it will update with the value you give it
-```
-
-FOREIGN KEYS - can connect tables based on foreign keys
-```sql
-CREATE TABLE table1(column1 DATATYPE REFERENCES table2(column_of_table2);
-
-ALTER TABLE table_name ADD COLUMN column_name DATATYPE REFERENCES referenced_table_name(referenced_column_name); # to set a foreign key that references a column from another table
-ALTER TABLE table_name ADD FOREIGN KEY(column_name) REFERENCES referenced_table(referenced_column); # set an existing column as a foreign key
-ALTER TABLE character_actions ADD FOREIGN KEY(character_id) REFERENCES characters(character_id);
-```
-
-```sql
--- AUTO_INCREMENT
--- Makes a column automatically populate with incrementing values (starting with 1) upon inserting new rows
-```sql
--- MySQL
-CREATE TABLE person (
-  person_id SMALLINT UNSIGNED,
-  PRIMARY KEY (person_id)
-);
-SET foreign_key_checks=0;
-ALTER TABLE person MODIFY person_id SMALLINT UNSIGNED AUTO_INCREMENT;
-SET foreign_key_checks=1;
-```
-
 
 ## Primary key
 
@@ -2496,13 +2457,21 @@ ALTER TABLE table_name ADD PRIMARY KEY(column1, column2);
 A foreign key:
 - Field in a table that references the primary key of another table
 - Makes a connection between two tables via their joint column. 
-- Enforce data integrity, making sure the data confirms to some rules when it is added to the DB. More specifically, it *verifies that the values in one table exist in another table.*
+- Enforce data integrity, making sure the data confirms to some rules when it is added to the DB. More specifically, it *restricts one or more columns to contain only values found in another table's primary key columns.*; thus it prevents *orphaned rows* - rows that no longer point to valid primary key (e.g. changing a customer's ID in the `customer` table without changing the same customer ID in the `rental` table);
 - It is NOT necessary to have a foreign key constraint in place in order to join two tables
 - A table might include a *self-referencing foreign key*, which means that it includes a column that points to the primary key within the same table; for example, a table about movies, where each movie has a `film_id`, can contain column `prequel_film_id` which points to the film's parent `film_id`
 
-ON DELETE SET NULL: if in the table 1 a row is deleted, then in the table 2 that references that first table via foreign key the corresponding value is set to NULL;
-
-ON DELETE CASCADE: if the row in the original table containing an id is deleted, then in a table referencing that table via a foreign key the entire row is deleted. 
+`ON` clauses in the foreign key constraint:
+- ON DELETE SET NULL: if in the table 1 a row is deleted, then in the table 2 that references that first table via foreign key the corresponding value is set to NULL;
+- ON DELETE CASCADE: if the row in the original table containing an id is deleted, then in a table referencing that table via a foreign key the entire row is deleted. 
+- ON DELETE RESTRICT: 
+  - will cause the server to raise an error if a row is deleted in the parent table that is referenced in the child table;
+  - protects against orphaned records when rows are deleted from the parent table;
+- ON UPDATE CASCADE: 
+  - will cause the server to propagate a change to the primary key value of a parent (referenced) table with a primary key to the child table;
+  - also protects against orphaned records when a primary key value is updated in the parent table;
+- ON UPDATE RESTRICT
+- ON UPDATE SET NULL
 
 **Create foreign key upon creation of the table**
 ```sql
@@ -2537,6 +2506,101 @@ ADD FOREIGN KEY(column_name)
 REFERENCES referenced_table(referenced_column)
 ON DELETE SET NULL -- optional option
 ;
+-- MySQL
+ALTER TABLE customer
+ADD CONSTRAINT fk_customer_address FOREIGN KEY (address_id)
+  REFERENCES address (address_id) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- remove a constraint
+ALTER TABLE customer
+DROP CONSTRAINT -- ...o9i
+```
+
+## UNIQUE
+
+Restricts the specified column to contain unique values within it. Values in this column must be unique for each data point. Makes sure that only unique values can be added in a column
+
+> You should not build unique indexes / constraints on your primary key column(s), since the server already checks uniqueness for primary key values.
+
+```sql
+ALTER TABLE table1 ADD CONSTRAINT constraint_name_here UNIQUE (column1) -- Custom constraint name
+-- or
+ALTER TABLE table1 ADD UNIQUE (column1) -- Constraint name defined by psql
+
+-- Create unique index on the `customer.email` column
+-- MySQL
+ALTER TABLE customer
+ADD UNIQUE idx_email (email);
+
+-- SQL server, Oracle database
+CREATE UNIQUE INDEX idx_email
+ON customer (email);
+```
+
+## CHECK
+
+Restricts the allowable values for a column. Thus, a column can only accept specific values
+
+```sql
+ALTER TABLE table1 
+ADD CONSTRAINT constraint_name CHECK (column1='Male' OR column1='Female');
+
+-- Other examples
+-- check the minimum length of a login field
+CONSTRAINT login_min_length CHECK (char_length(login) >= 3) 
+-- check constraints that only three values are possible for this column
+eye_color CHAR(2) CHECK (eye_color IN ('BR', 'BL', 'GR'))
+```
+
+## others
+
+| Constraint | Meaning |
+| --- | --- |
+| **NOT NULL** | Values in this column have to be present, i.e. cannot be `NULL` |
+| **DEFAULT** | Sets a default value for each row in a column |
+| **PRIMARY KEY** | Makes a specified column a `PRIMARY KEY` type. |
+| **FOREIGN KEY** | Makes a specified column an external key. E.g. `constraint user_uuid_foreign_key foreign key (user_uuid) references users (uuid) on update cascade on delete cascade` - обязывает содержать значение в user_uuid только для существующей записи в таблице users и автоматически обновится если оно будет изменено в таблице users, а так же заставит запись удалиться при удалении записи о пользователе |
+| **REFERENCES table(column)** | Make a foreign key referencing another table |
+
+Examples:
+```sql
+-- Add a NOT NULL constraint to the foreign key column, so that there will be no Null rows
+ALTER TABLE table_name ALTER COLUMN column_name SET NOT NULL;
+```
+
+
+DEFAULT - specify a default value for a column
+```sql
+CREATE TABLE table1 (column1 INT DEFAULT 'undecided')
+```
+
+CONFLICT (CONSTRAINT) MANAGEMENT
+```sql
+ON CONFLICT (column1) DO NOTHING;
+INSERT INTO ... VALUES ... ON CONFLICT (column1) DO UPDATE SET column1 = EXCLUDED.column1; # If an entry exists, it will update with the value you give it
+```
+
+FOREIGN KEYS - can connect tables based on foreign keys
+```sql
+CREATE TABLE table1(column1 DATATYPE REFERENCES table2(column_of_table2);
+
+ALTER TABLE table_name ADD COLUMN column_name DATATYPE REFERENCES referenced_table_name(referenced_column_name); # to set a foreign key that references a column from another table
+ALTER TABLE table_name ADD FOREIGN KEY(column_name) REFERENCES referenced_table(referenced_column); # set an existing column as a foreign key
+ALTER TABLE character_actions ADD FOREIGN KEY(character_id) REFERENCES characters(character_id);
+```
+
+```sql
+-- AUTO_INCREMENT
+-- Makes a column automatically populate with incrementing values (starting with 1) upon inserting new rows
+```sql
+-- MySQL
+CREATE TABLE person (
+  person_id SMALLINT UNSIGNED,
+  PRIMARY KEY (person_id)
+);
+SET foreign_key_checks=0;
+ALTER TABLE person MODIFY person_id SMALLINT UNSIGNED AUTO_INCREMENT;
+SET foreign_key_checks=1;
 ```
 
 
@@ -3459,7 +3523,9 @@ When you are working with a database in DBeaver, you can have two modes:
 
 Manual for DBeaver: https://github.com/dbeaver/dbeaver/wiki/Auto-and-Manual-Commit-Modes
 
-# Isolation levels
+
+
+## Isolation levels
 
 > Read more: https://blog.iddqd.uk/interview-section-databases/
 
@@ -3482,9 +3548,59 @@ The four isolation levels in increasing order of isolation attained for a given 
   - Strongest isolation, but also the slowest
   - Prevents dirty reads, non-repeatable reads, and phantom reads
 
+# Index
 
+Index is a mechanism for quickly finding a specific item within a resource.
 
+The role of indexes is to facilitate the retrieval of a subset of a table's rows and columns without the need to inspect every row in the table.
 
+Show indexes: `SHOW INDEX FROM customer;`
+
+```sql
+-- Add an index called `idx_email` on the `customer.email` column
+-- MySQL
+ALTER TABLE customer
+ADD INDEX idx_email (email);
+-- Others
+CREATE INDEX idx_email
+ON customer (email);
+
+-- Drop an index
+-- MySQL
+ALTER TABLE customer
+DROP INDEX idx_email;
+-- Others
+DROP INDEX idx_email;
+-- or
+DROP INDEX idx_email ON customer;
+```
+
+Index can be multicolumn if you query data based on multiple columns.
+
+E.g. if you search for customers by first and last names, you can build a multicolumn index:
+```sql
+ALTER TABLE customer
+ADD INDEX idx_full_name (last_name, first_name);
+```
+
+<u>Types of indexes</u>:
+- **B-tree indexes**: balanced-tree indexes;
+  - Branch nodes are used for navigating the tree, while leaf nodes hold the actual values and location information;
+  - Example of a B-tree index built on the customer.last_name column
+  ![alt text](image-1.png)
+  - As more and more rows are added to the table, the server will attempt to keep the tree balanced so that there aren't far more branch/leaf nodes on one side of the root node than the other; by keeping the tree balanced, the server is able to traverse quickly to the leaf nodes to find the desired values without having to navigate through many levels of branch nodes;
+  - Great at handling columns that contain many different values, e.g. a customer's first or last names
+- **Bitmap indexes**: 
+  - Generate a bitmap for each value stored in the column
+  - Bitmap indexes are a nice, compact indexing solution for columns with a small number of unique values
+  - `CREATE BITMAP INDEX idx_active ON customer (active);`
+  - Commonly used in warehousing environments, where large amounts of data are generally indexed on columns containing relatively few unique values;
+- **Text indexes** / full-text indexes
+  - If your database stores documents and the user wants to search for words or phrases in the document
+
+Index disadvantages:
+- Index is a table, so having lots of indexes can slow the database down
+- Indexes require disk space
 
 # Denormalisation
 
