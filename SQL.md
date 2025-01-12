@@ -86,6 +86,8 @@
 - [Procedures](#procedures)
 - [Views](#views-1)
 - [Transaction](#transaction)
+  - [Locking](#locking)
+  - [auto-commit vs manual commit](#auto-commit-vs-manual-commit)
 - [Isolation levels](#isolation-levels)
 - [Denormalisation](#denormalisation)
 - [Relationships](#relationships)
@@ -3319,7 +3321,7 @@ SELECT COUNT(*) FROM table1_table2_innerjoin;
 
 # Transaction
 
-A transaction is $N \ge 1$ queries to DB that either compelete successfully all together or are not completed at all.
+A transaction is $N \ge 1$ queries to DB that either compelete successfully all together or are not completed at all (property of *atomicity*).
 
 A SQL transaction is a sequence of database operations that behave as a single unit of work. It ensures that multiple operations are executed in an atomic and consistent manner, which is crucial for maintaining database integrity. SQL transactions adhere to a set of principles known as ACID.
 
@@ -3332,6 +3334,7 @@ Primary statements used for managing SQL transactions:
 Example of a transaction: consider a bank database with two tables: Customers (customer_id, name, account_balance) and Transactions (transaction_id, transaction_amount, customer_id). To transfer a specific amount from one customer to another securely, you would use a SQL transaction as follows:
 ```sql
 BEGIN TRANSACTION;
+-- MySQL `START TRANSACTION;`
 
 -- Reduce the balance of the sender
 UPDATE Customers
@@ -3350,25 +3353,111 @@ VALUES (-100, 1),
 
 -- Check if the sender's balance is sufficient
 IF (SELECT account_balance FROM Customers WHERE customer_id = 1) >= 0
+    -- if true, make the changes permanent;
     COMMIT;
 ELSE
+    -- otherwise, ROLLBACK - undo all the changes done to the data since the beginning of this transaction
     ROLLBACK;
+
+-- the end of the transaction is signalled by the COMMIT command
 ```
 
-SQL transactions are crucial in various real-world scenarios that require multiple database operations to occur atomically and consistently. Below are some common examples:
-- E-commerce: When processing an order that includes billing, shipping, and updating the inventory, it is essential to execute these actions as a single transaction to ensure data consistency and avoid potential double bookings, incorrect inventory updates, or incomplete order processing.
-- Banking and financial systems: Managing accounts, deposits, withdrawals, and transfers require transactions for ensuring data integrity and consistency while updating account balances and maintaining audit trails of all transactions.
-- Reservation systems: For booking tickets or accommodations, the availability of the seats or rooms must be checked, confirmed, and updated in the system. Transactions are necessary for this process to prevent overbooking or incorrect reservations.
-- User registration and authentication: While creating user accounts, it is vital to ensure that the account information is saved securely to the correct tables and without duplicates. Transactions can ensure atomicity and isolation of account data operations.
+Another example - transfer $50 from account 123 to account 789:
+```sql
+-- Account:
+-- account_id | avail_balance | last_activity_date  |
+-- --------------------------------------------------
+-- 123        | 500           | 2019-07-10 20:53:27 |
+-- 789        | 75            | 2019-06-22 15:18:35 |
 
-Potential issues with SQL transactions:
-- Isolation problems:
+-- Transaction:
+-- txn_id | txn_date   | account_id | txn_type_cd | amount |
+-- ---------------------------------------------------------
+-- 1001   | 2019-05-15 | 123        | C           | 500    |
+-- 1002   | 2019-06-01 | 789        | C           | 75     |
+
+START TRANSACTION;
+
+UPDATE Account 
+SET 
+	avail_balance = avail_balance - 50, 
+	last_activity_date = CURRENT_TIMESTAMP
+WHERE 
+	account_id = 123
+;
+
+INSERT INTO Transaction(txn_date, account_id, txn_type_cd, amount)
+VALUES (CURDATE(), 123, 'D', 50)
+
+UPDATE Account
+SET
+	avail_balance = avail_balance + 50,
+	last_activity_date = CURRENT_TIMESTAMP 
+WHERE 
+	account_id = 789
+;
+
+INSERT INTO Transaction(txn_date, account_id, txn_type_cd, amount)
+VALUES (CURDATE(), 789, 'C', 50)
+
+COMMIT;
+```
+
+SQL transactions are crucial in various real-world scenarios that require multiple database operations to occur atomically and consistently. **Real-life examples**:
+- **E-commerce**: When processing an order that includes billing, shipping, and updating the inventory, it is essential to execute these actions as a single transaction to ensure data consistency and avoid potential double bookings, incorrect inventory updates, or incomplete order processing.
+- **Banking and financial systems**: Managing accounts, deposits, withdrawals, and transfers require transactions for ensuring data integrity and consistency while updating account balances and maintaining audit trails of all transactions.
+- **Reservation systems**: For booking tickets or accommodations, the availability of the seats or rooms must be checked, confirmed, and updated in the system. Transactions are necessary for this process to prevent overbooking or incorrect reservations.
+- **User registration and authentication**: While creating user accounts, it is vital to ensure that the account information is saved securely to the correct tables and without duplicates. Transactions can ensure atomicity and isolation of account data operations.
+
+**Potential issues with SQL transactions**:
+- **Isolation problems**:
   - Dirty reads - where a transaction may see uncommitted changes made by some other transaction. 
   - Non-repeatable reads: Before transaction A is over, another transaction B also accesses the same data. Then, due to the modification caused by transaction B, the data read twice from transaction A may be different. The key to non-repeatable reading is to modify: In the same conditions, the data you have read, read it again, and find that the value is different.
   - Phantom reads: When the user reads records, another transaction inserts or deletes rows to the records being read. When the user reads the same rows again, a new “phantom” row will be found. The key point of the phantom reading is to add or delete: Under the same conditions, the number of records read out for the first time and the second time is different.
-- Deadlocks
-- Lost updates
-- Long-running transactions
+- **Deadlocks**: when two different transactions are waiting for resources that the other transaction currently holds. E.g. transaction A might have just updated the `account` table and is waiting for a write lock on the `transaction` table, while transaction B has inserted a row into the `transaction` table and is waiting for a write lock on the `account` table.
+- **Lost updates**
+- **Long-running transactions**
+
+
+
+Transactions may also have savepoints, so that if you do a rollback, you return to that savepoint (and not undo the entire transaction):
+```sql
+START TRANSACTION;
+
+UPDATE product
+SET date_retired = CURRENT_TIMESTAMP()
+WHERE product_cd = 'XYZ';
+
+SAVEPOINT before_close_accounts;
+
+UPDATE account
+SET 
+  status = 'CLOSED', 
+  close_date = CURRENT_TIMESTAMP(),
+  last_activity_date = CURRENT_TIMESTAMP()
+WHERE product_cd = 'XYZ';
+
+ROLLBACK TO SAVEPOINT before_close_accounts;
+COMMIT;
+```
+
+## Locking
+
+Locks are the mechanism the database server uses to control simultaneous use of data resources. 
+
+Two locking strategies:
+- Database writers request and receive from the server a write lock to modify data, *and database readers must request and receive from the server a read lock to query data*; One write lock is given out at a time for each table (or portion) and read requests are blocked until the write 
+- **Versioning approach:** database writers request and receive from the server a write lock to modify data, *but readers do not need any type of lock to query data*. Instead, the server ensures that a reader sees a consistent view of the data from the time their query begins until their query has finished. 
+
+## auto-commit vs manual commit
+
+> note: this is written for DBeaver
+
+When you are working with a database in DBeaver, you can have two modes:
+- Auto-commit: any changes to the database, such as UPDATE, DELETE, etc. are by default committed. Once a query has finished, there is no way of undoing it
+- Manual commit: you can rollback any changes you have made to the database. If you want to make the changes permanent, you have to manually commit them by pressing the corresponding button
+
+Manual for DBeaver: https://github.com/dbeaver/dbeaver/wiki/Auto-and-Manual-Commit-Modes
 
 # Isolation levels
 
