@@ -87,7 +87,6 @@
   - [Long -\> wide](#long---wide)
 - [Export query to CSV](#export-query-to-csv)
 - [Procedures](#procedures)
-- [Views](#views-1)
 - [Transaction](#transaction)
   - [Locking](#locking)
   - [auto-commit vs manual commit](#auto-commit-vs-manual-commit)
@@ -406,6 +405,8 @@ CREATE DATABASE database1 CHARACTER SET latin1;
 ```sql
 -- Select substring from index 5 to index 10
 SELECT SUBSTRING('yes hello world', 5, 5); -- returns 'hello'
+-- 'hello' + '****' + 'world' -> 'hello****world'
+SELECT CONCAT( SUBSTRING('yes hello world', 5, 5), '****', SUBSTRING('yes hello world', 11, 5) )
 ```
 
 **CHAR**
@@ -2173,25 +2174,112 @@ WHERE last_name LIKE '%J';
 
 ## Views
 
-It is a query that is stored in the data dictionary. 
-- It looks and acts like a table, but there is no data associated with a view; when you issue a query against a view, your query is merged with the view definition to create a final query to be executed.
-- It is like a saved query for later use;
+A view is a mechanism for querying data; a query that is stored in the data dictionary.
+- A view is created by assigning a name to a SELECT statement and then storing the query for future use;
+- It looks and acts like a table, but there is no data associated with a view; when you issue a query against a view, your query is merged with the view definition to create a final query to be executed
+- Example: you can save a table view upon running the inner join command, and then perform actions on that view table to not type in the join command over and over again. 
+
+Uses and advantages:
+- Data Security: 
+  - You can keep the table private (users don't have SELECT permission to the table) but create one or more views that obscure the private / sensitive information;
+- Data Aggregation:
+  - Views can join and simplify multiple tables into a single virtual table;
+  - Views can act as aggregated tables
+- Hiding Complexity:
+  - Views can hide the complexity of data
+  - E.g. you can have a view with tons of subqueries, joins, etc. but they are hidden from the end user
+
+
+
+After you create a view, it shows in the list of tables using the command `\d`. Nevertheless, this view is not a table; it simply is a result of a saved query. 
 
 ```sql
--- First you create a view
-CREATE VIEW cust_vw AS
+-- Create a view of a table
+CREATE VIEW table1_view_males AS 
+SELECT * FROM table1 WHERE gender = 'Male';
+
+-- Show a table view
+SELECT * FROM table1_view_males;
+
+-- Update a view
+CREATE OR REPLACE VIEW view1 AS ...;
+
+-- Delete a view
+DROP VIEW view1;
+```
+
+A more practical example
+```sql
+-- Let's say you have a join query
+SELECT table1.first_name, table1.gender, table1.age, table2.item 
+FROM table1 
+INNER JOIN table2 ON table1.first_name = table2.first_name;
+
+-- If you want to make an operation on it, instead of writing it out every time, you can save it as a view and then perform that action on the view of the table
+CREATE VIEW table1_table2_innerjoin AS 
+SELECT table1.first_name, table1.gender, table1.age, table2.item 
+FROM table1 
+INNER JOIN table2 ON table1.first_name = table2.first_name;
+
+-- So now, you can perform operations on that view object you created, 
+# for example, you can count rows
+SELECT COUNT(*) FROM table1_table2_innerjoin;
+```
+
+Another example - you want to define a view that partially hides the email:
+```sql
+-- define a view
+CREATE VIEW customer_vw (
+  customer_id,
+  first_name,
+  last_name,
+  email
+) AS
 SELECT 
-  person_id, 
-  name, 
-  surname,
-  height
-FROM person;
--- Then later, you can issue queries against a view
+  customer_id,
+  first_name,
+  last_name,
+  -- partially obstruct the emails - only show first two letters, then '*****', ended by the last four letters
+  concat(substr(email,1,2), '*****', substr(email, -4)) AS email
+FROM customer
+-- only show active customers
+WHERE active = 1
+;
+
+-- query a view just like you would a table
 SELECT 
-  name,
-  surname
-FROM cust_vw
-WHERE surname = 'Jones';
+  first_name,
+  last_name, 
+  email
+FROM customer_vw;
+```
+
+Maybe slighly counterintuitive, but you can modify a table that is used in the view as long as some conditions are met:
+- No aggregate functions are used
+- The view does not employ GROUP BY or HAVING clauses;
+- No subqueries exist in the SELECT or FROM clause, and any subqueries in the WHERE clause do no refer to tables in the from clause
+- The view does not utilize UNION, UNION ALL, or DISTINCT
+- The FROM clause includes at least one table or updatable view
+- The FROM clause uses only innner joins if there is more than one table or view
+
+For example, in the view below:
+- You can modify last_name
+- you CANNOT modify email since it is derived from an expression
+- you CANNOT insert new rows as you have a derived column `email`
+```sql
+CREATE VIEW customer_vw (
+  customer_id,
+  first_name,
+  last_name,
+  email
+) AS
+SELECT 
+  customer_id,
+  first_name,
+  last_name,
+  concat(substr(email,1,2), '*****', substr(email, -4)) AS email
+FROM customer
+;
 ```
 
 # Conditional logic
@@ -2465,7 +2553,7 @@ A foreign key:
 - ON DELETE SET NULL: if in the table 1 a row is deleted, then in the table 2 that references that first table via foreign key the corresponding value is set to NULL;
 - ON DELETE CASCADE: if the row in the original table containing an id is deleted, then in a table referencing that table via a foreign key the entire row is deleted. 
 - ON DELETE RESTRICT: 
-  - will cause the server to raise an error if a row is deleted in the parent table that is referenced in the child table;
+  - will cause the server to raise an error if a row is attempted to be deleted in the parent table that is referenced in the child table;
   - protects against orphaned records when rows are deleted from the parent table;
 - ON UPDATE CASCADE: 
   - will cause the server to propagate a change to the primary key value of a parent (referenced) table with a primary key to the child table;
@@ -2508,8 +2596,12 @@ ON DELETE SET NULL -- optional option
 ;
 -- MySQL
 ALTER TABLE customer
-ADD CONSTRAINT fk_customer_address FOREIGN KEY (address_id)
-  REFERENCES address (address_id) ON DELETE RESTRICT ON UPDATE CASCADE;
+ADD CONSTRAINT fk_customer_address FOREIGN KEY (address_id) -- add a foreign key on column address_id
+  REFERENCES address (address_id) ON DELETE RESTRICT ON UPDATE CASCADE; -- that will reference a parent table address, column address_id, and if from address.address_id a row is attempted to be removed, an error is raised
+
+ALTER TABLE rental 
+ADD CONSTRAINT fk_1 FOREIGN KEY (customer_id)
+REFERENCES customer (customer_id) ON DELETE RESTRICT;
 
 -- remove a constraint
 ALTER TABLE customer
@@ -3336,51 +3428,6 @@ CALL proc_insertRecord ('Isabel2', 'weird', 10);
 Delete a procedure
 ```sql
 DROP PROCEDURE proc_1;
-```
-
-# Views
-
-A View is a kind of a table that is based on results of a previous SQL query. For example, you can save a table view upon running the inner join command, and then perform actions on that view table to not type in the join command over and over again. 
-
-Uses and advantages:
-- Views can join and simplify multiple tables into a single virtual table;
-- Views can act as aggregated tables
-- Views can hide the complexity of data
-- Views can provide extra security to a DBMS
-
-After you create a view, it shows in the list of tables using the command `\d`. Nevertheless, this view is not a table; it simply is a result of a saved query. 
-
-```sql
-# Create a view of a table
-CREATE VIEW table1_view_males AS 
-SELECT * FROM table1 WHERE gender = 'Male';
-
-# Show a table view
-SELECT * FROM table1_view_males;
-
-# Update a view
-CREATE OR REPLACE VIEW view1 AS ...;
-
-# Delete a view
-DROP VIEW view1;
-```
-
-A more practical example
-```sql
-# Let's say you have a join query
-SELECT table1.first_name, table1.gender, table1.age, table2.item 
-FROM table1 
-INNER JOIN table2 ON table1.first_name = table2.first_name;
-
-# If you want to make an operation on it, instead of writing it out every time, you can save it as a view and then perform that action on the view of the table
-CREATE VIEW table1_table2_innerjoin AS 
-SELECT table1.first_name, table1.gender, table1.age, table2.item 
-FROM table1 
-INNER JOIN table2 ON table1.first_name = table2.first_name;
-
-# So now, you can perform operations on that view object you created, 
-# for example, you can count rows
-SELECT COUNT(*) FROM table1_table2_innerjoin;
 ```
 
 # Transaction
