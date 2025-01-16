@@ -1899,6 +1899,7 @@ WHERE
 These subqueries reference one or more columns from the containing query statement
 
 ```sql
+
 SELECT 
   с.first_name, 
   c.last_name 
