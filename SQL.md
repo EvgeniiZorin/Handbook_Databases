@@ -1517,6 +1517,9 @@ HAVING SUM(salary) > 50000;
 ```
 
 #### STRING_AGG
+
+> Note: string_agg = postgresql; group_concat = mysql;
+
 ```sql
 -- STRING_AGG to concatenate strings
 -- Below, the ORDER BY within the agg function is optional - it's just to sort the concatenated names lexicographically within each concatenation group
