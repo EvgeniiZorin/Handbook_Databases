@@ -91,6 +91,7 @@
   - [Locking](#locking)
   - [auto-commit vs manual commit](#auto-commit-vs-manual-commit)
   - [Isolation levels](#isolation-levels)
+- [Metadata](#metadata)
 - [Index](#index)
 - [Denormalisation](#denormalisation)
 - [Relationships](#relationships)
@@ -3595,6 +3596,106 @@ The four isolation levels in increasing order of isolation attained for a given 
 - **Serializable**: erializable is the highest transaction isolation level. Under this level, transactions are serialized and executed sequentially, which can avoid dirty read, non-repeatable read, and phantom read. However, this transaction isolation level is inefficient and consumes database performance, so it is rarely used.
   - Strongest isolation, but also the slowest
   - Prevents dirty reads, non-repeatable reads, and phantom reads
+
+# Metadata
+
+Metadata - data about data.
+
+Data dictionary / system catalog - data about tables:
+- table name
+- table storage information (tablespace, initial size, etc.)
+- storage engine
+- column names
+- column data types
+- default column values
+- not null column constraints
+- primary key columns
+- primary key name
+- name of primary key index
+- foreign key name and columns
+
+in MySQL, `information_schema` is used to publish metadata. All objects within the `information_schema` database are views that, unlike `describe`, can be queried. 
+
+Views within the `information_schema` database:
+| View name | Provides information about ... |
+| - | - |
+| `schemata` | Databases |
+| `tables` | Tables and views |
+| `columns` | Columns of tables and views |
+| `statistics` | Indexes |
+| `user_privileges` | Who has privileges on which schema objects |
+| `schema_privileges`, `table_privileges`, `column_privileges` | Who has privileges on which databases, tables, or columns of which tables |
+| `character_sets` | What character sets are available |
+| `collations` | What collations are available for which character sets |
+| `collation_character_set_applicability` | Which character sets are available for which collation |
+| `table_constraints` | The unique, foreign key, and primary key constraints |
+| `key_column_usage` | The constraints associated with each key column |
+| `routines` | Stored routines (procedures and functions) |
+| `views` | Views |
+| `triggers` | Table triggers |
+| `plugins` | Server plug-ins |
+| `engines` | Available storage engines |
+| `partitions` | Table partitions |
+| `events` | Scheduled events |
+| `processlist` | Running processes |
+| `referential_constraints` | Foreign keys |
+| `parameters` | Stored procedure and function parameters |
+| `profiling` | User profiling information |
+
+Examples:
+
+```sql
+-- show info about tables and views
+SELECT table_name, table_type
+FROM information_schema.tables
+WHERE
+	-- 'sakila' schema / database
+	table_schema = 'sakila'
+	-- exclude the views, showing only tables
+	AND table_type = 'BASE TABLE'
+ORDER BY table_name;
+
+-- show info only about views
+SELECT table_name, is_updatable
+FROM information_schema.views
+WHERE table_schema = 'sakila'
+ORDER BY table_name;
+
+-- column information for both tables and views
+SELECT 
+	column_name,
+	data_type,
+	character_maximum_length AS char_max_len,
+	numeric_precision AS num_prcsn,
+	numeric_scale AS num_scale
+FROM information_schema.columns
+WHERE 
+	table_schema = 'sakila'
+	AND table_name = 'film'
+-- 'ordinal_position' - to retrieve the columns in the order in which they were added to the table
+ORDER BY ordinal_position;
+
+-- get info about indexes for database 'sakila', table 'rental'
+SELECT 
+	index_name,
+	non_unique,
+	seq_in_index, 
+	column_name
+FROM information_schema.statistics
+WHERE 	
+	table_schema = 'sakila'
+	AND table_name = 'rental'
+ORDER BY index_name, seq_in_index;
+
+-- show constraints
+SELECT 
+	constraint_name,
+	table_name,
+	constraint_type
+FROM information_schema.table_constraints
+WHERE table_schema = 'sakila'
+ORDER BY constraint_type, constraint_name;
+```
 
 # Index
 
