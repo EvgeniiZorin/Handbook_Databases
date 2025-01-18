@@ -36,6 +36,8 @@
     - [Random sampling](#random-sampling)
     - [QUOTE](#quote)
     - [LIKE, REGEXP](#like-regexp)
+    - [Data windows](#data-windows)
+    - [RANK](#rank)
     - [Aggregate statements](#aggregate-statements)
       - [COUNT](#count)
       - [SUM](#sum)
@@ -563,6 +565,9 @@ SELECT current_setting('TIMEZONE');
 **General**
 
 ```sql
+-- Get a quarter number for a timestamp
+SELECT quarter(datetime)
+
 -- Update a date for a row
 UPDATE rental
 SET return_date = '2019-09-17' -- or '2019-09-17 15:30:00'
@@ -661,7 +666,9 @@ SELECT * FROM notable_dates WHERE EXTRACT (MONTH FROM date1) = 02
 WHERE EXTRACT(YEAR FROM date1) < EXTRACT(YEAR FROM CURRENT_DATE())
 WHERE EXTRACT(YEAR FROM e.birth_date) IN (1967, 1961)
 -- MySQL
-WHERE YEAR(date1) = 2004 -- or '2004'
+YEAR(date1) = 2004 -- or '2004'
+QUARTER(date1)
+MONTHNAME(date1)
 ```
 
 ```sql
@@ -722,6 +729,29 @@ SELECT * FROM notable_dates
 ORDER BY 
   EXTRACT(MONTH FROM date), 
   EXTRACT(DAY FROM date) DESC;
+```
+
+Show total monthly payments for film rentals for 2005 for each quarter and month;
+```sql
+SELECT 
+	QUARTER(payment_date) AS quarter,
+	MONTHNAME(payment_date) AS month_nm,
+	SUM(amount) AS monthly_sales,
+	MAX(SUM(amount)) OVER () AS max_overall_sales,
+	MAX(SUM(amount)) OVER (PARTITION BY QUARTER(payment_date)) AS max_qrtr_sales
+FROM payment
+WHERE YEAR(payment_date) = 2005
+GROUP BY 
+	quarter(payment_date),
+	monthname(payment_date)
+;
+
+-- quarter|month_nm|monthly_sales|max_overall_sales|max_qrtr_sales|
+-- -------+--------+-------------+-----------------+--------------+
+--       2|May     |      4823.44|         28368.91|       9629.89|
+--       2|June    |      9629.89|         28368.91|       9629.89|
+--       3|July    |     28368.91|         28368.91|      28368.91|
+--       3|August  |     24070.14|         28368.91|      28368.91|
 ```
 
 ## NULL
@@ -1246,6 +1276,148 @@ FROM employee;
 -- Andy      |true         |
 ```
 
+### Data windows
+
+```sql
+OVER ()
+OVER (PARTITION BY column1) AS alias
+```
+
+Show total monthly payments for film rentals for 2005 for each quarter and month;
+```sql
+SELECT 
+	QUARTER(payment_date) AS quarter,
+	MONTHNAME(payment_date) AS month_nm,
+	SUM(amount) AS monthly_sales,
+	MAX(SUM(amount)) OVER () AS max_overall_sales,
+	MAX(SUM(amount)) OVER (PARTITION BY QUARTER(payment_date)) AS max_qrtr_sales
+FROM payment
+WHERE YEAR(payment_date) = 2005
+GROUP BY 
+	quarter(payment_date),
+	monthname(payment_date)
+;
+
+-- quarter|month_nm|monthly_sales|max_overall_sales|max_qrtr_sales|
+-- -------+--------+-------------+-----------------+--------------+
+--       2|May     |      4823.44|         28368.91|       9629.89|
+--       2|June    |      9629.89|         28368.91|       9629.89|
+--       3|July    |     28368.91|         28368.91|      28368.91|
+--       3|August  |     24070.14|         28368.91|      28368.91|
+```
+
+
+
+### RANK
+
+Ranking functions:
+- `row_number`: returns a unique number for each row
+- `rank`: returns the same ranking in case of a tie, with gaps in the ranking
+- `dense_rank`: returns the same ranking in case of a tie, with NO gaps in the ranking
+
+> For many situations, the `rank` function might be the best option
+
+An example:
+```sql
+SELECT 
+	customer_id,
+	num_rentals,
+	ROW_NUMBER() OVER (ORDER BY num_rentals DESC) AS row_number_rnk,
+	RANK() OVER (ORDER BY num_rentals DESC) AS rank_rnk,
+	DENSE_RANK() OVER (ORDER BY num_rentals DESC) AS dense_rank_rnk
+FROM (	
+	SELECT 1 customer_id, 46 num_rentals
+	UNION ALL
+	SELECT 2 customer_id, 45 num_rentals
+	UNION ALL
+	SELECT 3 customer_id, 45 num_rentals
+	UNION ALL
+	SELECT 4 customer_id, 44 num_rentals
+	UNION ALL
+	SELECT 5 customer_id, 44 num_rentals
+	UNION ALL
+	SELECT 6 customer_id, 44 num_rentals
+	UNION ALL
+	SELECT 7 customer_id, 43 num_rentals
+) a1;
+-- customer_id|num_rentals|row_number_rnk|rank_rnk|dense_rank_rnk|
+-- -----------+-----------+--------------+--------+--------------+
+--           1|         46|             1|       1|             1|
+--           2|         45|             2|       2|             2|
+--           3|         45|             3|       2|             2|
+--           4|         44|             4|       4|             3|
+--           5|         44|             5|       4|             3|
+--           6|         44|             6|       4|             3|
+--           7|         43|             7|       7|             4|
+```
+
+Get top 3 for ROW_NUMBER() function:
+```sql
+SELECT *
+FROM (
+	SELECT 
+		customer_id,
+		num_rentals,
+		ROW_NUMBER() OVER (ORDER BY num_rentals DESC) AS row_number_rnk
+	FROM (	
+		SELECT 1 customer_id, 46 num_rentals
+		UNION ALL
+		SELECT 2 customer_id, 45 num_rentals
+		UNION ALL
+		SELECT 3 customer_id, 45 num_rentals
+		UNION ALL
+		SELECT 4 customer_id, 44 num_rentals
+		UNION ALL
+		SELECT 5 customer_id, 44 num_rentals
+		UNION ALL
+		SELECT 6 customer_id, 44 num_rentals
+		UNION ALL
+		SELECT 7 customer_id, 43 num_rentals
+	) a1
+) a2
+WHERE 
+	row_number_rnk <= 3
+;
+-- customer_id|num_rentals|row_number_rnk|
+-- -----------+-----------+--------------+
+--           1|         46|             1|
+--           2|         45|             2|
+--           3|         45|             3|
+```
+
+Multiple ranking - get ranking for each year
+```sql
+SELECT 
+	customer_id,
+	YEAR,
+	num_rentals,
+	DENSE_RANK() OVER (PARTITION BY YEAR ORDER BY num_rentals DESC) AS dense_rank_rnk
+FROM (	
+	SELECT 1 customer_id, 2014 year, 46 num_rentals
+	UNION ALL
+	SELECT 2 customer_id, 2014 YEAR, 45 num_rentals
+	UNION ALL
+	SELECT 3 customer_id, 2014 YEAR, 45 num_rentals
+	UNION ALL
+	SELECT 4 customer_id, 2014 YEAR, 44 num_rentals
+	UNION ALL
+	SELECT 5 customer_id, 2015 YEAR, 44 num_rentals
+	UNION ALL
+	SELECT 6 customer_id, 2015 YEAR, 44 num_rentals
+	UNION ALL
+	SELECT 7 customer_id, 2015 YEAR, 43 num_rentals
+) a1;
+-- customer_id|YEAR|num_rentals|dense_rank_rnk|
+-- -----------+----+-----------+--------------+
+--           1|2014|         46|             1|
+--           2|2014|         45|             2|
+--           3|2014|         45|             2|
+--           4|2014|         44|             3|
+--           5|2015|         44|             1|
+--           6|2015|         44|             1|
+--           7|2015|         43|             2|
+```
+
 ### Aggregate statements
 
 Aggregate statements / functions can be used in two ways:
@@ -1565,6 +1737,12 @@ SELECT STRING_AGG(emp_id, ' ') FROM a1
 -- Method 2
 SELECT STRING_AGG(CAST(emp_id AS VARCHAR), ' | ') -- VARCHAR for PostgreSQL and STRING for BigQuery
 FROM test.employee
+```
+
+Example of GROUP_CONCAT (MySQL):
+```sql
+-- concatenate all rows in the column "last_name" with separator ', '
+group_concat(last_name ORDER BY first_name SEPARATOR ', ')
 ```
 
 ## FROM
