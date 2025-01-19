@@ -70,6 +70,8 @@ Column vs row database:
 
 Two types of databases - relational databases using [SQL](SQL.md) and non-relational databases using [noSQL](noSQL.md):
 
+> Please note that in the present, SQL is a querying language, while a relational databases is a database with a set of specific rules defining it. We can have non-relational databases, e.g. BigQuery, that are queried with SQL
+
 ## SQL
 
 Relational Database: 
@@ -159,4 +161,12 @@ ACID is a series of characteristics / features that which ensures that a set of 
 - **Isolation**: Isolation ensures that all transactions run in an isolated environment. That enables running transactions concurrently because transactions don’t interfere with each other.
 - **Durability**: Durability guarantees that once the transaction completes and changes are written to the database, they are persisted. This ensures that data within the system will persist even in the case of system failures like crashes or power outages.
 
+# ER diagram
 
+> a.k.a. entity-relationship diagram
+
+This diagram depicts the entities / tables in the database along with the foreign-key relationships between the tables. 
+
+Example:
+
+![alt text](image-2.png)
