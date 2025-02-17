@@ -1097,30 +1097,39 @@ SELECT
 
 ```sql
 -- Only print unique values from the column
+-- the two queries below produce the same result
 SELECT DISTINCT (column1)
 SELECT DISTINCT column1
 
 -- Show unique combinations of two columns - returns column where each row is a list of unique combs
 SELECT DISTINCT (column1, column2)
--- row                   |
--- ----------------------+
--- (2,"Custom Forms")    |
--- (2,Paper)             |
--- (2,"Writing Utensils")|
--- (3,"Custom Forms")    |
--- (3,Paper)             |
--- (3,"Writing Utensils")|
+-- show unique combinations of two columns BUT return a normal table
+SELECT DISTINCT column1, column2
 
--- Same but as separate columns
-SELECT DISTINCT column1, column2 
--- branch_id|supply_type     |
--- ---------+----------------+
---         2|Custom Forms    |
---         2|Paper           |
---         2|Writing Utensils|
---         3|Custom Forms    |
---         3|Paper           |
---         3|Writing Utensils|
+-- example
+SELECT DISTINCT(country, lang)
+FROM (
+	SELECT 'usa' AS country, 'english' AS lang
+	UNION ALL
+	SELECT 'usa' AS country, 'spanish' AS lang
+	UNION ALL
+	SELECT 'can' AS country, 'french' AS lang
+	UNION ALL
+	SELECT 'usa' AS country, 'spanish' AS lang
+) AS subquery1;
+-- `SELECT DISTINCT(country, lang)` returns this:
+-- row          |
+-- -------------+
+-- (can,french) |
+-- (usa,english)|
+-- (usa,spanish)|
+
+-- `SELECT DISTINCT country, lang` returns this:
+-- country|lang   |
+-- -------+-------+
+-- usa    |spanish|
+-- can    |french |
+-- usa    |english|
 ```
 
 ### COALESCE
