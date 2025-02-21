@@ -25,13 +25,14 @@
     - [Divide by zero](#divide-by-zero)
   - [Set](#set)
     - [UNION](#union)
+    - [EXCEPT](#except)
 - [Query clauses](#query-clauses)
   - [Aliases](#aliases)
   - [SELECT](#select)
     - [Built-in functions](#built-in-functions)
     - [DISTINCT](#distinct)
     - [COALESCE](#coalesce)
-    - [EXCEPT](#except)
+    - [EXCEPT](#except-1)
     - [CONCAT](#concat)
     - [Random sampling](#random-sampling)
     - [QUOTE](#quote)
@@ -959,7 +960,6 @@ GROUP BY
 
 ## Set 
 
-> To read more on set operations, see the section **Set operations**
 
 | Operator | Explanation |
 | - | - |
@@ -1040,6 +1040,10 @@ FROM (
 ```
 
 UNION can also be used to generate synthetic data. See `Types of tables/Subquery/Generate temporary data`
+
+### EXCEPT
+
+
 
 # Query clauses
 
