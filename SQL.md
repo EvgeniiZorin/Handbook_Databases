@@ -443,6 +443,8 @@ FROM person;
 --      5|
 ```
 
+
+
 **TRIM**
 
 Removes spaces or specified characters from both ends of a string.
@@ -1320,6 +1322,41 @@ GROUP BY
 ```
 
 
+**Another example:**
+
+```sql
+SELECT 
+	year,
+	month, 
+	MAX(MAX(sale)) OVER () AS max_overall_sale,
+	MAX(SUM(sale)) OVER (PARTITION BY month) AS total_monthly_sales,
+	MAX(MAX(sale)) OVER (PARTITION BY year, month) AS max_monthly_sales
+	
+FROM (
+	SELECT '2014' AS year, 'June' AS month, 100 AS sale
+	UNION ALL
+	SELECT '2014' AS year, 'June' AS month, 150 AS sale
+	UNION ALL
+	SELECT '2014' AS year, 'July' AS month, 170 AS sale
+	UNION ALL
+	SELECT '2015' AS year, 'June' AS month, 300 AS sale
+	UNION ALL
+	SELECT '2015' AS year, 'June' AS month, 50 AS sale
+) a1
+GROUP BY 
+	year,
+	month
+
+```
+
+Result: 
+```txt
+year|month|max_overall_sale|total_monthly_sales|max_monthly_sales|
+----+-----+----------------+-------------------+-----------------+
+2014|July |             300|                170|              170|
+2014|June |             300|                350|              150|
+2015|June |             300|                350|              300|
+```
 
 ### RANK
 
@@ -1363,6 +1400,41 @@ FROM (
 --           6|         44|             6|       4|             3|
 --           7|         43|             7|       7|             4|
 ```
+
+
+Another example: **For each group, save only the longest string**
+```sql
+WITH a1 AS (
+	SELECT 'Text 1' AS texts, 1 AS groups
+	UNION ALL
+	SELECT 'Longer texts' AS texts, 1 AS groups
+	UNION ALL
+	SELECT 'fasdd asdfasd' AS texts, 2 AS groups
+	UNION ALL
+	SELECT 'aas algitorkdm' AS texts, 2 AS groups
+	UNION ALL 
+	SELECT NULL AS texts, 3 AS groups
+	UNION ALL
+	SELECT 'aaa' AS texts, 3 AS groups
+),
+a2 AS (
+	SELECT 
+		groups,
+		CASE WHEN texts IS NULL THEN '-' ELSE texts END AS texts
+	FROM a1
+),
+a3 AS (
+	SELECT
+		texts, 
+		groups,
+		ROW_NUMBER() OVER (PARTITION BY groups ORDER BY LENGTH(texts) DESC)
+	FROM a2
+)
+SELECT *
+FROM a3
+WHERE row_number = 1
+```
+
 
 Get top 3 for ROW_NUMBER() function:
 ```sql
