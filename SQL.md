@@ -1140,6 +1140,8 @@ FROM (
 
 ### COALESCE
 
+> Basically null-value handling.
+
 Return the first non-null value in a list of columns. If all the values in the list of columns are NULL, then the function returns NULL
 
 ```sql
@@ -1159,7 +1161,21 @@ FROM student s
 
 
 -- in this case get a value for NULL values
-SELECT COALESCE(column1, 'Entry not found') FROM table1;
+WITH table1 AS (
+	SELECT 'John' AS name
+	UNION ALL
+	SELECT NULL AS name
+	UNION ALL
+	SELECT 'Jack' AS name
+)
+SELECT 
+	COALESCE(name, 'unknown')
+FROM table1
+-- coalesce|
+-- --------+
+-- John    |
+-- unknown |
+-- Jack    |
 ```
 
 ### EXCEPT
