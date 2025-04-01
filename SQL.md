@@ -728,9 +728,10 @@ select * from personal_data where birthday = '1977-05-04'::date;
 --  21 | Person 1     | 1971-11-21 |
 --  23 | Person 2     | 1989-12-29 |
 
-SELECT * FROM notable_dates 
+SELECT * 
+FROM notable_dates 
 ORDER BY 
-  EXTRACT(MONTH FROM date), 
+  EXTRACT(MONTH FROM date) DESC, 
   EXTRACT(DAY FROM date) DESC;
 ```
 
