@@ -1179,6 +1179,31 @@ FROM table1
 -- Jack    |
 ```
 
+Can also coalesce based on three columns:
+```sql
+WITH table1 AS (
+	SELECT 'John' AS name1, 'John' AS name2, NULL AS name3
+	UNION ALL
+	SELECT NULL AS name1, NULL AS name2, 'Jane' AS name3
+	UNION ALL
+	SELECT 'Jack' AS name1, 'Jill' AS name2, 'Joan' AS name3
+	UNION ALL
+	SELECT NULL AS name1, NULL AS name2, NULL AS name3
+)
+SELECT 
+	COALESCE(name1, name2, name3),
+	*
+FROM table1
+
+-- coalesce|name1|name2|name3|
+-- --------+-----+-----+-----+
+-- John    |John |John |     |
+-- Jane    |     |     |Jane |
+-- Jack    |Jack |Jill |Joan |
+--         |     |     |     |
+```
+
+
 ### EXCEPT
 
 This function doesn't work in PostgreSQL. Works in BigQuery.
