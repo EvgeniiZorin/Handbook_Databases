@@ -2033,6 +2033,15 @@ FROM person
 ORDER BY 3 DESC; -- order the table using the third element in the SELECT clause
 ```
 
+Please note that sort is case-sensitive, i.e. SORT BY will sort `amazon, Avon, Bangladesh` to `Avon, Bangladesh, amazon`, so all lowercase will be ordered after all uppercase. To prevent this, do this:
+```sql
+SELECT 
+  col1, 
+  col2
+FROM temp1
+ORDER BY LOWER(col1)
+```
+
 
 ## OFFSET 
 
