@@ -38,7 +38,8 @@
     - [QUOTE](#quote)
     - [LIKE, REGEXP](#like-regexp)
     - [Data windows](#data-windows)
-    - [RANK](#rank)
+      - [RANK](#rank)
+      - [QUALIFY](#qualify)
     - [Aggregate statements](#aggregate-statements)
       - [COUNT](#count)
       - [SUM](#sum)
@@ -1335,6 +1336,8 @@ FROM employee;
 
 ### Data windows
 
+In SQL, a window function or analytic function is a function which uses values from one or multiple rows to return a value for each row. (This contrasts with an aggregate function, which returns a single value for multiple rows.) Window functions have an OVER clause; any function without an OVER clause is not a window function, but rather an aggregate or single-row (scalar) function.[2]
+
 ```sql
 OVER ()
 OVER (PARTITION BY column1) AS alias
@@ -1400,7 +1403,7 @@ year|month|max_overall_sale|total_monthly_sales|max_monthly_sales|
 2015|June |             300|                350|              300|
 ```
 
-### RANK
+#### RANK
 
 Ranking functions:
 - `row_number`: returns a unique number for each row
@@ -1516,25 +1519,25 @@ Multiple ranking - get ranking for each year
 ```sql
 SELECT 
 	customer_id,
-	YEAR,
+	yr,
 	num_rentals,
-	DENSE_RANK() OVER (PARTITION BY YEAR ORDER BY num_rentals DESC) AS dense_rank_rnk
+	ROW_NUMBER() OVER (PARTITION BY yr ORDER BY num_rentals DESC) AS num_rentals_rank
 FROM (	
-	SELECT 1 customer_id, 2014 year, 46 num_rentals
+	SELECT 1 customer_id, 2014 yr, 46 num_rentals
 	UNION ALL
-	SELECT 2 customer_id, 2014 YEAR, 45 num_rentals
+	SELECT 2 customer_id, 2014 yr, 45 num_rentals
 	UNION ALL
-	SELECT 3 customer_id, 2014 YEAR, 45 num_rentals
+	SELECT 3 customer_id, 2014 yr, 45 num_rentals
 	UNION ALL
-	SELECT 4 customer_id, 2014 YEAR, 44 num_rentals
+	SELECT 4 customer_id, 2014 yr, 44 num_rentals
 	UNION ALL
-	SELECT 5 customer_id, 2015 YEAR, 44 num_rentals
+	SELECT 5 customer_id, 2015 yr, 44 num_rentals
 	UNION ALL
-	SELECT 6 customer_id, 2015 YEAR, 44 num_rentals
+	SELECT 6 customer_id, 2015 yr, 44 num_rentals
 	UNION ALL
-	SELECT 7 customer_id, 2015 YEAR, 43 num_rentals
+	SELECT 7 customer_id, 2015 yr, 43 num_rentals
 ) a1;
--- customer_id|YEAR|num_rentals|dense_rank_rnk|
+-- customer_id|yr  |num_rentals|dense_rank_rnk|
 -- -----------+----+-----------+--------------+
 --           1|2014|         46|             1|
 --           2|2014|         45|             2|
@@ -1543,6 +1546,38 @@ FROM (
 --           5|2015|         44|             1|
 --           6|2015|         44|             1|
 --           7|2015|         43|             2|
+```
+
+#### QUALIFY
+
+QUALIFY is a clause used to filter the results of a window function. 
+
+> You need a QUALIFY statement because WHERE, GROUP BY, and HAVING filtering statements are all evaluated before the window functions. This can be overcome either by QUALIFY within the same query or writing filters on a window function-containing query contained within a CTE.
+
+Examples:
+> seemingly, QUALIFY doesn't work in PostgreSQL
+```sql
+SELECT 
+	customer_id,
+	yr,
+	num_rentals
+FROM (	
+	SELECT 1 customer_id, 2014 yr, 46 num_rentals
+	UNION ALL
+	SELECT 2 customer_id, 2014 yr, 45 num_rentals
+	UNION ALL
+	SELECT 3 customer_id, 2014 yr, 45 num_rentals
+	UNION ALL
+	SELECT 4 customer_id, 2014 yr, 44 num_rentals
+	UNION ALL
+	SELECT 5 customer_id, 2015 yr, 44 num_rentals
+	UNION ALL
+	SELECT 6 customer_id, 2015 yr, 44 num_rentals
+	UNION ALL
+	SELECT 7 customer_id, 2015 yr, 43 num_rentals
+) a1
+QUALIFY ROW_NUMBER() OVER (PARTITION BY yr ORDER BY num_rentals DESC) = 1
+;
 ```
 
 ### Aggregate statements
