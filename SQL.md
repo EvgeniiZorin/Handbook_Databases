@@ -1071,8 +1071,9 @@ SELECT
 -- or `*` to select the rows from all the columns in a table
 -- or `table1.column1, table1.column2` to specify which table, especially useful in joins
 FROM table1
-WHERE column2 = 'Value' -- allows us to specify a condition by using an operator
-AND (column3 = 'Value2' OR column3 > 100);
+WHERE 
+  column2 = 'Value' -- allows us to specify a condition by using an operator
+  AND (column3 = 'Value2' OR column3 > 100);
 
 -- we can also give aliases to the tables
 SELECT o.OrderId, o.OrderDate, c.CustomerId, c.FirstName, c.LastName, c.Country
@@ -1088,6 +1089,25 @@ SELECT column1 alias1
 ```
 
 ## SELECT
+
+There are different ways of aliasing columns:
+
+```sql
+SELECT
+  column1, 
+  COUNT(*)
+FROM table1
+GROUP BY column1
+ORDER BY COUNT(*) DESC
+
+-- or
+SELECT
+  column1, 
+  COUNT(*)
+FROM table1
+GROUP BY 1
+ORDER BY 2 DESC
+```
 
 ### Built-in functions
 
