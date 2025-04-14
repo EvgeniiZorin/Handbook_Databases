@@ -777,6 +777,7 @@ Rules:
 You can cast datatypes in the ways below:
 ```sql
 -- data types: date, numeric, int, float
+-- does NOT work in BigQuery, but works in PostgreSQL
 SELECT 
   whatever::date, 
   whatever2::numeric
