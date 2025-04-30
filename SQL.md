@@ -391,6 +391,8 @@ Transaction Control Language:
 > Note 1: 
 > for character data types, use single quotes, not doublequotes. 
 > If you need to use a single apostrophe as part of the string, use it two times to escape, e.g. to write a string `O'Brien` you can escape like this: `'O''Brien'`
+>
+> HOWEVER, in BigQuery, you can use single quotes `'` or double quotes `"`, to represent character data types and datetime. 
 
 > Note 2:
 > CHAR and VARCHAR are for storing relatively short text strings. For longer, use text data types
