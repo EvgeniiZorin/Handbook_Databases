@@ -3552,7 +3552,41 @@ Cartesian product (a.k.a. cross join) is when you join two tables without specif
 For example, in this case you join two tables without specifying a condition:
 - `SELECT COUNT(*) FROM customer` - $599$ rows
 - `SELECT COUNT(*) FROM payment` - $16044$ rows
-- `SELECT COUNT(*) FROM customer INNER JOIN payment` - $599 * 16044 = 9610356$ rows
+- `SELECT COUNT(*) FROM customer CROSS JOIN payment` - $599 * 16044 = 9610356$ rows
+
+A more visual example:
+```sql
+WITH table1 AS (
+	SELECT 'John' AS name, 'Wayne' AS surname
+	UNION ALL
+	SELECT 'Bruce' AS name, 'Willis' AS surname
+	UNION ALL
+	SELECT 'Jack' AS name, 'The Ripper' AS surname
+),
+table2 AS (
+	SELECT 'Carpenter' AS profession
+	UNION ALL
+	SELECT 'Movie Star' AS profession
+	UNION ALL
+	SELECT 'Data Scientist' AS profession
+)
+SELECT * FROM table1
+CROSS JOIN table2
+
+-- Output:
+-- name |surname   |profession    |
+-- -----+----------+--------------+
+-- John |Wayne     |Carpenter     |
+-- John |Wayne     |Movie Star    |
+-- John |Wayne     |Data Scientist|
+-- Bruce|Willis    |Carpenter     |
+-- Bruce|Willis    |Movie Star    |
+-- Bruce|Willis    |Data Scientist|
+-- Jack |The Ripper|Carpenter     |
+-- Jack |The Ripper|Movie Star    |
+-- Jack |The Ripper|Data Scientist|
+```
+
 ```sql
 SELECT * FROM customer INNER JOIN payment;
 -- can also be written as:
