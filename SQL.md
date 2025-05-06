@@ -48,6 +48,8 @@
       - [GROUP BY](#group-by)
         - [WHERE vs HAVING](#where-vs-having)
       - [STRING\_AGG](#string_agg)
+    - [Statistics](#statistics)
+      - [Quantile](#quantile)
   - [FROM](#from)
   - [WHERE](#where)
     - [LIKE, REGEX](#like-regex)
@@ -1091,6 +1093,8 @@ SELECT column1 AS alias1
 SELECT column1 alias1
 ```
 
+> Note: alias name cannot start with a digit / number
+
 ## SELECT
 
 There are different ways of aliasing columns:
@@ -1928,6 +1932,50 @@ Example of GROUP_CONCAT (MySQL):
 ```sql
 -- concatenate all rows in the column "last_name" with separator ', '
 group_concat(last_name ORDER BY first_name SEPARATOR ', ')
+```
+
+### Statistics
+
+#### Quantile
+
+```sql
+WITH table1 AS (
+	SELECT 'Carpenter' AS profession, 70 AS age
+	UNION ALL
+	SELECT 'Carpenter' AS profession, 50 AS age
+	UNION ALL
+	SELECT 'Carpenter' AS profession, 65 AS age
+	UNION ALL
+	SELECT 'Carpenter' AS profession, 45 AS age
+	UNION ALL
+	SELECT 'Programmer' AS profession, 30 AS age
+	UNION ALL
+	SELECT 'Programmer' AS profession, 35 AS age
+	UNION ALL
+	SELECT 'Programmer' AS profession, 20 AS age
+	UNION ALL
+	SELECT 'Programmer' AS profession, 25 AS age
+)
+SELECT 
+	profession,
+	MIN(age) AS min_age,
+	AVG(age) AS mean_age,
+  -- BigQuery: calculate 10th and 90th percentile
+	APPROX_QUANTILES(age, 100)[OFFSET(10)] AS percentile_10,
+	APPROX_QUANTILES(age, 100)[OFFSET(90)] AS percentile_90
+	-- PostgreSQL: calculate 10th, 50th, and 90th percentile, taking the value that exists in the dataset; 
+	-- so if there's an even number of data points, it takes the lower middle value
+	percentile_disc(0.1) WITHIN GROUP(ORDER BY age) AS percentile_10_disc,
+	percentile_disc(0.5) WITHIN GROUP(ORDER BY age) AS percentile_50_disc,
+	percentile_disc(0.9) WITHIN GROUP(ORDER BY age) AS percentile_90_disc,
+  	-- PostgreSQL: find true quantiles
+	-- if there's an even number of data points, takes the average of the middle two values
+	percentile_cont(0.1) WITHIN GROUP(ORDER BY age) AS percentile_10_cont,
+	percentile_cont(0.5) WITHIN GROUP(ORDER BY age) AS percentile_50_cont,
+	percentile_cont(0.9) WITHIN GROUP(ORDER BY age) AS percentile_90_cont
+FROM table1
+GROUP BY 
+	profession
 ```
 
 ## FROM
@@ -3660,6 +3708,9 @@ NATURAL JOIN rental r
 
 ## Wide -> long
 
+**Example 1**
+
+```txt
 From table: 
 | name | sport | color | bonus |
 | - | - | - | - |
@@ -3675,28 +3726,32 @@ To table:
 | name2 | sport | voleyball |
 | name2 | color | red |
 | name2 | bonus | 5 |
-
-```sql
-select 
- name, 
- 'sport' as category, 
- sport as value
-from wideClient
-union all 
-select 
- name, 
- 'color' as category, 
- color as value
-from wideClient
-union all
-select 
- name, 
- 'bonus' as category, 
- bonus as value 
-from wideClient
 ```
 
+```sql
+SELECT 
+  name, 
+  'sport' AS category, 
+  sport AS value
+FROM wideClient
+UNION ALL 
+SELECT 
+  name, 
+  'color' AS category, 
+  color AS value
+FROM wideClient
+UNION ALL
+SELECT 
+  name, 
+  'bonus' AS category, 
+  bonus AS value 
+FROM wideClient
+```
+
+
 ## Long -> wide
+
+**Example 1**
 
 ```txt
 Input: 
@@ -3787,6 +3842,34 @@ FROM film;
 ```
 
 In MySQL, you can use the pivot clauses.
+
+**Example 2**
+
+```sql
+-- | store | week | xcount |
+-- | - | - | - |
+-- | 101 | 1 | 138 |
+-- | 101 | 2 | 282 |
+-- | 102 | 1 | 96 |
+-- | 102 | 2 | 18 |
+
+-- BigQuery / MySQL solution
+WITH temp1 AS (
+  SELECT 101 AS store, 1 AS week, 138 AS xcount
+  UNION ALL
+  SELECT 101 AS store, 2 AS week, 282 AS xcount
+  UNION ALL 
+  SELECT 102 AS store, 1 AS week, 96 AS xcount
+)
+SELECT * 
+FROM temp1
+PIVOT (MAX(xcount) for week IN (1, 2, 3))
+
+-- | store | _1 | _2 | _3 |
+-- | - | - | - | - |
+-- | 101 | 138 | 282 | NULL |
+-- | 102 | 96 | 18 | NULL |
+```
 
 # Export query to CSV
 
