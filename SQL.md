@@ -40,6 +40,7 @@
     - [Data windows](#data-windows)
       - [RANK](#rank)
       - [QUALIFY](#qualify)
+      - [LAG, LEAD](#lag-lead)
     - [Aggregate statements](#aggregate-statements)
       - [COUNT](#count)
       - [SUM](#sum)
@@ -1363,12 +1364,19 @@ FROM employee;
 
 ### Data windows
 
-In SQL, a window function or analytic function is a function which uses values from one or multiple rows to return a value for each row. (This contrasts with an aggregate function, which returns a single value for multiple rows.) Window functions have an OVER clause; any function without an OVER clause is not a window function, but rather an aggregate or single-row (scalar) function.[2]
+In SQL, a window function or analytic function is a function which uses values from one or multiple rows to return a value for each row. (This contrasts with an aggregate function, which returns a single value for multiple rows.) Window functions have an OVER clause; any function without an OVER clause is not a window function, but rather an aggregate or single-row (scalar) function.
 
+Window functions allow advanced analytics by letting you calculate across rows while keeping all data intact. 
+
+Anatomy of a window function:
 ```sql
-OVER ()
-OVER (PARTITION BY column1) AS alias
+<function_name>() OVER (PARTITION BY <column> ORDER BY <column>)
 ```
+- `OVER()` clause: defines the set of rows for the function. Every window function requires this;
+- `PARTITION BY`: split data into groups, applying the function within each group. Similar to GROUP BY but without collapsing rows;
+- `ORDER BY`: orders rows within each partition, critical for functions like ROW_NUMBER() and RANK();
+
+**Example 1:**
 
 Show total monthly payments for film rentals for 2005 for each quarter and month;
 ```sql
@@ -1393,8 +1401,7 @@ GROUP BY
 --       3|August  |     24070.14|         28368.91|      28368.91|
 ```
 
-
-**Another example:**
+**Example 2:**
 
 ```sql
 SELECT 
@@ -1419,27 +1426,26 @@ GROUP BY
 	year,
 	month
 
+-- Result: 
+-- year|month|max_overall_sale|total_monthly_sales|max_monthly_sales|
+-- ----+-----+----------------+-------------------+-----------------+
+-- 2014|July |             300|                170|              170|
+-- 2014|June |             300|                350|              150|
+-- 2015|June |             300|                350|              300|
 ```
 
-Result: 
-```txt
-year|month|max_overall_sale|total_monthly_sales|max_monthly_sales|
-----+-----+----------------+-------------------+-----------------+
-2014|July |             300|                170|              170|
-2014|June |             300|                350|              150|
-2015|June |             300|                350|              300|
-```
 
 #### RANK
 
 Ranking functions:
-- `row_number`: returns a unique number for each row
-- `rank`: returns the same ranking in case of a tie, with gaps in the ranking
-- `dense_rank`: returns the same ranking in case of a tie, with NO gaps in the ranking
+- `ROW_NUMBER`: returns a unique number for each row
+- `RANK`: returns the same ranking in case of a tie, with gaps in the ranking
+- `DENSE_RANK`: returns the same ranking in case of a tie, with NO gaps in the ranking
 
-> For many situations, the `rank` function might be the best option
+> For many situations, the `RANK` function might be the best option
 
-An example:
+**A clear comparative example**
+
 ```sql
 SELECT 
 	customer_id,
@@ -1475,6 +1481,7 @@ FROM (
 
 
 Another example: **For each group, save only the longest string**
+
 ```sql
 WITH a1 AS (
 	SELECT 'Text 1' AS texts, 1 AS groups
@@ -1605,6 +1612,35 @@ FROM (
 ) a1
 QUALIFY ROW_NUMBER() OVER (PARTITION BY yr ORDER BY num_rentals DESC) = 1
 ;
+```
+
+#### LAG, LEAD
+
+```sql
+WITH temp1 AS (
+	SELECT 'Lisa' name, '2021-01-01' date, 5500 salary
+	UNION ALL
+	SELECT 'Lisa' name, '2022-01-01' date, 7000 salary
+	UNION ALL
+	SELECT 'Lisa' name, '2023-01-01' date, 7500 salary
+	UNION ALL
+	SELECT 'Lisa' name, '2024-01-01' date, 8000 salary
+)
+SELECT
+	name, 
+	date,
+	salary,
+	LAG(salary) OVER (ORDER BY date) AS prev_salary,
+	LEAD(salary) OVER (ORDER BY date) AS next_salary
+FROM temp1;
+
+-- output
+-- name|date      |salary|prev_salary|next_salary|
+-- ----+----------+------+-----------+-----------+
+-- Lisa|2021-01-01|  5500|           |       7000|
+-- Lisa|2022-01-01|  7000|       5500|       7500|
+-- Lisa|2023-01-01|  7500|       7000|       8000|
+-- Lisa|2024-01-01|  8000|       7500|           |
 ```
 
 ### Aggregate statements
