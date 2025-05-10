@@ -37,6 +37,7 @@
     - [Random sampling](#random-sampling)
     - [QUOTE](#quote)
     - [LIKE, REGEXP](#like-regexp)
+    - [farm\_fingerprint](#farm_fingerprint)
     - [Data windows](#data-windows)
       - [RANK](#rank)
       - [QUALIFY](#qualify)
@@ -1098,6 +1099,15 @@ SELECT column1 alias1
 
 ## SELECT
 
+```sql
+-- select all columns
+SELECT * 
+FROM table1
+-- select all but one column
+SELECT * EXCEPT (id)
+FROM table1
+```
+
 There are different ways of aliasing columns:
 
 ```sql
@@ -1360,6 +1370,105 @@ FROM employee;
 -- Kelly     |false        |
 -- Stanley   |false        |
 -- Andy      |true         |
+```
+
+### farm_fingerprint
+
+> Only works in BigQuery
+
+Computer the fingerprint of a STRING or BYTES value, using the FarmHash Fingerprint64 algorithm. The output of this function for a particular input will never change. **It is a fingerprint function, whose requirement it is to simply produce a deterministic unique hash value for every unique input (avoid collisions)**. 
+
+Example:
+```sql
+SELECT 
+  id,
+  FARM_FINGERPRINT(name)
+FROM `dataset.table1`
+```
+
+This is useful for making reproducible samples. For example, in the query below, since each unique value processed with farm_fingerprint maps to a unique fingerprint (reproducibly), then this can serve as a proxy for a random, but reproducible sample. 
+```sql
+WITH temp1 AS (
+	SELECT 1 id, 103 value
+	UNION ALL
+	SELECT 2 id, 102 value
+	UNION ALL
+	SELECT 3 id, 1339 value
+	UNION ALL
+	SELECT 4 id, 371 value
+	UNION ALL
+	SELECT 5 id, 193 value
+	UNION ALL 
+	SELECT 6 id, 1923 value
+	UNION ALL
+	SELECT 7 id, 1022 value
+	UNION ALL
+	SELECT 8 id, 162 vlaue
+	UNION ALL 
+	SELECT 9 id, 19234785 value
+	UNION ALL
+	SELECT 10 id, 5673 value
+)
+SELECT 
+	*,
+	FARM_FINGERPRINT(CAST(value AS string)) AS farm_fingerprint_value,
+	ROW_NUMBER() OVER (
+		ORDER BY FARM_FINGERPRINT(
+			CAST(value AS string)
+		)) AS random_count
+FROM temp1
+-- | id | value | farm_fingerprint_value | random_count |
+-- | - | - | - | - |
+-- | 4 | 371 | -5933768062887988196 | 1 |
+-- | 7 | 1022 | -3328868577810523882 | 2 |
+-- | 9 | 19234785 | -3020018155477927287 | 3 |
+-- ...
+-- | 10 | 5 | 193 | 8834274070702014843 | 10 |
+```
+
+Therefore, we can choose to randomly select a sample of 3 rows, but this will be reproducible in the future.
+```sql
+WITH temp1 AS (
+	SELECT 1 id, 103 value
+	UNION ALL
+	SELECT 2 id, 102 value
+	UNION ALL
+	SELECT 3 id, 1339 value
+	UNION ALL
+	SELECT 4 id, 371 value
+	UNION ALL
+	SELECT 5 id, 193 value
+	UNION ALL 
+	SELECT 6 id, 1923 value
+	UNION ALL
+	SELECT 7 id, 1022 value
+	UNION ALL
+	SELECT 8 id, 162 vlaue
+	UNION ALL 
+	SELECT 9 id, 19234785 value
+	UNION ALL
+	SELECT 10 id, 5673 value
+),
+hashed AS (
+	SELECT 
+		*,
+		FARM_FINGERPRINT(CAST(value AS string)) AS farm_fingerprint_value,
+		ROW_NUMBER() OVER (
+			ORDER BY FARM_FINGERPRINT(
+				CAST(value AS string)
+			)) AS random_count
+	FROM temp1
+)
+SELECT 
+	id,
+	value
+FROM hashed
+WHERE random_count <= 3
+-- | id | value |
+-- | - | - |
+-- | 4 | 371 |
+-- | 7 | 1022 |
+-- | 9 | 19234785 |
 ```
 
 ### Data windows
