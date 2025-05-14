@@ -3443,7 +3443,8 @@ SELECT
   title,
   review
 FROM post
-INNER JOIN post_comment ON post.post_id = post_comment.post_id
+INNER JOIN post_comment 
+  ON post.post_id = post_comment.post_id
 ORDER BY post.post_id, post_comment_id
 ```
 
@@ -3462,7 +3463,7 @@ SELECT
   review
 FROM post
 INNER JOIN post_comment 
-  USING(post_id)
+  USING(post_id) -- can also write as: USING (post_id)
 ORDER BY post_id, post_comment_id
 ```
 
