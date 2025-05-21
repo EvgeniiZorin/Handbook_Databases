@@ -1452,7 +1452,7 @@ WITH temp1 AS (
 hashed AS (
 	SELECT 
 		*,
-		FARM_FINGERPRINT(CAST(value AS string)) AS farm_fingerprint_value,
+		FARM_FINGERPRINT(CAST(value AS string)) AS farm_fingerprint_value, -- NOTE : this is an optional variable, used here just for visualising
 		ROW_NUMBER() OVER (
 			ORDER BY FARM_FINGERPRINT(
 				CAST(value AS string)
@@ -1469,6 +1469,84 @@ WHERE random_count <= 3
 -- | 4 | 371 |
 -- | 7 | 1022 |
 -- | 9 | 19234785 |
+```
+
+Using a slighly modified example to do stratified sampling stratified by groupp:
+```sql
+WITH temp1 AS (
+	SELECT 1 id, 103 value, 'a' groupp
+	UNION ALL
+	SELECT 2 id, 102 value, 'a' groupp
+	UNION ALL
+	SELECT 3 id, 1339 value, 'a' groupp
+	UNION ALL
+	SELECT 4 id, 371 value, 'a' groupp
+	UNION ALL
+	SELECT 5 id, 193 value, 'b' groupp
+	UNION ALL 
+	SELECT 6 id, 1923 value, 'b' groupp
+	UNION ALL
+	SELECT 7 id, 1022 value, 'b' groupp
+	UNION ALL
+	SELECT 8 id, 162 vlaue, 'c' groupp
+	UNION ALL 
+	SELECT 9 id, 19234785 value, 'c' groupp
+	UNION ALL
+	SELECT 10 id, 5673 value, 'c' groupp
+),
+/*
+CODE VARIANT 1
+this is the way to write it in PostgreSQL; also works in BigQuery but is more verbose
+*/
+hashed AS (
+	SELECT 
+		*,
+		ROW_NUMBER() OVER (
+			PARTITION BY groupp
+      ORDER BY FARM_FINGERPRINT(
+				CAST(value AS string)
+			)) AS random_count
+	FROM temp1
+)
+SELECT 
+	id,
+  groupp,
+	value
+FROM hashed
+WHERE random_count <= 2
+/*
+CODE VARIANT 2
+In BigQuery, you can make it shorter:
+*/
+SELECT *
+FROM temp1 
+QUALIFY ROW_NUMBER() OVER (
+  PARTITION BY groupp 
+  ORDER BY FARM_FINGERPRINT(CAST(value AS string))
+) <= 3
+
+-- | id | groupp | value |
+-- | 4 | a | 371 |
+-- |3 | a | 1339 |
+-- | 7 | b | 1022 |
+-- | 6 | b | 1923 |
+-- | 9 | c | 19234785 |
+-- | 10 | c | 5673 |
+```
+
+---
+
+Final note:
+
+apart from farm_fingerprint (which is great because it's reproducible) you can also use random number: 
+
+```sql
+SELECT *
+FROM temp1 
+QUALIFY ROW_NUMBER() OVER (
+  PARTITION BY groupp 
+  ORDER BY RAND()
+) <= 3
 ```
 
 ### Data windows
