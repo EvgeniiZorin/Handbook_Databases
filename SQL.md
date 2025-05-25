@@ -38,11 +38,11 @@
     - [QUOTE](#quote)
     - [LIKE, REGEXP](#like-regexp)
     - [farm\_fingerprint](#farm_fingerprint)
-    - [Data windows](#data-windows)
+    - [Window functions](#window-functions)
       - [RANK](#rank)
       - [QUALIFY](#qualify)
       - [LAG, LEAD](#lag-lead)
-    - [Aggregate statements](#aggregate-statements)
+    - [Aggregate functions](#aggregate-functions)
       - [COUNT](#count)
       - [SUM](#sum)
       - [MIN/MAX](#minmax)
@@ -1471,19 +1471,27 @@ WHERE random_count <= 3
 -- | 9 | 19234785 |
 ```
 
-### Data windows
+### Window functions
 
-In SQL, a window function or analytic function is a function which uses values from one or multiple rows to return a value for each row. (This contrasts with an aggregate function, which returns a single value for multiple rows.) Window functions have an OVER clause; any function without an OVER clause is not a window function, but rather an aggregate or single-row (scalar) function.
+> a.k.a. data windows, window functions, analytic function
 
-Window functions allow advanced analytics by letting you calculate across rows while keeping all data intact. 
+In SQL, a window function allows advanced analytics by letting you calculate across rows while keeping all data intact; it is a function which uses values from one or multiple rows to return a value for each row. 
+- ℹ️ This contrasts with an aggregate function, which returns a single value for multiple rows.
+
+Window functions have an OVER clause; any function without an OVER clause is not a window function, but rather an aggregate or single-row (scalar) function.
 
 Anatomy of a window function:
-```sql
-<function_name>() OVER (PARTITION BY <column> ORDER BY <column>)
-```
 - `OVER()` clause: defines the set of rows for the function. Every window function requires this;
 - `PARTITION BY`: split data into groups, applying the function within each group. Similar to GROUP BY but without collapsing rows;
 - `ORDER BY`: orders rows within each partition, critical for functions like ROW_NUMBER() and RANK();
+
+```sql
+<function_name>() OVER (
+  PARTITION BY <column> 
+  ORDER BY <column>
+)
+```
+
 
 **Example 1:**
 
@@ -1752,7 +1760,7 @@ FROM temp1;
 -- Lisa|2024-01-01|  8000|       7500|           |
 ```
 
-### Aggregate statements
+### Aggregate functions
 
 Aggregate statements / functions can be used in two ways:
 - Implicit groups: there is no GROUP BY clause, so all rows are considered
@@ -1944,13 +1952,17 @@ SELECT super_id, COUNT(DISTINCT(emp_id)) FROM employee GROUP BY super_id;
 
 ##### WHERE vs HAVING
 
-WHERE vs HAVING:
-- WHERE is used for filtering rows BEFORE any grouping or aggregation. Therefore, you cannot filter in your WHERE statements based on aggregate functions, as they haven't been generated yet
+**WHERE vs HAVING clause**:
+- WHERE is used for filtering rows BEFORE any grouping or aggregation. 
+  - You cannot filter in your WHERE statements based on aggregate functions, as they haven't been generated yet. Therefore, WHERE does not work with aggregated results;
 - HAVING is used for filtering rows AFTER any grouping or aggregation.
+  - The HAVING clause was added to SQL to filter the results of the GROUP BY clause. 
+  - The HAVING clause is used in combination with the GROUP BY clause in a SELECT statement to filter rows based on specified conditions after the data is grouped and aggregated. It operates on the result of the grouping operation and filters the aggregated data.
 
-Example:
+**Here is a thorough example:**
 ```sql
-SELECT * FROM client;
+SELECT * 
+FROM client;
 -- client_id|branch_id|
 -- ---------+---------+
 --       400|        2|
@@ -1961,17 +1973,55 @@ SELECT * FROM client;
 --       405|        3|
 --       406|        2|
 
+/*
+For example, in the query below, you can query BEFORE grouping, 
+but you cannot query aggregate functions. For instance, this is a simple query condition
+*/
+WITH client AS (
+	SELECT 400 client_id, 2 branch_id UNION ALL SELECT 401 client_id, 2 branch_id UNION ALL SELECT 402 client_id, 3 branch_id UNION ALL SELECT 403 client_id, 3 branch_id UNION ALL SELECT 404 client_id, 2 branch_id UNION ALL SELECT 405 client_id, 3 branch_id UNION ALL SELECT 406 client_id, 2 branch_id
+)
 SELECT 
 	branch_id,
 	COUNT(*) AS clients_per_branch
 FROM client
-WHERE client_id <> 405
+WHERE client_id <> 405 -- however, you CANNOT write `WHERE COUNT(*) = 4`
 GROUP BY branch_id;
 -- branch_id|clients_per_branch|
 -- ---------+------------------+
 --         3|                 2|
 --         2|                 4|
 
+/*
+If you wanted, however, to filter by the results of the count aggregate function, 
+you would have to include an extra CTE, as you cannot filter using WHERE keyword 
+the result of an aggregate function:
+*/
+WITH client AS (
+	SELECT 400 client_id, 2 branch_id UNION ALL SELECT 401 client_id, 2 branch_id UNION ALL SELECT 402 client_id, 3 branch_id UNION ALL SELECT 403 client_id, 3 branch_id UNION ALL SELECT 404 client_id, 2 branch_id UNION ALL SELECT 405 client_id, 3 branch_id UNION ALL SELECT 406 client_id, 2 branch_id
+), 
+temp1 AS (
+	SELECT 
+	branch_id,
+	COUNT(*) AS clients_per_branch
+	FROM client
+	WHERE client_id <> 405
+	GROUP BY branch_id
+)
+SELECT 
+	*
+FROM temp1
+WHERE clients_per_branch = 4
+-- branch_id|clients_per_branch|
+-- ---------+------------------+
+--         2|                 4|
+
+/*
+Nevertheless, you can use HAVING statement to filter the result
+of an aggregate function like COUNT:
+*/
+WITH client AS (
+	SELECT 400 client_id, 2 branch_id UNION ALL SELECT 401 client_id, 2 branch_id UNION ALL SELECT 402 client_id, 3 branch_id UNION ALL SELECT 403 client_id, 3 branch_id UNION ALL SELECT 404 client_id, 2 branch_id UNION ALL SELECT 405 client_id, 3 branch_id UNION ALL SELECT 406 client_id, 2 branch_id
+)
 SELECT 
 	branch_id,
 	COUNT(*) AS clients_per_branch
@@ -1989,7 +2039,9 @@ In order to use HAVING, you also need:
 - A GROUP BY clause
 - An aggregation in your SELECT section (SUM, MIN, MAX, etc.)
 
+Some more examples of using the `HAVING` statement:
 ```sql
+-- Example 1
 SELECT 
   p.name,
   p.surname,
@@ -2001,13 +2053,9 @@ GROUP BY
   name, 
   surname
 HAVING COUNT(*) >= 40
-```
 
 
-```sql
--- HAVING clause
--- The HAVING clause was added to SQL to filter the results of the GROUP BY clause since WHERE does not work with aggregated results. The syntax for the HAVING clause is as follows:
--- The HAVING clause is used in combination with the GROUP BY clause in a SELECT statement to filter rows based on specified conditions after the data is grouped and aggregated. It operates on the result of the grouping operation and filters the aggregated data.
+-- Example 2
 SELECT column1, aggregate_function(column2)
 FROM table
 GROUP BY column1
@@ -2021,6 +2069,7 @@ FROM employees
 GROUP BY department_id
 HAVING SUM(salary) > 50000;
 ```
+
 
 #### STRING_AGG
 
