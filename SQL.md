@@ -38,10 +38,11 @@
     - [QUOTE](#quote)
     - [LIKE, REGEXP](#like-regexp)
     - [farm\_fingerprint](#farm_fingerprint)
-    - [Data windows](#data-windows)
+    - [Window functions](#window-functions)
       - [RANK](#rank)
       - [QUALIFY](#qualify)
       - [LAG, LEAD](#lag-lead)
+      - [FIRST\_VALUE](#first_value)
     - [Aggregate functions](#aggregate-functions)
       - [COUNT](#count)
       - [SUM](#sum)
@@ -1549,7 +1550,7 @@ QUALIFY ROW_NUMBER() OVER (
 ) <= 3
 ```
 
-### Data windows
+### Window functions
 
 > a.k.a. data windows, window functions, analytic function
 
@@ -1746,12 +1747,7 @@ WHERE
 
 Multiple ranking - get ranking for each year
 ```sql
-SELECT 
-	customer_id,
-	yr,
-	num_rentals,
-	ROW_NUMBER() OVER (PARTITION BY yr ORDER BY num_rentals DESC) AS num_rentals_rank
-FROM (	
+WITH temp1 AS (
 	SELECT 1 customer_id, 2014 yr, 46 num_rentals
 	UNION ALL
 	SELECT 2 customer_id, 2014 yr, 45 num_rentals
@@ -1765,7 +1761,14 @@ FROM (
 	SELECT 6 customer_id, 2015 yr, 44 num_rentals
 	UNION ALL
 	SELECT 7 customer_id, 2015 yr, 43 num_rentals
-) a1;
+)
+SELECT 
+	customer_id,
+	yr,
+	num_rentals,
+	ROW_NUMBER() OVER (PARTITION BY yr ORDER BY num_rentals DESC) AS num_rentals_rank
+FROM temp1
+
 -- customer_id|yr  |num_rentals|dense_rank_rnk|
 -- -----------+----+-----------+--------------+
 --           1|2014|         46|             1|
@@ -1836,6 +1839,126 @@ FROM temp1;
 -- Lisa|2022-01-01|  7000|       5500|       7500|
 -- Lisa|2023-01-01|  7500|       7000|       8000|
 -- Lisa|2024-01-01|  8000|       7500|           |
+```
+
+#### FIRST_VALUE
+
+FIRST_VALUE() returns the first value in an ordered partition, while LAST_VALUE() returns the last value. 
+
+𝗙𝗼𝗿 𝗲𝘅𝗮𝗺𝗽𝗹𝗲: In analyzing stock prices, FIRST_VALUE() can be used to compare daily stock prices to the price at month's start, so we can measure price changes relative to the month's opening price.
+
+Example:
+
+**FIRST_VALUE() behaves exactly as expected:**
+```sql
+WITH temp1 AS (
+	SELECT 1 customer_id, 2014 yr, 46 num_rentals
+	UNION ALL
+	SELECT 2 customer_id, 2014 yr, 45 num_rentals
+	UNION ALL
+	SELECT 3 customer_id, 2014 yr, 45 num_rentals
+	UNION ALL
+	SELECT 4 customer_id, 2014 yr, 44 num_rentals
+	UNION ALL
+	SELECT 5 customer_id, 2015 yr, 44 num_rentals
+	UNION ALL
+	SELECT 6 customer_id, 2015 yr, 44 num_rentals
+	UNION ALL
+	SELECT 7 customer_id, 2015 yr, 43 num_rentals
+)
+SELECT 
+	customer_id,
+	yr,
+	num_rentals,
+	FIRST_VALUE(num_rentals) OVER (PARTITION BY yr ORDER BY num_rentals)
+FROM temp1;
+-- customer_id|yr  |num_rentals|first_value|
+-- -----------+----+-----------+-----------+
+--           4|2014|         44|         44|
+--           2|2014|         45|         44|
+--           3|2014|         45|         44|
+--           1|2014|         46|         44|
+--           7|2015|         43|         43|
+--           5|2015|         44|         43|
+--           6|2015|         44|         43|
+
+```
+
+**LAST_VALUE(), however, has an interesting case:**
+
+```sql
+/*
+If you run it like below, it will find the last row between the start and the current row for each partition
+*/
+WITH temp1 AS (
+	SELECT 1 customer_id, 2014 yr, 46 num_rentals
+	UNION ALL
+	SELECT 2 customer_id, 2014 yr, 45 num_rentals
+	UNION ALL
+	SELECT 3 customer_id, 2014 yr, 45 num_rentals
+	UNION ALL
+	SELECT 4 customer_id, 2014 yr, 44 num_rentals
+	UNION ALL
+	SELECT 5 customer_id, 2015 yr, 44 num_rentals
+	UNION ALL
+	SELECT 6 customer_id, 2015 yr, 44 num_rentals
+	UNION ALL
+	SELECT 7 customer_id, 2015 yr, 43 num_rentals
+)
+SELECT 
+	customer_id,
+	yr,
+	num_rentals,
+	LAST_VALUE(num_rentals) OVER (PARTITION BY yr ORDER BY num_rentals)
+FROM temp1
+-- customer_id|yr  |num_rentals|last_value|
+-- -----------+----+-----------+----------+
+--           4|2014|         44|        44|
+--           2|2014|         45|        45|
+--           3|2014|         45|        45|
+--           1|2014|         46|        46|
+--           7|2015|         43|        43|
+--           5|2015|         44|        44|
+--           6|2015|         44|        44|
+
+/*
+This is because by default, if you don't specify the range for the LAST_VALUE function, it runs the following: 
+LAST_VALUE(num_rentals) OVER (PARTITION BY yr ORDER BY num_rentals RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)
+which exactly finds the last value in the range between the starting value and the current row's value.
+
+Nevertheless, if you (as expected) want to find the last row in the range of starting value to the end value of a partition, 
+you need to specify it in the range:
+*/
+WITH temp1 AS (
+	SELECT 1 customer_id, 2014 yr, 46 num_rentals
+	UNION ALL
+	SELECT 2 customer_id, 2014 yr, 45 num_rentals
+	UNION ALL
+	SELECT 3 customer_id, 2014 yr, 45 num_rentals
+	UNION ALL
+	SELECT 4 customer_id, 2014 yr, 44 num_rentals
+	UNION ALL
+	SELECT 5 customer_id, 2015 yr, 44 num_rentals
+	UNION ALL
+	SELECT 6 customer_id, 2015 yr, 44 num_rentals
+	UNION ALL
+	SELECT 7 customer_id, 2015 yr, 43 num_rentals
+)
+SELECT 
+	customer_id,
+	yr,
+	num_rentals,
+	LAST_VALUE(num_rentals) OVER (PARTITION BY yr ORDER BY num_rentals RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING)
+FROM temp1
+-- customer_id|yr  |num_rentals|last_value|
+-- -----------+----+-----------+----------+
+--           4|2014|         44|        46|
+--           2|2014|         45|        46|
+--           3|2014|         45|        46|
+--           1|2014|         46|        46|
+--           7|2015|         43|        44|
+--           5|2015|         44|        44|
+--           6|2015|         44|        44|
 ```
 
 ### Aggregate functions
