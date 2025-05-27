@@ -26,6 +26,7 @@
   - [Set](#set)
     - [UNION](#union)
     - [EXCEPT](#except)
+    - [Generate temporary data](#generate-temporary-data)
 - [Query clauses](#query-clauses)
   - [Aliases](#aliases)
   - [SELECT](#select)
@@ -61,7 +62,6 @@
   - [LIMIT](#limit)
 - [Types of tables](#types-of-tables)
   - [Subquery](#subquery)
-    - [Generate temporary data](#generate-temporary-data)
     - [Types of correlation](#types-of-correlation)
     - [Types of location](#types-of-location)
   - [CTE](#cte)
@@ -1057,6 +1057,126 @@ UNION can also be used to generate synthetic data. See `Types of tables/Subquery
 
 
 
+### Generate temporary data
+
+Subqueries (or preferably CTEs) can be used to **generate new data**:
+
+**Generating a (relatively) small dataset**
+```sql
+-- query
+SELECT 'Small Fry' name, 0 low_limit, 74.99 high_limit
+UNION ALL
+SELECT 'Average Joes' name, 75 low_limit, 149.99 high_limit
+UNION ALL
+SELECT 'Heavy Hitters' name, 150 low_limit, 99999.99 high_limit;
+-- generates the following temporary data
+-- name         |low_limit|high_limit|
+-- -------------+---------+----------+
+-- Small Fry    |        0|     74.99|
+-- Average Joes |       75|    149.99|
+-- Heavy Hitters|      150|  99999.99|
+
+-- you can subsequently make operations with this synthetic generated data
+WITH temp1 AS (
+	SELECT 'Small Fry' name, 0 low_limit, 74.99 high_limit
+	UNION ALL
+	SELECT 'Average Joes' name, 75 low_limit, 149.99 high_limit
+	UNION ALL
+	SELECT 'Heavy Hitters' name, 150 low_limit, 99999.99 high_limit
+)
+SELECT COUNT(*)
+FROM temp1
+```
+
+**Generate a larger dataset**
+```sql
+-- Generate a column with increasing numbers from 0 to 399 (in total 400 rows)
+-- MySQL
+SELECT 
+	ones.num + tens.num + hundreds.num AS a
+FROM
+(
+	SELECT 0 num UNION ALL
+	SELECT 1 num UNION ALL
+	SELECT 2 num UNION ALL
+	SELECT 3 num UNION ALL
+	SELECT 4 num UNION ALL
+	SELECT 5 num UNION ALL
+	SELECT 6 num UNION ALL
+	SELECT 7 num UNION ALL
+	SELECT 8 num UNION ALL
+	SELECT 9 num 
+) AS ones
+CROSS JOIN
+(
+	SELECT 0 num UNION ALL
+	SELECT 10 num UNION ALL
+	SELECT 20 num UNION ALL
+	SELECT 30 num UNION ALL
+	SELECT 40 num UNION ALL
+	SELECT 50 num UNION ALL
+	SELECT 60 num UNION ALL
+	SELECT 70 num UNION ALL
+	SELECT 80 num UNION ALL
+	SELECT 90 num 
+) AS tens
+CROSS JOIN
+(
+	SELECT 0 num UNION ALL
+	SELECT 100 num UNION ALL
+	SELECT 200 num UNION ALL
+	SELECT 300 num 
+) AS hundreds
+ORDER BY a
+;
+
+-- Generate a row for every day in the year 2020
+-- MySQL
+-- This approach automatically includes the extra leap day (February 29)
+SELECT 
+	DATE_ADD(
+		'2020-01-01', 
+		INTERVAL (ones.num + tens.num + hundreds.num) DAY
+	) AS dt
+FROM
+(
+	SELECT 0 num UNION ALL
+	SELECT 1 num UNION ALL
+	SELECT 2 num UNION ALL
+	SELECT 3 num UNION ALL
+	SELECT 4 num UNION ALL
+	SELECT 5 num UNION ALL
+	SELECT 6 num UNION ALL
+	SELECT 7 num UNION ALL
+	SELECT 8 num UNION ALL
+	SELECT 9 num 
+) AS ones
+CROSS JOIN
+(
+	SELECT 0 num UNION ALL
+	SELECT 10 num UNION ALL
+	SELECT 20 num UNION ALL
+	SELECT 30 num UNION ALL
+	SELECT 40 num UNION ALL
+	SELECT 50 num UNION ALL
+	SELECT 60 num UNION ALL
+	SELECT 70 num UNION ALL
+	SELECT 80 num UNION ALL
+	SELECT 90 num 
+) AS tens
+CROSS JOIN
+(
+	SELECT 0 num UNION ALL
+	SELECT 100 num UNION ALL
+	SELECT 200 num UNION ALL
+	SELECT 300 num 
+) AS hundreds
+WHERE DATE_ADD('2020-01-01', INTERVAL(ones.num + tens.num + hundreds.num) DAY) < '2021-01-01'
+ORDER BY dt
+;
+```
+
+
 # Query clauses
 
 Query clauses:
@@ -1560,6 +1680,7 @@ In SQL, a window function allows advanced analytics by letting you calculate acr
 Window functions have an OVER clause; any function without an OVER clause is not a window function, but rather an aggregate or single-row (scalar) function.
 
 Anatomy of a window function:
+- Some aggregate function first;
 - `OVER()` clause: defines the set of rows for the function. Every window function requires this;
 - `PARTITION BY`: split data into groups, applying the function within each group. Similar to GROUP BY but without collapsing rows;
 - `ORDER BY`: orders rows within each partition, critical for functions like ROW_NUMBER() and RANK();
@@ -2560,6 +2681,8 @@ Different types of tables:
 - Temporary (volatile) tables: volatile data held in memory
 - Virtual table (view): created using the `CREATE VIEW` statement
 
+
+
 ## Subquery
 
 > a.k.a. subquery, nested query, inner query
@@ -2569,124 +2692,6 @@ Different types of tables:
 - **Scalar subqueries** are queries that only return a single value. More specifically, this means if you execute a scalar subquery, it would return one column value of one specific row. 
 - **Non-scalar subqueries**, however, can return single or multiple rows and may contain multiple columns.
 
-
-### Generate temporary data
-
-Subqueries can be used to **generate new data**:
-
-**Generating a (relatively) small dataset**
-```sql
--- query
-SELECT 'Small Fry' name, 0 low_limit, 74.99 high_limit
-UNION ALL
-SELECT 'Average Joes' name, 75 low_limit, 149.99 high_limit
-UNION ALL
-SELECT 'Heavy Hitters' name, 150 low_limit, 99999.99 high_limit;
--- generates the following temporary data
--- name         |low_limit|high_limit|
--- -------------+---------+----------+
--- Small Fry    |        0|     74.99|
--- Average Joes |       75|    149.99|
--- Heavy Hitters|      150|  99999.99|
-
--- you can subsequently make operations with this synthetic generated data
-SELECT COUNT(*)
-FROM (
-	SELECT 'Small Fry' name, 0 low_limit, 74.99 high_limit
-	UNION ALL
-	SELECT 'Average Joes' name, 75 low_limit, 149.99 high_limit
-	UNION ALL
-	SELECT 'Heavy Hitters' name, 150 low_limit, 99999.99 high_limit
-) sq
-```
-
-**Generate a larger dataset**
-```sql
--- Generate a column with increasing numbers from 0 to 399 (in total 400 rows)
--- MySQL
-SELECT 
-	ones.num + tens.num + hundreds.num AS a
-FROM
-(
-	SELECT 0 num UNION ALL
-	SELECT 1 num UNION ALL
-	SELECT 2 num UNION ALL
-	SELECT 3 num UNION ALL
-	SELECT 4 num UNION ALL
-	SELECT 5 num UNION ALL
-	SELECT 6 num UNION ALL
-	SELECT 7 num UNION ALL
-	SELECT 8 num UNION ALL
-	SELECT 9 num 
-) AS ones
-CROSS JOIN
-(
-	SELECT 0 num UNION ALL
-	SELECT 10 num UNION ALL
-	SELECT 20 num UNION ALL
-	SELECT 30 num UNION ALL
-	SELECT 40 num UNION ALL
-	SELECT 50 num UNION ALL
-	SELECT 60 num UNION ALL
-	SELECT 70 num UNION ALL
-	SELECT 80 num UNION ALL
-	SELECT 90 num 
-) AS tens
-CROSS JOIN
-(
-	SELECT 0 num UNION ALL
-	SELECT 100 num UNION ALL
-	SELECT 200 num UNION ALL
-	SELECT 300 num 
-) AS hundreds
-ORDER BY a
-;
-
--- Generate a row for every day in the year 2020
--- MySQL
--- This approach automatically includes the extra leap day (February 29)
-SELECT 
-	DATE_ADD(
-		'2020-01-01', 
-		INTERVAL (ones.num + tens.num + hundreds.num) DAY
-	) AS dt
-FROM
-(
-	SELECT 0 num UNION ALL
-	SELECT 1 num UNION ALL
-	SELECT 2 num UNION ALL
-	SELECT 3 num UNION ALL
-	SELECT 4 num UNION ALL
-	SELECT 5 num UNION ALL
-	SELECT 6 num UNION ALL
-	SELECT 7 num UNION ALL
-	SELECT 8 num UNION ALL
-	SELECT 9 num 
-) AS ones
-CROSS JOIN
-(
-	SELECT 0 num UNION ALL
-	SELECT 10 num UNION ALL
-	SELECT 20 num UNION ALL
-	SELECT 30 num UNION ALL
-	SELECT 40 num UNION ALL
-	SELECT 50 num UNION ALL
-	SELECT 60 num UNION ALL
-	SELECT 70 num UNION ALL
-	SELECT 80 num UNION ALL
-	SELECT 90 num 
-) AS tens
-CROSS JOIN
-(
-	SELECT 0 num UNION ALL
-	SELECT 100 num UNION ALL
-	SELECT 200 num UNION ALL
-	SELECT 300 num 
-) AS hundreds
-WHERE DATE_ADD('2020-01-01', INTERVAL(ones.num + tens.num + hundreds.num) DAY) < '2021-01-01'
-ORDER BY dt
-;
-```
 
 ### Types of correlation
 
@@ -2874,7 +2879,7 @@ FROM Orders);
 
 CTE, common table expressions
 - CTEs are, in a sense, are like *named subqueries*
-- They make a query more readable and allow each CTE communicate / query other CTEs
+- They make a query more readable and allow each CTE communicate / query other CTEs, as opposed to (nested) subqueries. 
 
 
 CTEs are also temporary tables typically that are formulated at the beginning of a
@@ -3549,6 +3554,9 @@ SELECT employee_id, if(employee_id % 2 = 1 AND name NOT LIKE 'M%', salary, 0) AS
 # Joins
 
 JOIN is a command for linking rows from two or more tables based on a column common for all of them, using the subclause `ON`.
+- Common joins: `INNER`, `LEFT`
+- Less common: `FULL OUTER`
+- Joins you should use very rarely: `RIGHT`, `CROSS`
 
 | Type | Explanation |
 | - | - |
@@ -3565,6 +3573,35 @@ General form:
 ```sql
 SELECT * FROM table1 -- or SELECT table1.id, table2.id2
 JOIN table2 ON table1.id = table2.id;
+```
+
+In your ON statement, you can also join based on ranges:
+```sql
+
+WITH 
+Prices AS (
+	SELECT 1 product_id, '2019-02-17'::date start_date, '2019-02-28'::date end_date, 5 price
+	UNION ALL
+	SELECT 1 product_id, '2019-03-01'::date start_date, '2019-03-22'::date end_date, 20 price
+	UNION ALL
+	SELECT 2 product_id, '2019-02-01'::date start_date, '2019-02-20'::date end_date, 15 price
+	UNION ALL
+	SELECT 2 product_id, '2019-02-21'::date start_date, '2019-03-31'::date end_date, 30 price
+),
+UnitsSold AS (
+	SELECT 1 product_id, '2019-02-25'::date purchase_date, 100 units
+	UNION ALL
+	SELECT 1 product_id, '2019-03-01'::date purchase_date, 15 units
+	UNION ALL
+	SELECT 2 product_id, '2019-02-10'::date purchase_date, 200 units
+	UNION ALL
+	SELECT 2 product_id, '2019-03-22'::date purchase_date, 30 units
+)
+SELECT *
+FROM Prices AS p
+INNER JOIN UnitsSold AS us
+	ON p.start_date < us.purchase_date 
+	AND us.purchase_date < p.end_date
 ```
 
 You can also combine JOIN and WHERE operations:
