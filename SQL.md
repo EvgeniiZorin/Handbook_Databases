@@ -43,6 +43,7 @@
       - [RANK](#rank)
       - [QUALIFY](#qualify)
       - [LAG, LEAD](#lag-lead)
+      - [Cumulative SUM](#cumulative-sum)
       - [FIRST\_VALUE](#first_value)
     - [Aggregate functions](#aggregate-functions)
       - [COUNT](#count)
@@ -1960,6 +1961,29 @@ FROM temp1;
 -- Lisa|2022-01-01|  7000|       5500|       7500|
 -- Lisa|2023-01-01|  7500|       7000|       8000|
 -- Lisa|2024-01-01|  8000|       7500|           |
+```
+
+#### Cumulative SUM
+
+```sql
+WITH daily_sales AS (
+	SELECT '2023-05-01'::date date, 100 sales
+	UNION ALL
+	SELECT '2023-05-02'::date date, 200 sales
+	UNION ALL
+	SELECT '2023-05-03'::date date, 150 sales
+)
+SELECT 
+	date, 
+	sales,
+	SUM(sales) OVER (ORDER BY Date) as CumulativeSales
+FROM daily_sales;
+
+-- date      |sales|cumulativesales|
+-- ----------+-----+---------------+
+-- 2023-05-01|  100|            100|
+-- 2023-05-02|  200|            300|
+-- 2023-05-03|  150|            450|
 ```
 
 #### FIRST_VALUE
