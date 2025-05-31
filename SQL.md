@@ -45,6 +45,7 @@
       - [LAG, LEAD](#lag-lead)
       - [Cumulative SUM](#cumulative-sum)
       - [FIRST\_VALUE](#first_value)
+      - [Sliding window](#sliding-window)
     - [Aggregate functions](#aggregate-functions)
       - [COUNT](#count)
       - [SUM](#sum)
@@ -785,7 +786,8 @@ Rules:
 You can cast datatypes in the ways below:
 ```sql
 -- data types: date, numeric, int, float
--- does NOT work in BigQuery, but works in PostgreSQL
+-- does NOT work in BigQuery or MySQL,
+-- but works in PostgreSQL
 SELECT 
   whatever::date, 
   whatever2::numeric
@@ -2104,6 +2106,52 @@ FROM temp1
 --           7|2015|         43|        44|
 --           5|2015|         44|        44|
 --           6|2015|         44|        44|
+```
+
+#### Sliding window
+
+E.g. this leet code question: https://leetcode.com/problems/restaurant-growth/submissions/1649171860/?envType=study-plan-v2&envId=top-sql-50
+
+Query below answer the question: 
+- What is the cumulative sum of current day with the previous day for purchases? 
+- What is the average purchase between each day and it's previous day? 
+
+```sql
+WITH temp1 AS (
+  SELECT '2024-01-01' date, 10 purchase
+  UNION ALL
+  SELECT '2024-01-02' date, 50 purchase
+  UNION ALL
+  SELECT '2024-01-02' date, 50 purchase
+  UNION ALL
+  SELECT '2024-01-03' date, 60 purchase
+  UNION ALL
+  SELECT '2024-01-04' date, 70 purchase
+  UNION ALL
+  SELECT '2024-01-04' date, 10 purchase
+), 
+temp2 AS (
+  SELECT 
+    CAST(date AS date) AS date,
+    purchase
+  FROM temp1
+)
+
+SELECT 
+  date,
+  purchase,
+  SUM(purchase) OVER (
+    ORDER BY date 
+    RANGE BETWEEN INTERVAL 1 DAY PRECEDING 
+    AND CURRENT ROW 
+  ) AS cumsum_prev_day,
+  ROUND(
+    AVG(purchase) OVER (
+      ORDER BY date 
+      RANGE BETWEEN INTERVAL 1 DAY PRECEDING 
+      AND CURRENT ROW)
+  , 2) AS cumavg_prev_day
+FROM temp2
 ```
 
 ### Aggregate functions
