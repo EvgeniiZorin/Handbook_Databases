@@ -31,14 +31,16 @@
   - [Aliases](#aliases)
   - [SELECT](#select)
     - [Built-in functions](#built-in-functions)
-    - [DISTINCT](#distinct)
-    - [COALESCE](#coalesce)
-    - [EXCEPT](#except-1)
-    - [CONCAT](#concat)
     - [Random sampling](#random-sampling)
+    - [Record expansion](#record-expansion)
+    - [COALESCE](#coalesce)
+    - [CONCAT](#concat)
+    - [DISTINCT](#distinct)
+    - [EXCEPT](#except-1)
+    - [FARM\_FINGERPRINT](#farm_fingerprint)
+    - [LIKE \& REGEXP](#like--regexp)
     - [QUOTE](#quote)
-    - [LIKE, REGEXP](#like-regexp)
-    - [farm\_fingerprint](#farm_fingerprint)
+    - [SPLIT\_PART](#split_part)
     - [Window functions](#window-functions)
       - [RANK](#rank)
       - [QUALIFY](#qualify)
@@ -1263,43 +1265,99 @@ SELECT
 ;
 ```
 
-### DISTINCT
+### Random sampling
+
+https://render.com/blog/postgresql-random-samples-big-tables
+
+**random()**
+
+
+First type of sort is this. 
+
+Intuitive but very inefficient.
 
 ```sql
--- Only print unique values from the column
--- the two queries below produce the same result
-SELECT DISTINCT (column1)
-SELECT DISTINCT column1
+SELECT * FROM my_events -- first, examines every row in the table
+ORDER BY random() -- performs a lot of comparisons to sort
+LIMIT 10000;
+```
 
--- Show unique combinations of two columns - returns column where each row is a list of unique combs
-SELECT DISTINCT (column1, column2)
--- show unique combinations of two columns BUT return a normal table
-SELECT DISTINCT column1, column2
+Next type - Bernoulli sampling. Much faster (as you just go through the data once) but the output is non-deterministic in the count of rows you get.
 
--- example
-SELECT DISTINCT(country, lang)
-FROM (
-	SELECT 'usa' AS country, 'english' AS lang
-	UNION ALL
-	SELECT 'usa' AS country, 'spanish' AS lang
-	UNION ALL
-	SELECT 'can' AS country, 'french' AS lang
-	UNION ALL
-	SELECT 'usa' AS country, 'spanish' AS lang
-) AS subquery1;
--- `SELECT DISTINCT(country, lang)` returns this:
--- row          |
--- -------------+
--- (can,french) |
--- (usa,english)|
--- (usa,spanish)|
+```sql
+-- Random returns a value in the range [0, 1)
+-- Therefore we compare against (0.001% / 100) to get ~10k rows
+SELECT * FROM sample_values WHERE random() < 0.00001;
+```
 
--- `SELECT DISTINCT country, lang` returns this:
--- country|lang   |
--- -------+-------+
--- usa    |spanish|
--- can    |french |
--- usa    |english|
+
+**TABLESAMPLE SYSTEM**
+
+Sample N % of all data points. 
+
+> More info: https://cloud.google.com/bigquery/docs/table-sampling
+
+```sql
+-- IMPORTANT! sampling is always done before the filtering. Here, you will first sample the table and then to that sample apply the WHERE clause, so the actual amount of sampled data will vary 
+SELECT *
+FROM table1 TABLESAMPLE SYSTEM (1)
+WHERE last_name = 'Wayne'
+
+-- or
+SELECT *
+FROM table1 AS t1
+TABLESAMPLE SYSTEM (0.1) -- sample 0.1% of rows
+WHERE last_name = 'Wayne'
+
+-- To first filter and then do sampling you can do this, you can create a temporary table but I don't know how to do it: https://dba.stackexchange.com/questions/258271/perform-tablesample-with-where-clause-in-postgresql#:~:text=However%20you%20can%20work%20around%20this%20if%20you%20really%20want%20to%20use%20the%20tablesample%20attribute%20by%20creating%20a%20temporary%20table%20(or%20similar)%20based%20on%20your%20conditional%20query.
+
+```
+
+### Record expansion
+
+In PostgreSQL, if you have a column where each row is a record/tuple of fixed length (e.g., `(a, b, c)`), and you want to split this column into separate columns, you can use record expansion (also called row deconstruction) via:
+- `SELECT (column_name).*` syntax
+- Or explicitly cast to a named composite type or use `unnest`, `json`, etc., depending on the context
+
+For instance, the query below returns a column which consists of records with tuples of fixed length:
+```sql
+WITH temp1 AS (
+	SELECT 1 a, 2 b, 3 c 
+	UNION ALL
+	SELECT 4 a, 5 b, 6 c
+), 
+temp2 AS (
+	SELECT DISTINCT(a, b, c)
+	FROM temp1
+)
+SELECT *
+FROM temp2 
+-- row    |
+-- -------+
+-- (1,2,3)|
+-- (4,5,6)|
+```
+
+You can split it into several columns 
+```sql
+WITH temp1 AS (
+	SELECT 1 a, 2 b, 3 c 
+	UNION ALL
+	SELECT 4 a, 5 b, 6 c
+), 
+temp2 AS (
+	SELECT DISTINCT(a, b, c)
+	FROM temp1
+)
+SELECT 
+	(row).f1 AS row1,
+	(row).f2 AS row2,
+	(row).f3 AS row3
+FROM temp2 
+-- row1|row2|row3|
+-- ----+----+----+
+--    1|   2|   3|
+--    4|   5|   6|
 ```
 
 ### COALESCE
@@ -1366,19 +1424,6 @@ FROM table1
 --         |     |     |     |
 ```
 
-
-### EXCEPT
-
-This function doesn't work in PostgreSQL. Works in BigQuery.
-
-```sql
--- Select every column except for the column `alias`
-SELECT
-	* EXCEPT (alias)
-FROM student s
-
-```
-
 ### CONCAT
 
 Features:
@@ -1398,105 +1443,59 @@ UPDATE table1
 SET col1 = CONCAT(col1, ' additional string')
 ```
 
-
-### Random sampling
-
-https://render.com/blog/postgresql-random-samples-big-tables
-
-**random()**
-
-
-First type of sort is this. 
-
-Intuitive but very inefficient.
+### DISTINCT
 
 ```sql
-SELECT * FROM my_events -- first, examines every row in the table
-ORDER BY random() -- performs a lot of comparisons to sort
-LIMIT 10000;
+-- Only print unique values from the column
+-- the two queries below produce the same result
+SELECT DISTINCT (column1)
+SELECT DISTINCT column1
+
+-- Show unique combinations of two columns - returns column where each row is a list of unique combs
+SELECT DISTINCT (column1, column2)
+-- show unique combinations of two columns BUT return a normal table
+SELECT DISTINCT column1, column2
+
+-- example
+SELECT DISTINCT(country, lang)
+FROM (
+	SELECT 'usa' AS country, 'english' AS lang
+	UNION ALL
+	SELECT 'usa' AS country, 'spanish' AS lang
+	UNION ALL
+	SELECT 'can' AS country, 'french' AS lang
+	UNION ALL
+	SELECT 'usa' AS country, 'spanish' AS lang
+) AS subquery1;
+-- `SELECT DISTINCT(country, lang)` returns this:
+-- row          |
+-- -------------+
+-- (can,french) |
+-- (usa,english)|
+-- (usa,spanish)|
+
+-- `SELECT DISTINCT country, lang` returns this:
+-- country|lang   |
+-- -------+-------+
+-- usa    |spanish|
+-- can    |french |
+-- usa    |english|
 ```
 
-Next type - Bernoulli sampling. Much faster (as you just go through the data once) but the output is non-deterministic in the count of rows you get.
+
+### EXCEPT
+
+This function doesn't work in PostgreSQL. Works in BigQuery.
 
 ```sql
--- Random returns a value in the range [0, 1)
--- Therefore we compare against (0.001% / 100) to get ~10k rows
-SELECT * FROM sample_values WHERE random() < 0.00001;
-```
-
-
-**TABLESAMPLE SYSTEM**
-
-Sample N % of all data points. 
-
-> More info: https://cloud.google.com/bigquery/docs/table-sampling
-
-```sql
--- IMPORTANT! sampling is always done before the filtering. Here, you will first sample the table and then to that sample apply the WHERE clause, so the actual amount of sampled data will vary 
-SELECT *
-FROM table1 TABLESAMPLE SYSTEM (1)
-WHERE last_name = 'Wayne'
-
--- or
-SELECT *
-FROM table1 AS t1
-TABLESAMPLE SYSTEM (0.1) -- sample 0.1% of rows
-WHERE last_name = 'Wayne'
-
--- To first filter and then do sampling you can do this, you can create a temporary table but I don't know how to do it: https://dba.stackexchange.com/questions/258271/perform-tablesample-with-where-clause-in-postgresql#:~:text=However%20you%20can%20work%20around%20this%20if%20you%20really%20want%20to%20use%20the%20tablesample%20attribute%20by%20creating%20a%20temporary%20table%20(or%20similar)%20based%20on%20your%20conditional%20query.
+-- Select every column except for the column `alias`
+SELECT
+	* EXCEPT (alias)
+FROM student s
 
 ```
 
-### QUOTE
-
-> This function is MySQL only.
-
-Place quotes around results of the query AND adds escape characters (to single quotes / apostrophes). Can be used with any data type.
-
-```sql
-SELECT QUOTE(person_id) FROM person
--- output:
--- QUOTE(person_id)|
--- ---------------+
--- '58'           |
--- '92'           |
--- '182'          |
--- '118'          |
-```
-
-### LIKE, REGEXP
-
-> `LIKE` Works for MySQL, PostgreSQL
-
-The regex statement `LIKE` in the `SELECT` clause will return a boolean mask for whether a column matches that regexp.
-
-```sql
-SELECT 
-  first_name,
-  first_name LIKE 'A%' AS starts_with_a
-  -- MySQL:      alternatively you can use: `first_name REGEXP '^A.*' AS starts_with_a`
-  -- PostgreSQL: alternatively you can use: `first_name ~ '^A.*' AS starts_with_a`
-FROM employee;
--- returns for MySQL
--- first_name|starts_with_a| -- bigint
--- ----------+-------------+
--- David     |0            |
--- Angela    |1            |
--- Kelly     |0            |
--- Stanley   |0            |
--- Andy      |1            |
-
--- returns for PostgreSQL
--- first_name|starts_with_a| -- bool
--- ----------+-------------+
--- David     |false        |
--- Angela    |true         |
--- Kelly     |false        |
--- Stanley   |false        |
--- Andy      |true         |
-```
-
-### farm_fingerprint
+### FARM_FINGERPRINT
 
 > Only works in BigQuery
 
@@ -1672,6 +1671,90 @@ QUALIFY ROW_NUMBER() OVER (
   ORDER BY RAND()
 ) <= 3
 ```
+
+### LIKE & REGEXP
+
+> `LIKE` Works for MySQL, PostgreSQL
+
+The regex statement `LIKE` in the `SELECT` clause will return a boolean mask for whether a column matches that regexp.
+
+```sql
+SELECT 
+  first_name,
+  first_name LIKE 'A%' AS starts_with_a
+  -- MySQL:      alternatively you can use: `first_name REGEXP '^A.*' AS starts_with_a`
+  -- PostgreSQL: alternatively you can use: `first_name ~ '^A.*' AS starts_with_a`
+FROM employee;
+-- returns for MySQL
+-- first_name|starts_with_a| -- bigint
+-- ----------+-------------+
+-- David     |0            |
+-- Angela    |1            |
+-- Kelly     |0            |
+-- Stanley   |0            |
+-- Andy      |1            |
+
+-- returns for PostgreSQL
+-- first_name|starts_with_a| -- bool
+-- ----------+-------------+
+-- David     |false        |
+-- Angela    |true         |
+-- Kelly     |false        |
+-- Stanley   |false        |
+-- Andy      |true         |
+```
+
+
+### QUOTE
+
+> This function is MySQL only.
+
+Place quotes around results of the query AND adds escape characters (to single quotes / apostrophes). Can be used with any data type.
+
+```sql
+SELECT QUOTE(person_id) FROM person
+-- output:
+-- QUOTE(person_id)|
+-- ---------------+
+-- '58'           |
+-- '92'           |
+-- '182'          |
+-- '118'          |
+```
+
+### SPLIT_PART
+
+From a column with text values, where each cell has values with a delimiter, extract n-th value into a new column.
+
+> Works in PostgreSQL
+
+Simple example:
+```sql
+SELECT SPLIT_PART('a,b,c', ',', 2)
+-- split_part|
+-- ----------+
+-- b         |
+```
+
+Another example, slightly more complex:
+```sql
+WITH temp1 AS (
+	SELECT 'a1,b1,c1' AS str1
+	UNION ALL
+	SELECT 'a2,b2,c2' AS str1
+)
+SELECT 
+	SPLIT_PART(str1, ',', 1) AS a,
+	SPLIT_PART(str1, ',', 2) AS b,
+	SPLIT_PART(str1, ',', 3) AS c
+FROM temp1
+-- a |b |c |
+-- --+--+--+
+-- a1|b1|c1|
+-- a2|b2|c2|
+```
+
+
 
 ### Window functions
 
