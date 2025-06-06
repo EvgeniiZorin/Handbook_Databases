@@ -125,7 +125,7 @@ Examples of different types of NRDBMS:
 - **Document-oriented**: uses structured formats (JSON, BSON, XML) for storing documents; specifying data schemas is optional; as a result, each document / data point can have its own internal structure; they are great for prototyping and fast development due to ease of use and ability to change data types; 
   - MondoDB, RethinkDB, Elasticsearch, Aerospike
 - **Column**: databases optimised for column search; as opposed to the RDBMS, which scans scans the entire table, this one allows searching only in specific columns;
-  - ClickHouse, Cassandra
+  - ClickHouse, Cassandra, BigQuery
 - **Graph**: make links between tables using edges, nodes, and properties.
   - ArangoDB: free, open-source multi-model (can be used as document DB, key-value store, or graph DB). Uses AQL (ArangoDB query language)
   - Neo4j, Dgraph, RedisGraph
