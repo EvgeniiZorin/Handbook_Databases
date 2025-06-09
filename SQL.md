@@ -10,6 +10,8 @@
   - [DML](#dml)
   - [DCL](#dcl)
   - [TCL](#tcl)
+- [Examples](#examples)
+  - [Creating and populating a table (PostgreSQL)](#creating-and-populating-a-table-postgresql)
 - [Datatypes](#datatypes)
   - [Character](#character)
   - [Numeric](#numeric)
@@ -257,18 +259,6 @@ CREATE TABLE table1(
 CREATE TABLE IF NOT EXISTS tablename;
 -- Create an empty table
 CREATE TABLE table1();
--- Some examples
-CREATE TABLE table1(
-  -- primary key column to automatically increment
-  id SERIAL PRIMARY KEY, -- BIGSERIAL NOT NULL PRIMARY KEY; 
-  first_name VARCHAR(50) NOT NULL, 
-  gender VARCHAR(7) NOT NULL, 
-  date_birth DATE NOT NULL,
-  street VARCHAR(20),
-  city VARCHAR(20),
-  country VARCHAR(20),
-  eye_color ENUM('BR', 'BL', 'GR') -- can only take on values from the list
-);
 
 -- Rename a table
 ALTER TABLE table1 
@@ -386,6 +376,46 @@ Transaction Control Language:
 - COMMIT
 - ROLLBACK
 - SAVEPOINT
+
+# Examples
+
+## Creating and populating a table (PostgreSQL)
+
+```sql
+-- An extensive example (PostgreSQL) with a PRIMARY KEY
+DROP TABLE IF EXISTS public.employee CASCADE; 
+DROP TABLE IF EXISTS public.employee_info;
+CREATE TABLE public.employee(
+  id SERIAL PRIMARY KEY,                               -- Primary key column that automatically increments with each inserted row
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),   -- When the row was added
+  date_birth DATE NOT NULL,                            -- Comment here
+  street VARCHAR(20),                                  -- Comment here
+  phone_number NUMERIC UNIQUE NOT NULL,                -- Comment here
+  city VARCHAR(20),                                    -- Comment here
+  country VARCHAR(20)                                  -- Comment here
+);
+-- Then add another table with a FOREIGN KEY
+CREATE TABLE public.employee_info(
+  employee_id INTEGER NOT NULL,                        -- References employee.id
+  first_name VARCHAR(50) NOT NULL,                     -- First name
+  last_name VARCHAR(50) NOT NULL,                      -- Last name
+  sex VARCHAR(10) NOT NULL                             
+    CHECK (sex IN ('male', 'female', 'other')),
+  --eye_color ENUM('BR', 'BL', 'GR'),                    -- Eye color
+  salary INTEGER NOT NULL DEFAULT 10000,               -- If no salary is provided, default = 10,000
+  PRIMARY KEY (employee_id, first_name, last_name),    -- Composite primary key
+  FOREIGN KEY (employee_id)                            -- Delete definitions if attribute is deleted
+    REFERENCES employee (id)
+    ON DELETE CASCADE
+);
+-- Insert some values
+INSERT INTO public.employee 
+	(date_birth, street, phone_number, city, country)
+VALUES
+	('1970-05-04', 'Grove street', 7291235938, 'Toluca', 'Mexico'),
+	('1971-06-01', 'Oak avenue', 3835913978, 'Puebla', 'Mexico')
+;
+```
 
 # Datatypes
 
@@ -3454,6 +3484,8 @@ CREATE TABLE sounds (sound_id INT PRIMARY KEY);
 CREATE TABLE sounds (
   sound_id SERIAL PRIMARY KEY
 );
+-- alternatively, can use:
+-- BIGSERIAL NOT NULL PRIMARY KEY; 
 
 -- MySQL
 -- can be SMALLINT or INT
@@ -3611,6 +3643,10 @@ ON customer (email);
 
 ## CHECK
 
+> Check works for PostgreSQL; 
+> 
+> Enum - for MySQL (I think)
+
 Restricts the allowable values for a column. Thus, a column can only accept specific values
 
 ```sql
@@ -3622,6 +3658,11 @@ ADD CONSTRAINT constraint_name CHECK (column1='Male' OR column1='Female');
 CONSTRAINT login_min_length CHECK (char_length(login) >= 3) 
 -- check constraints that only three values are possible for this column
 eye_color CHAR(2) CHECK (eye_color IN ('BR', 'BL', 'GR'))
+```
+
+MySQL:
+```sql
+eye_color ENUM('BR', 'BL', 'GR'),                    -- Eye color
 ```
 
 ## others
@@ -4462,8 +4503,10 @@ PIVOT (MAX(xcount) for week IN (1, 2, 3))
 # Export query to CSV
 
 ```sql
+-- General form
 \copy (SELECT ...) TO '/Users/Desktop/file.csv' DELIMITER ',' CSV HEADER;
-# Example
+
+-- Example
 \copy (SELECT * FROM table1 WHERE first_name='Evgenii') TO '/Users/evgen/Desktop/query2.csv' DELIMITER ',' CSV HEADER;
 ```
 
