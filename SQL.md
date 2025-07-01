@@ -83,6 +83,7 @@
   - [Foreign key](#foreign-key)
   - [UNIQUE](#unique)
   - [CHECK](#check)
+  - [DEFAULT](#default)
   - [others](#others)
 - [Trigger](#trigger)
 - [IF conditions](#if-conditions)
@@ -3663,6 +3664,15 @@ eye_color CHAR(2) CHECK (eye_color IN ('BR', 'BL', 'GR'))
 MySQL:
 ```sql
 eye_color ENUM('BR', 'BL', 'GR'),                    -- Eye color
+```
+
+## DEFAULT
+
+Sets a default value for each row in a column. If no value is provided for this column, set a default value. 
+
+```sql
+DEFAULT NOW()
+DEFAULT 'string here'
 ```
 
 ## others
