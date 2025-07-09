@@ -43,6 +43,7 @@
     - [LIKE \& REGEXP](#like--regexp)
     - [QUOTE](#quote)
     - [SPLIT\_PART](#split_part)
+    - [SPLIT](#split)
     - [Window functions](#window-functions)
       - [RANK](#rank)
       - [QUALIFY](#qualify)
@@ -1785,7 +1786,84 @@ FROM temp1
 -- a2|b2|c2|
 ```
 
+### SPLIT
 
+Splits a string row into multiple rows based on a specified delimiter. 
+
+> Works in BigQuery
+>
+> Doesn't work in PostgreSQL
+
+By default, splits the rows into nested rows, where each row will be a list of split values:
+
+```sql
+WITH temp1 AS (
+  SELECT 0 id, 'product a' feature
+  UNION ALL
+  SELECT 1 id, 'product a ; product b ; product c' feature
+  UNION ALL 
+  SELECT 2 id, 'product a ; product b' feature
+)
+SELECT 
+  id,
+  SPLIT(feature, ' ; ') AS feature_split
+FROM temp1
+
+-- [{
+--   "id": "0",
+--   "feature_split": ["product a"]
+-- }, {
+--   "id": "1",
+--   "feature_split": ["product a", "product b", "product c"]
+-- }, {
+--   "id": "2",
+--   "feature_split": ["product a", "product b"]
+-- }]
+```
+
+To reset the index, use the UNNEST function:
+```sql
+WITH temp1 AS (
+  SELECT 0 id, 'product a' feature
+  UNION ALL
+  SELECT 1 id, 'product a ; product b ; product c' feature
+  UNION ALL 
+  SELECT 2 id, 'product a ; product b' feature
+),
+temp2 AS (
+  SELECT 
+    id,
+    SPLIT(feature, ' ; ') AS feature_split
+  FROM temp1
+)
+
+SELECT 
+  id,
+  feature_split_2
+FROM 
+  temp2,
+  UNNEST(feature_split) AS feature_split_2
+
+-- [{
+--   "id": "0",
+--   "feature_split_2": "product a"
+-- }, {
+--   "id": "1",
+--   "feature_split_2": "product a"
+-- }, {
+--   "id": "1",
+--   "feature_split_2": "product b"
+-- }, {
+--   "id": "1",
+--   "feature_split_2": "product c"
+-- }, {
+--   "id": "2",
+--   "feature_split_2": "product a"
+-- }, {
+--   "id": "2",
+--   "feature_split_2": "product b"
+-- }]
+```
 
 ### Window functions
 
@@ -2736,6 +2814,7 @@ There are two ways of writing regular expressions in SQL:
 
 First, very basic regex functions `LEFT`:
 
+
 **LEFT**
 
 > Works for PostgreSQL, MySQL
@@ -2746,6 +2825,7 @@ WHERE LEFT(last_name, 1) = 'Q'
 -- Match last names that begin with 'Qu'
 WHERE LEFT(last_name, 2) = 'Qu'
 ```
+
 
 **LIKE**
 
@@ -2790,6 +2870,7 @@ ILIKE, NOT ILIKE
 
 ```
 
+
 **REGEXP**
 
 > MySQL: `REGEXP` ; PostgreSQL: `~`
@@ -2800,6 +2881,19 @@ SELECT * FROM table1 WHERE name ~ '^Grandfather.+|.+parents.+'
 SELECT DISTINCT(CITY) FROM STATION WHERE CITY ~ '^[AEIOUaeiou].*';
 SELECT DISTINCT(CITY) FROM STATION WHERE CITY REGEXP '^[aeiou]';
 ```
+
+
+**CONTAINS_SUBSTR**
+
+> Works only for BigQuery
+
+```sql
+SELECT *
+FROM `database.countries`
+WHERE CONTAINS_SUBSTR(country_name, 'rus')
+-- will find rows which in column `country_name` have 'Cyprus', 'Belarus', 'Russia'
+```
+
 
 ## ORDER BY
 
