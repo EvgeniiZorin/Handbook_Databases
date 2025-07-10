@@ -1456,6 +1456,21 @@ FROM table1
 --         |     |     |     |
 ```
 
+You can also include COALESCE into a WHERE condition:
+```sql
+with temp1 as (
+  select 'ab' id 
+  union all
+  select 'cd' id 
+  union all 
+  select NULL id
+)
+select 
+  coalesce(id, 'none') AS id
+from temp1
+where coalesce(id, 'none') <> 'ab'
+```
+
 ### CONCAT
 
 Features:
