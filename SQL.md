@@ -28,6 +28,7 @@
   - [Set](#set)
     - [UNION](#union)
     - [EXCEPT](#except)
+    - [INTERSECT](#intersect)
     - [Generate temporary data](#generate-temporary-data)
 - [Query clauses](#query-clauses)
   - [Aliases](#aliases)
@@ -417,6 +418,17 @@ VALUES
 	('1970-05-04', 'Grove street', 7291235938, 'Toluca', 'Mexico'),
 	('1971-06-01', 'Oak avenue', 3835913978, 'Puebla', 'Mexico')
 ;
+```
+
+MySQL:
+- Mostly all the same
+- Different how you auto-increment a column
+
+```sql
+CREATE TABLE table1 (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  -- ...
+)
 ```
 
 # Datatypes
@@ -1092,7 +1104,97 @@ UNION can also be used to generate synthetic data. See `Types of tables/Subquery
 
 ### EXCEPT
 
+### INTERSECT
 
+PostgreSQL example:
+
+```sql
+WITH temp1 AS (
+  SELECT 0 index, 'A' letter
+  UNION ALL
+  SELECT 1 index, 'B' letter
+  UNION ALL
+  SELECT 2 index, 'C' letter
+  UNION ALL
+  SELECT 3 index, 'D' letter
+  UNION ALL
+  SELECT 3 index, 'D' letter
+),
+temp2 AS (
+  SELECT 2 index, 'C' letter
+  UNION ALL
+  SELECT 3 index, 'D' letter
+  UNION ALL
+  SELECT 3 index, 'D' letter
+  UNION ALL
+  SELECT 3 index, 'something else here' letter
+  UNION ALL
+  SELECT 4 index, 'E' letter
+)
+SELECT *
+FROM temp1
+INTERSECT
+SELECT *
+FROM temp2
+
+-- result
+-- if you just run INTERSECT, it basically removes duplicates:
+-- index|letter|
+-- -----+------+
+--     3|D     |
+--     2|C     |
+
+-- you can also run INTERSECT ALL, which doesn't remove duplicate intersecting rows:
+-- index|letter|
+-- -----+------+
+--     3|D     |
+--     3|D     |
+--     2|C     |
+```
+
+BigQuery example
+
+```sql
+/* This is an example from BigQuery, where only INTERSECT DISTINCT exists. */
+
+WITH temp1 AS (
+  SELECT 0 index, 'A' letter
+  UNION ALL
+  SELECT 1 index, 'B' letter
+  UNION ALL
+  SELECT 2 index, 'C' letter
+  UNION ALL
+  SELECT 3 index, 'D' letter
+  UNION ALL
+  SELECT 3 index, 'D' letter
+),
+temp2 AS (
+  SELECT 2 index, 'C' letter
+  UNION ALL
+  SELECT 3 index, 'D' letter
+  UNION ALL
+  SELECT 3 index, 'D' letter
+  UNION ALL
+  SELECT 3 index, 'something else here' letter
+  UNION ALL
+  SELECT 4 index, 'E' letter
+)
+SELECT *
+FROM temp1
+INTERSECT ALL
+SELECT *
+FROM temp2
+
+
+-- Result:
+-- [{
+--   "index": "2",
+--   "letter": "C"
+-- }, {
+--   "index": "3",
+--   "letter": "D"
+-- }]
+```
 
 ### Generate temporary data
 
@@ -2963,6 +3065,22 @@ ORDER BY LOWER(col1)
 ## OFFSET 
 
 Skip $n$ rows.
+
+> Note: for some reason, you can use OFFSET only after a LIMIT, but without LIMIT you can't use it
+
+```sql
+WITH temp1 AS (
+  SELECT 0 index, 'A' letter
+  UNION ALL
+  SELECT 1 index, 'B' letter
+  UNION ALL
+  SELECT 2 index, 'C' letter
+)
+SELECT *
+FROM temp1
+LIMIT 10
+OFFSET 2
+```
 
 ## LIMIT
 
