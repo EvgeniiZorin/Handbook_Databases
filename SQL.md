@@ -842,7 +842,7 @@ round( SUM(rating::dec / position::dec)::dec / COUNT(rating)::dec, 2) AS quality
 
 -- another way
 SELECT 
-  CAST(sss2.sku_id AS STRING),
+  CAST(sss2.id AS STRING),
   CAST(age AS varchar),
   CAST('123' AS SIGNED INTEGER)
 ```
@@ -1804,6 +1804,37 @@ QUALIFY ROW_NUMBER() OVER (
 -- | 6 | b | 1923 |
 -- | 9 | c | 19234785 |
 -- | 10 | c | 5673 |
+```
+
+Another example:
+```sql
+with temp1 AS (
+  select 1 idd, 'one' descr
+  union all 
+  select 1 idd, 'one again' descr
+  union all
+  select 2 idd, 'two' descr
+  union all 
+  select 2 idd, 'two again' descr 
+  union all 
+  select 3 idd, 'three' descr
+  union all 
+  select 4 idd, 'four' descr 
+  union all 
+  select 5 idd, 'five' descr
+)
+
+select 
+  idd,
+  string_agg(descr)
+from temp1
+GROUP BY idd 
+ORDER BY farm_fingerprint(cast(idd as string))
+limit 3
+-- Fila	idd	f0_
+-- 1	1	one,one again
+-- 2	3	three
+-- 3	4	four	
 ```
 
 ---
