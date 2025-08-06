@@ -1934,6 +1934,7 @@ FROM temp1
 -- a2|b2|c2|
 ```
 
+
 ### SPLIT
 
 Splits a string row into multiple rows based on a specified delimiter. 
@@ -2011,6 +2012,23 @@ FROM
 --   "id": "2",
 --   "feature_split_2": "product b"
 -- }]
+```
+
+Now check this out! An alternative to `SPLIT_PART` in BigQuery is the combination of `SPLIT` and `SAFE_OFFSET`:
+```sql
+
+with temp1 AS (
+  select 'a/b/c' col1
+  union all
+  select 'a2/b2' col1 
+  union all 
+  select 'a3' col1
+)
+
+select 
+  col1, 
+  split(col1, '/')[safe_offset(0)]
+from temp1
 ```
 
 ### Window functions
