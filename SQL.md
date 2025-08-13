@@ -44,7 +44,7 @@
     - [LIKE \& REGEXP](#like--regexp)
     - [QUOTE](#quote)
     - [SPLIT\_PART](#split_part)
-    - [SPLIT](#split)
+    - [Row array-like, SPLIT](#row-array-like-split)
     - [Window functions](#window-functions)
       - [RANK](#rank)
       - [QUALIFY](#qualify)
@@ -1935,7 +1935,7 @@ FROM temp1
 ```
 
 
-### SPLIT
+### Row array-like, SPLIT
 
 Splits a string row into multiple rows based on a specified delimiter. 
 
@@ -1947,15 +1947,13 @@ By default, splits the rows into nested rows, where each row will be a list of s
 
 ```sql
 WITH temp1 AS (
-  SELECT 0 id, 'product a' feature
+  SELECT 0 id, SPLIT('product a', ' ; ') feature
   UNION ALL
-  SELECT 1 id, 'product a ; product b ; product c' feature
+  SELECT 1 id, SPLIT('product a ; product b ; product c', ' ; ') feature
   UNION ALL 
-  SELECT 2 id, 'product a ; product b' feature
+  SELECT 2 id, SPLIT('product a ; product b', ' ; ') feature
 )
-SELECT 
-  id,
-  SPLIT(feature, ' ; ') AS feature_split
+SELECT *
 FROM temp1
 
 -- [{
@@ -1968,24 +1966,27 @@ FROM temp1
 --   "id": "2",
 --   "feature_split": ["product a", "product b"]
 -- }]
+
+-- As a table in database IDE, it kind of looks like this:
+-- | id | feature   |
+-- | -- | --------- |
+-- | 0  | product a |
+-- | 1  | product a |
+-- |    | product b |
+-- |    | product c |
+-- | 2  | product a |
+-- |    | product b |
 ```
 
 To reset the index, use the UNNEST function:
 ```sql
 WITH temp1 AS (
-  SELECT 0 id, 'product a' feature
+  SELECT 0 id, SPLIT('product a', ' ; ') feature
   UNION ALL
-  SELECT 1 id, 'product a ; product b ; product c' feature
+  SELECT 1 id, SPLIT('product a ; product b ; product c', ' ; ') feature
   UNION ALL 
-  SELECT 2 id, 'product a ; product b' feature
-),
-temp2 AS (
-  SELECT 
-    id,
-    SPLIT(feature, ' ; ') AS feature_split
-  FROM temp1
+  SELECT 2 id, SPLIT('product a ; product b', ' ; ') feature
 )
-
 SELECT 
   id,
   feature_split_2
@@ -2030,6 +2031,27 @@ select
   split(col1, '/')[safe_offset(0)]
 from temp1
 ```
+
+
+At least in BigQuery, you can filter based on these array-like values:
+```sql
+WITH temp1 AS (
+  SELECT 0 id, split('product a', ' ; ') feature
+  UNION ALL
+  SELECT 1 id, split('product a ; product b ; product c', ' ; ') feature
+  UNION ALL 
+  SELECT 2 id, split('product a ; product b', ' ; ') feature
+)
+
+SELECT *
+FROM temp1
+WHERE array_to_string(feature, ',') = 'product a,product b'
+-- [{
+--   "id": "2",
+--   "feature": ["product a", "product b"]
+-- }]
+```
+
 
 ### Window functions
 
@@ -2270,12 +2292,11 @@ QUALIFY is a clause used to filter the results of a window function.
 
 Examples:
 > seemingly, QUALIFY doesn't work in PostgreSQL
+
 ```sql
-SELECT 
-	customer_id,
-	yr,
-	num_rentals
-FROM (	
+-- Notice in this example that QUALIFY is applied AFTER 
+-- apllying the WHERE clause
+WITH temp1 AS (
 	SELECT 1 customer_id, 2014 yr, 46 num_rentals
 	UNION ALL
 	SELECT 2 customer_id, 2014 yr, 45 num_rentals
@@ -2289,9 +2310,21 @@ FROM (
 	SELECT 6 customer_id, 2015 yr, 44 num_rentals
 	UNION ALL
 	SELECT 7 customer_id, 2015 yr, 43 num_rentals
-) a1
-QUALIFY ROW_NUMBER() OVER (PARTITION BY yr ORDER BY num_rentals DESC) = 1
-;
+)
+SELECT *
+FROM temp1
+WHERE customer_id IN (1, 2, 5, 6)
+QUALIFY ROW_NUMBER() OVER(
+	PARTITION BY yr 
+	ORDER BY num_rentals ASC
+) = 1
+-- | customer_id | yr   | num_rentals |
+-- | ----------- | ---- | ----------- |
+-- | 2           | 2014 | 45          |
+-- | 5           | 2015 | 44          |
+
+-- if you comment out the WHERE clause, then apply QUALIFY in a separate CTE, and then apply WHERE, 
+-- the results will be different - will return empty table
 ```
 
 #### LAG, LEAD
