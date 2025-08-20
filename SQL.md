@@ -2570,17 +2570,34 @@ GROUP BY column1;
 
 #### COUNT
 
-> Note: COUNT(*) counts all values including NULL; 
+> Note: 
 > 
-> COUNT(column1), SUM(column1), MAX(column1), AVG(column1) count all values EXCEPT FOR NULL;
+> COUNT(*) counts all rows, including those with NULL values; 
+> 
+> COUNT(column1) counts all rows, EXCEPT FOR NULL;
+> Other functions such as SUM(column1), MAX(column1), AVG(column1) are also applied to all rows except for nulls;
 
+```sql
+WITH temp1 AS (
+  select 'John' name
+  union all 
+  select 'Jack' name
+  union all
+  select 'Jill' name
+  union all 
+  select NULL name
+)
+
+SELECT 
+  -- Count the total number of rows
+  COUNT(*) AS count_asterisk,
+  -- Count non-null values in a column
+  COUNT(name) AS count_name
+FROM temp1
+```
 
 ```sql
 -- COUNT
--- Count the total number of rows
-SELECT COUNT(*)
--- Count non-null values in a column
-SELECT COUNT(column_name)
 -- Count all female employees
 SELECT COUNT(emp_id) FROM employee WHERE sex = 'F';
 -- Count how many entries for each unique group in column 'sex' there are
