@@ -2924,11 +2924,52 @@ SELECT STRING_AGG(CAST(emp_id AS VARCHAR), ' | ') -- VARCHAR for PostgreSQL and 
 FROM test.employee
 ```
 
+another example (you can comment out the `DISTINCT` statement below to see that you get repeats)
+```sql
+with temp1 AS (
+  select 1 id, 'one' key, 'a' value
+  union all 
+  select 1 id, 'one' key, 'a' value
+  union all 
+  select 1 id, 'one' key, 'b' value
+  union all 
+  select 1 id, 'two' key, 'a' value
+  union all
+  select 2 id, 'one' key, 'a' value
+  union all 
+  select 2 id, 'two' key, 'b' value
+  union all 
+  select 2 id, 'two' key, 'b' value 
+  union all 
+  select 2 id, 'three' key, 'b' value
+  union all 
+  select 2 id, 'three' key, 'b' value
+)
+select 
+  id,
+  STRING_AGG(
+    DISTINCT
+      CONCAT(key, ' : ', value),
+      ' || '
+  ) AS descr_key_value
+FROM temp1
+group by id
+-- [{
+--   "id": "1",
+--   "descr_key_value": "one : a || one : b || two : a"
+-- }, {
+--   "id": "2",
+--   "descr_key_value": "one : a || two : b || three : b"
+-- }]
+```
+
+
 Example of GROUP_CONCAT (MySQL):
 ```sql
 -- concatenate all rows in the column "last_name" with separator ', '
 group_concat(last_name ORDER BY first_name SEPARATOR ', ')
 ```
+
 
 ### Statistics
 
