@@ -119,6 +119,7 @@
   - [Many-to-one](#many-to-one)
   - [Self-referencing](#self-referencing)
 - [PostgreSQL](#postgresql)
+- [Create function](#create-function)
 - [Tasks](#tasks)
   - [JOINS](#joins-1)
 
@@ -5400,6 +5401,52 @@ CREATE TABLE employees (
 # PostgreSQL
 
 Login: `psql --username=<username-here> --dbname=<dbname-here>`
+
+# Create function
+
+In PostgreSQL, first you can create a function. First, let's say you have the following table `public.test`:
+
+```txt
+id|num|data        |
+--+---+------------+
+ 1|100|abc'def     |
+ 2|200|second_entry|
+ 3|100|abc'def     |
+ 4|200|second_entry|
+ 5|100|abc'def     |
+ 6|200|second_entry|
+```
+
+Create this filter function:
+
+```sql
+CREATE OR REPLACE FUNCTION SelectId4(N INT) RETURNS TABLE (num INT, data1 VARCHAR) AS $$
+BEGIN
+	RETURN QUERY (
+		SELECT
+			t1.num,
+			t1.data AS data1
+		FROM public.test AS t1
+		WHERE id = N
+	);
+END;
+$$ LANGUAGE plpgsql;
+```
+
+Then you can call it like this: 
+
+```sql
+SELECT * FROM SelectId4(3)
+```
+
+To see all the available functions that I created:
+
+```sql
+SELECT routine_name, routine_schema, routine_definition
+FROM information_schema.routines
+WHERE routine_type = 'FUNCTION'
+AND routine_schema NOT IN ('pg_catalog', 'information_schema');
+```
 
 # Tasks
 
