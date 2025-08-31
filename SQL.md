@@ -41,7 +41,7 @@
     - [DISTINCT](#distinct)
     - [EXCEPT](#except-1)
     - [FARM\_FINGERPRINT](#farm_fingerprint)
-    - [LIKE \& REGEXP](#like--regexp)
+    - [LENGTH](#length)
     - [QUOTE](#quote)
     - [SPLIT\_PART](#split_part)
     - [Row array-like, SPLIT](#row-array-like-split)
@@ -1853,36 +1853,22 @@ QUALIFY ROW_NUMBER() OVER (
 ) <= 3
 ```
 
-### LIKE & REGEXP
-
-> `LIKE` Works for MySQL, PostgreSQL
-
-The regex statement `LIKE` in the `SELECT` clause will return a boolean mask for whether a column matches that regexp.
+### LENGTH
 
 ```sql
+WITH temp1 AS (
+	SELECT 'Manhattan' city
+	UNION ALL
+	SELECT 'Alaska' city
+)
 SELECT 
-  first_name,
-  first_name LIKE 'A%' AS starts_with_a
-  -- MySQL:      alternatively you can use: `first_name REGEXP '^A.*' AS starts_with_a`
-  -- PostgreSQL: alternatively you can use: `first_name ~ '^A.*' AS starts_with_a`
-FROM employee;
--- returns for MySQL
--- first_name|starts_with_a| -- bigint
--- ----------+-------------+
--- David     |0            |
--- Angela    |1            |
--- Kelly     |0            |
--- Stanley   |0            |
--- Andy      |1            |
-
--- returns for PostgreSQL
--- first_name|starts_with_a| -- bool
--- ----------+-------------+
--- David     |false        |
--- Angela    |true         |
--- Kelly     |false        |
--- Stanley   |false        |
--- Andy      |true         |
+	city,
+	LENGTH(city)
+FROM temp1
+-- city     |LENGTH(city)|
+-- ---------+------------+
+-- Manhattan|           9|
+-- Alaska   |           6|
 ```
 
 
@@ -3125,7 +3111,36 @@ LIKE '_A_T%S'
 NOT LIKE '_lgorithms';
 -- case-insensitive
 ILIKE, NOT ILIKE
+```
 
+> `LIKE` Works for MySQL, PostgreSQL
+
+The regex statement `LIKE` in the `SELECT` clause will return a boolean mask for whether a column matches that regexp.
+
+```sql
+SELECT 
+  first_name,
+  first_name LIKE 'A%' AS starts_with_a
+  -- MySQL:      alternatively you can use: `first_name REGEXP '^A.*' AS starts_with_a`
+  -- PostgreSQL: alternatively you can use: `first_name ~ '^A.*' AS starts_with_a`
+FROM employee;
+-- returns for MySQL
+-- first_name|starts_with_a| -- bigint
+-- ----------+-------------+
+-- David     |0            |
+-- Angela    |1            |
+-- Kelly     |0            |
+-- Stanley   |0            |
+-- Andy      |1            |
+
+-- returns for PostgreSQL
+-- first_name|starts_with_a| -- bool
+-- ----------+-------------+
+-- David     |false        |
+-- Angela    |true         |
+-- Kelly     |false        |
+-- Stanley   |false        |
+-- Andy      |true         |
 ```
 
 
@@ -3138,6 +3153,9 @@ SELECT * FROM table1 WHERE name ~ '^Grandfather.+|.+parents.+'
 -- Entries start with a vowel
 SELECT DISTINCT(CITY) FROM STATION WHERE CITY ~ '^[AEIOUaeiou].*';
 SELECT DISTINCT(CITY) FROM STATION WHERE CITY REGEXP '^[aeiou]';
+
+-- Ends with a vowel
+WHERE CITY REGEXP '.+[aeiouAEIOU]$'
 ```
 
 
