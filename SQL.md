@@ -64,7 +64,7 @@
       - [Quantile](#quantile)
   - [FROM](#from)
   - [WHERE](#where)
-    - [LIKE, REGEX](#like-regex)
+    - [Regular Expressions](#regular-expressions)
   - [ORDER BY](#order-by)
   - [OFFSET](#offset)
   - [LIMIT](#limit)
@@ -3050,7 +3050,7 @@ MOD(columnName, 2) <> 0
 MOD(columnName, 2) = 0
 ```
 
-### LIKE, REGEX
+### Regular Expressions
 
 There are two ways of writing regular expressions in SQL:
 - `LIKE`: simplified REGEXP; is not as powerful, but typically faster than regular expressions.
@@ -3151,11 +3151,16 @@ FROM employee;
 ```sql
 SELECT * FROM table1 WHERE name ~ '^Grandfather.+|.+parents.+'
 -- Entries start with a vowel
-SELECT DISTINCT(CITY) FROM STATION WHERE CITY ~ '^[AEIOUaeiou].*';
-SELECT DISTINCT(CITY) FROM STATION WHERE CITY REGEXP '^[aeiou]';
+WHERE CITY ~ '^[AEIOUaeiou].*';
+WHERE CITY REGEXP '^[aeiou]';
+-- Entries that do NOT start with a vowel
+WHERE LOWER(CITY) NOT REGEXP '^[aeiou].+'
 
 -- Ends with a vowel
 WHERE CITY REGEXP '.+[aeiouAEIOU]$'
+
+-- Does not start or end with a vowel
+LOWER(CITY) NOT REGEXP '^[aeiou].+|.+[aeiou]$'
 ```
 
 
