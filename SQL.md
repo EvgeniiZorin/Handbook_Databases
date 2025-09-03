@@ -44,6 +44,7 @@
     - [LENGTH](#length)
     - [QUOTE](#quote)
     - [SPLIT\_PART](#split_part)
+    - [SUBSTRING](#substring)
     - [Row array-like, SPLIT](#row-array-like-split)
     - [Window functions](#window-functions)
       - [RANK](#rank)
@@ -1921,6 +1922,32 @@ FROM temp1
 -- a2|b2|c2|
 ```
 
+### SUBSTRING
+
+> In some dialects SUBSTR
+
+Slice a string.
+
+Basic syntax: `SUBSTRING(string, start_position, length)`
+
+```sql
+WITH temp1 AS (
+	SELECT 'Betty' name 
+	UNION ALL 
+	SELECT 'Anastasia' name
+)
+SELECT substring (name, 1, 3)
+FROM temp1
+-- substring|
+-- ---------+
+-- Bet      |
+-- Ana      |
+```
+
+Using a negative start_position (in some dialects like MySQL): a negative start_position counts from the end of the string.
+```sql
+SELECT SUBSTRING('Hello, World!', -6); -- Result: 'World!'
+```
 
 ### Row array-like, SPLIT
 
@@ -3694,7 +3721,7 @@ Creating a new column / field based on a condition for the other columns.
 
 Features:
 - In the CASE expression, the clauses are evaluated from top to bottom in order
-- CASE expressions may return any type of expression, including subqueries
+- CASE expressions may return any type of expression, including subqueries; IOW, the CASE expression goes through conditions and returns a value when the first condition is met (so it's greedy)
 
 **Types of CASE statements**:
 1. Searched case expressions
