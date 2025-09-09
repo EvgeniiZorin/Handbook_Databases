@@ -62,7 +62,6 @@
       - [GROUP BY](#group-by)
         - [WHERE vs HAVING](#where-vs-having)
       - [STRING\_AGG](#string_agg)
-    - [Statistics](#statistics)
       - [Quantile](#quantile)
   - [FROM](#from)
   - [WHERE](#where)
@@ -1367,6 +1366,17 @@ ORDER BY dt
 ;
 ```
 
+Can also write like this: 
+```sql
+WITH transactions AS (
+  SELECT 1 AS user_id, 100 AS amount UNION ALL
+  SELECT 1, 150 UNION ALL
+  SELECT 1, 200
+)
+SELECT *
+FROM transactions
+```
+
 
 # Query clauses
 
@@ -2355,7 +2365,7 @@ QUALIFY is a clause used to filter the results of a window function.
 > You need a QUALIFY statement because WHERE, GROUP BY, and HAVING filtering statements are all evaluated before the window functions. This can be overcome either by QUALIFY within the same query or writing filters on a window function-containing query contained within a CTE.
 
 Examples:
-> seemingly, QUALIFY doesn't work in PostgreSQL
+> QUALIFY doesn't work in PostgreSQL or MySQL
 
 ```sql
 -- Notice in this example that QUALIFY is applied AFTER 
@@ -3034,10 +3044,68 @@ Example of GROUP_CONCAT (MySQL):
 group_concat(last_name ORDER BY first_name SEPARATOR ', ')
 ```
 
-
-### Statistics
-
 #### Quantile
+
+- `APPROX_QUANTILES`: 
+  - BigQuery = Aggregate functions
+- `PERCENTILE_DISC`: 
+  - Calculate percentiles, taking the value that exists in the dataset; so if there is an even number of data points, it takes the lower middle value
+  - BigQuery = window function 
+  - PostgreSQL = aggregate function
+- `PERCENTILE_CONT`:
+  - Find true quantiles: if there's an even number of data points, takes the average of the middle two values
+  - BigQuery = window function
+  - PostgreSQL = aggregate function
+
+
+**BigQuery**
+
+```sql
+WITH table1 AS (
+	SELECT 'Carpenter' AS profession, 70 AS age UNION ALL
+	SELECT 'Carpenter', 50 UNION ALL
+  SELECT 'Carpenter', 65 UNION ALL
+  SELECT 'Carpenter', 45 UNION ALL
+  SELECT 'Programmer', 30 UNION ALL
+  SELECT 'Programmer', 35 UNION ALL
+  SELECT 'Programmer', 20 UNION ALL
+  SELECT 'Programmer', 25 
+)
+SELECT 
+	profession,
+	MIN(age) AS min_age,
+	AVG(age) AS mean_age,
+  -- BigQuery: calculate 10th and 90th percentile
+	APPROX_QUANTILES(age, 100)[OFFSET(10)] AS percentile_10,
+	APPROX_QUANTILES(age, 100)[OFFSET(90)] AS percentile_90,
+FROM table1
+GROUP BY 
+	profession
+```
+
+In BigQuery, there is also a window function `PERCENTILE_CONT`:
+
+```sql
+WITH table1 AS (
+	SELECT 'Carpenter' AS profession, 70 AS age UNION ALL
+	SELECT 'Carpenter', 50 UNION ALL
+  SELECT 'Carpenter', 65 UNION ALL
+  SELECT 'Carpenter', 45 UNION ALL
+  SELECT 'Programmer', 30 UNION ALL
+  SELECT 'Programmer', 35 UNION ALL
+  SELECT 'Programmer', 20 UNION ALL
+  SELECT 'Programmer', 25 
+)
+SELECT
+  profession, 
+  age, 
+  PERCENTILE_CONT(age, 0.95) OVER() AS p95_overall,
+  PERCENTILE_CONT(age, 0.95) OVER(PARTITION BY profession) AS p95_per_profession
+FROM table1
+```
+
+
+**PostgreSQL**
 
 ```sql
 WITH table1 AS (
@@ -3061,16 +3129,9 @@ SELECT
 	profession,
 	MIN(age) AS min_age,
 	AVG(age) AS mean_age,
-  -- BigQuery: calculate 10th and 90th percentile
-	APPROX_QUANTILES(age, 100)[OFFSET(10)] AS percentile_10,
-	APPROX_QUANTILES(age, 100)[OFFSET(90)] AS percentile_90
-	-- PostgreSQL: calculate 10th, 50th, and 90th percentile, taking the value that exists in the dataset; 
-	-- so if there's an even number of data points, it takes the lower middle value
 	percentile_disc(0.1) WITHIN GROUP(ORDER BY age) AS percentile_10_disc,
 	percentile_disc(0.5) WITHIN GROUP(ORDER BY age) AS percentile_50_disc,
 	percentile_disc(0.9) WITHIN GROUP(ORDER BY age) AS percentile_90_disc,
-  	-- PostgreSQL: find true quantiles
-	-- if there's an even number of data points, takes the average of the middle two values
 	percentile_cont(0.1) WITHIN GROUP(ORDER BY age) AS percentile_10_cont,
 	percentile_cont(0.5) WITHIN GROUP(ORDER BY age) AS percentile_50_cont,
 	percentile_cont(0.9) WITHIN GROUP(ORDER BY age) AS percentile_90_cont
