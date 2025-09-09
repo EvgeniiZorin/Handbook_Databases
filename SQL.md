@@ -14,6 +14,7 @@
   - [Creating and populating a table (PostgreSQL)](#creating-and-populating-a-table-postgresql)
 - [Datatypes](#datatypes)
   - [Character](#character)
+    - [REPLACE](#replace)
   - [Numeric](#numeric)
     - [Round](#round)
   - [Temporal](#temporal)
@@ -520,6 +521,55 @@ SELECT CONCAT(
   UPPER(SUBSTRING(name,1,1)),
   LOWER(SUBSTRING(name, 2, LENGTH(name) - 1))
 ) AS name
+```
+
+### REPLACE
+
+Basic form:
+
+`REPLACE(string_expression, string_pattern, string_replacement)`
+
+Examples:
+```sql
+/* Simply substitute whitespaces with underscores
+*/
+WITH temp1 AS (
+	SELECT 'John Wayne' AS full_name
+	UNION ALL
+	SELECT 'Mayor C Payne' AS full_name
+)
+SELECT REPLACE(full_name, ' ', '_')
+FROM temp1
+-- replace      |
+-- -------------+
+-- John_Wayne   |
+-- Mayor_C_Payne|
+
+
+/* In numbers, replace zeros with nothing
+*/
+
+WITH temp1 AS (
+    SELECT 2010 AS salary
+    UNION ALL
+    SELECT 20 AS salary
+    UNION ALL
+    SELECT 215 AS salary
+    UNION ALL
+    SELECT 13 AS salary
+)
+
+SELECT 
+	CAST(
+		REPLACE (CAST(salary AS VARCHAR), '0', '')
+	AS INT)
+FROM temp1
+-- replace|
+-- -------+
+--       21|
+--       2|
+--     215|
+--      13|
 ```
 
 ## Numeric
