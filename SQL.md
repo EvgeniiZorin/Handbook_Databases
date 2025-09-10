@@ -63,6 +63,8 @@
         - [WHERE vs HAVING](#where-vs-having)
       - [STRING\_AGG](#string_agg)
       - [Quantile](#quantile)
+      - [Outliers handling](#outliers-handling)
+        - [Quantiles](#quantiles)
   - [FROM](#from)
   - [WHERE](#where)
     - [Regular Expressions](#regular-expressions)
@@ -3139,6 +3141,76 @@ FROM table1
 GROUP BY 
 	profession
 ```
+
+#### Outliers handling
+
+##### Quantiles
+
+**BigQuery**
+
+```sql
+-- Outlier handling based on 5th and 95th quantile
+WITH t_temp AS (
+	SELECT 'Carpenter' AS profession, 70 AS age UNION ALL
+	SELECT 'Carpenter', 50 UNION ALL
+  SELECT 'Carpenter', 65 UNION ALL
+  SELECT 'Carpenter', 45 UNION ALL
+  SELECT 'Programmer', 30 UNION ALL
+  SELECT 'Programmer', 35 UNION ALL
+  SELECT 'Programmer', 20 UNION ALL
+  SELECT 'Programmer', 25 
+),
+
+t_percentile AS (
+  SELECT 
+    *,
+    PERCENTILE_CONT(age, 0.95) OVER(PARTITION BY profession) AS percentile_95,
+    PERCENTILE_CONT(age, 0.05) OVER(PARTITION BY profession) AS percentile_5
+  FROM t_temp
+)
+
+SELECT
+  * EXCEPT (percentile_95, percentile_5)
+FROM t_percentile
+WHERE
+  age > percentile_5
+  AND age < percentile_95
+/* It just removes ages 70 and 45 from `Carpenter`
+and 20 and 35 from `Programmer`
+*/
+```
+
+However, the problem with using quantiles for removing outliers is that it will remove any values from top and bottom, even if they are actually very close: 
+```sql
+WITH t_temp AS (
+	SELECT 'Carpenter' AS profession, 1 AS age UNION ALL
+	SELECT 'Carpenter', 2 UNION ALL
+  SELECT 'Carpenter', 3 UNION ALL
+  SELECT 'Carpenter', 4 UNION ALL
+  SELECT 'Programmer', 10 UNION ALL
+  SELECT 'Programmer', 11 UNION ALL
+  SELECT 'Programmer', 12 UNION ALL
+  SELECT 'Programmer', 13 
+),
+
+t_percentile AS (
+  SELECT 
+    *,
+    PERCENTILE_CONT(age, 0.95) OVER(PARTITION BY profession) AS percentile_95,
+    PERCENTILE_CONT(age, 0.05) OVER(PARTITION BY profession) AS percentile_5
+  FROM t_temp
+)
+
+SELECT
+  * EXCEPT (percentile_95, percentile_5)
+FROM t_percentile
+WHERE
+  age > percentile_5
+  AND age < percentile_95
+-- this will remove rows with ages 1 and 4 from `Carpenter`
+-- and rows with ages 10 and 13 from `Programmer`
+```
+
 
 ## FROM
 
