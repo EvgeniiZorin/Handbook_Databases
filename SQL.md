@@ -2151,6 +2151,26 @@ Anatomy of a window function:
 )
 ```
 
+**Example 0**
+
+``sql
+WITH temp1 AS (
+  SELECT 100 price, 1 id 
+  union all 
+  select 150 price, 2 id 
+  union all
+  select 200 price, 2 id 
+)
+select
+  id, 
+  price, 
+  SUM(price) OVER (PARTITION BY id) AS sum_price
+FROM temp1
+<!-- Fila	id	price	sum_price
+1	1	100	100
+2	2	150	350
+3	2	200	350	 -->
+```
 
 **Example 1:**
 
