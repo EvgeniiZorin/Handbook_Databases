@@ -3393,6 +3393,21 @@ WHERE CITY REGEXP '.+[aeiouAEIOU]$'
 LOWER(CITY) NOT REGEXP '^[aeiou].+|.+[aeiou]$'
 ```
 
+> Note that BigQuery works slightly different:
+
+```sql
+WITH temp1 AS (
+  SELECT 'section: protein: 10%; fat: 5%; another section' descr1, 1 id 
+  union all 
+  select 'section: protein: 15%; fat: 7%; fibre: 10%' descr2, 2 id 
+)
+select *
+from temp1
+where
+  REGEXP_CONTAINS(descr1, r'.+protein.+')
+
+```
+
 
 **CONTAINS_SUBSTR**
 
