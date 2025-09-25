@@ -798,6 +798,8 @@ SELECT TO_CHAR(order_date, 'YYYY-MM')
 SELECT DATEDIFF('2019-09-03', '2019-06-21') -- > 74
 SELECT DATEDIFF('2019-09-03 23:59:59', '2019-06-21 00:00:01') -- > 74
 SELECT DATEDIFF('2019-06-21', '2019-09-03') -- > -74
+-- in PostgreSQL, you just subtract
+SELECT '2025-09-20'::date - '2025-09-01'::date AS days_difference; -- -> 19 -- days
 
 -- MySQL
 -- if you have date containing minutes, hours, etc. apart from the date itself, you can filter only based on year,month,day like this:
