@@ -2389,7 +2389,77 @@ QUALIFY is a clause used to filter the results of a window function.
 > You need a QUALIFY statement because WHERE, GROUP BY, and HAVING filtering statements are all evaluated before the window functions. This can be overcome either by QUALIFY within the same query or writing filters on a window function-containing query contained within a CTE.
 
 Examples:
+> QUALIFY is available in Snowflake, Databricks, ClickHouse, BigQuery, Redshift
 > QUALIFY doesn't work in PostgreSQL or MySQL
+
+**Basic usage example**:
+
+```sql
+/* This is the way you filter the lowest num_rentals
+per year, using CTEs
+*/
+WITH temp1 AS (
+	SELECT 1 customer_id, 2014 yr, 46 num_rentals
+	UNION ALL
+	SELECT 2 customer_id, 2014 yr, 45 num_rentals
+	UNION ALL
+	SELECT 3 customer_id, 2014 yr, 45 num_rentals
+	UNION ALL
+	SELECT 4 customer_id, 2014 yr, 44 num_rentals
+	UNION ALL
+	SELECT 5 customer_id, 2015 yr, 44 num_rentals
+	UNION ALL
+	SELECT 6 customer_id, 2015 yr, 44 num_rentals
+	UNION ALL
+	SELECT 7 customer_id, 2015 yr, 43 num_rentals
+),
+
+ranked_orders AS (
+	SELECT
+		*,
+		ROW_NUMBER() OVER (
+			PARTITION BY yr
+			ORDER BY num_rentals ASC 
+		) AS rn 
+	FROM temp1
+)
+
+SELECT *
+FROM ranked_orders
+WHERE rn = 1;
+
+-- customer_id|yr  |num_rentals|rn|
+-- -----------+----+-----------+--+
+--           4|2014|         44| 1|
+--           7|2015|         43| 1|
+
+/* However, you can do the same as above 
+in one step (instead of two) 
+using QUALIFY statement
+*/
+WITH temp1 AS (
+	SELECT 1 customer_id, 2014 yr, 46 num_rentals
+	UNION ALL
+	SELECT 2 customer_id, 2014 yr, 45 num_rentals
+	UNION ALL
+	SELECT 3 customer_id, 2014 yr, 45 num_rentals
+	UNION ALL
+	SELECT 4 customer_id, 2014 yr, 44 num_rentals
+	UNION ALL
+	SELECT 5 customer_id, 2015 yr, 44 num_rentals
+	UNION ALL
+	SELECT 6 customer_id, 2015 yr, 44 num_rentals
+	UNION ALL
+	SELECT 7 customer_id, 2015 yr, 43 num_rentals
+)
+SELECT *
+FROM temp1
+QUALIFY ROW_NUMBER() OVER(
+	PARTITION BY yr 
+	ORDER BY num_rentals ASC
+) = 1
+```
+
 
 ```sql
 -- Notice in this example that QUALIFY is applied AFTER 
@@ -3393,6 +3463,21 @@ WHERE CITY REGEXP '.+[aeiouAEIOU]$'
 
 -- Does not start or end with a vowel
 LOWER(CITY) NOT REGEXP '^[aeiou].+|.+[aeiou]$'
+```
+
+> Note that BigQuery works slightly different:
+
+```sql
+WITH temp1 AS (
+  SELECT 'section: protein: 10%; fat: 5%; another section' descr1, 1 id 
+  union all 
+  select 'section: protein: 15%; fat: 7%; fibre: 10%' descr2, 2 id 
+)
+select *
+from temp1
+where
+  REGEXP_CONTAINS(descr1, r'.+protein.+')
+
 ```
 
 
