@@ -65,6 +65,7 @@
       - [Quantile](#quantile)
       - [Outliers handling](#outliers-handling)
         - [Quantiles](#quantiles)
+        - [Z-score](#z-score)
   - [FROM](#from)
   - [WHERE](#where)
     - [Regular Expressions](#regular-expressions)
@@ -3301,6 +3302,73 @@ WHERE
   AND age < percentile_95
 -- this will remove rows with ages 1 and 4 from `Carpenter`
 -- and rows with ages 10 and 13 from `Programmer`
+```
+
+##### Z-score
+
+```sql
+WITH data1 AS (
+	SELECT 1 category, 'protein' nutrient, 3 value
+	UNION ALL 
+	SELECT 1, 'protein', 5
+	UNION ALL 
+	SELECT 1, 'protein', 19
+	UNION ALL 
+	SELECT 1, 'protein', 9
+	UNION ALL 
+	SELECT 1, 'protein', 100
+	UNION ALL 
+	SELECT 1, 'fat', 7
+	UNION ALL
+	SELECT 1, 'fat', 8
+	UNION ALL
+	SELECT 1, 'fat', 9
+	UNION ALL
+	SELECT 1, 'fat', 39
+	UNION ALL
+	SELECT 1, 'fat', 2
+	UNION ALL
+	SELECT 2, 'protein', 15
+	UNION ALL
+	SELECT 2, 'protein', 10
+	UNION ALL
+	SELECT 2, 'protein', 1000
+	UNION ALL
+	SELECT 2, 'fat', 14
+	UNION ALL
+	SELECT 2, 'fat', 19
+), 
+
+intermediate_calc AS (
+	SELECT
+		category,
+		nutrient,
+		value,
+		AVG(value) OVER (PARTITION BY category, nutrient) AS mu,
+		COUNT(value) OVER (PARTITION BY category, nutrient) AS n,
+		(value - AVG(value) OVER (PARTITION BY category, nutrient))
+			* (value - AVG(value) OVER (PARTITION BY category, nutrient))
+			AS x_minus_mu_squared
+	FROM data1
+),
+
+calculate_sigma AS (
+	SELECT
+		category,
+		nutrient,
+		value,
+		mu,
+		n, 
+		SQRT(SUM(x_minus_mu_squared) OVER (PARTITION BY category, nutrient) / n) AS sigma
+	FROM intermediate_calc
+)
+
+SELECT
+	category,
+	nutrient,
+	(value - mu) / sigma AS zscore
+FROM calculate_sigma
+ORDER BY category ASC, nutrient ASC
 ```
 
 
