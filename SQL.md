@@ -105,7 +105,9 @@
   - [Cross join](#cross-join)
   - [Natural join](#natural-join)
 - [Pivot](#pivot)
-  - [Wide -\> long](#wide---long)
+  - [Wide -\> long (unpivot)](#wide---long-unpivot)
+    - [UNPIVOT](#unpivot)
+    - [UNION ALL](#union-all)
   - [Long -\> wide](#long---wide)
 - [Export query to CSV](#export-query-to-csv)
 - [Procedures](#procedures)
@@ -1074,6 +1076,35 @@ GROUP BY
   c.first_name,
   c.last_name
 ```
+
+`SAFE_DIVIDE`
+- BigQuery
+
+Additionally, when you know that your division operation might involve dividing by zero, you can use BigQuery's function `SAFE_DIVIDE` as it doesn't return an error upon encountering error, but a null value:
+```sql
+WITH temp1 AS (
+  SELECT 1 a, 2 b
+  union all
+  select 1 a, 1 b  
+  union all 
+  select 1 a, 0 b  
+  union all 
+  select 0 a, 1 b  
+  union all 
+  select 0 a, 0 b
+)
+SELECT SAFE_DIVIDE (a, b)
+from temp1
+-- returns
+-- | fila | f0_  |
+-- | ---- | ---- |
+-- | 1    | 0.5  |
+-- | 2    | 1.0  |
+-- | 3    | null |
+-- | 4    | 0.0  |
+-- | 5    | null |
+```
+
 
 ## Set 
 
@@ -5121,7 +5152,44 @@ NATURAL JOIN rental r
 
 # Pivot
 
-## Wide -> long
+## Wide -> long (unpivot)
+
+There are different solutions for this.
+
+### UNPIVOT
+
+- Works in BigQuery
+
+```sql
+WITH temp1 AS (
+  SELECT 1 ID, 25 age, 50000 compensation, 3 years_experience
+  union all
+  select 2 ID, 33 age, 61000 compensation, 5 years_experience 
+)
+
+SELECT
+    ID,
+    VariableType,
+    VariableValue
+FROM
+    temp1
+UNPIVOT
+    (VariableValue FOR VariableType IN (age, compensation, years_experience)) AS UnpivotedData;
+
+-- result
+-- | ID | VariableType     | VariableValue |
+-- | -- | ---------------- | ------------- |
+-- | 1  | age              | 25            |
+-- | 1  | compensation     | 50000         |
+-- | 1  | years_experience | 3             |
+-- | 2  | age              | 33            |
+-- | 2  | compensation     | 61000         |
+-- | 2  | years_experience | 5             |
+```
+
+### UNION ALL
+
+- A more compatible solution
 
 **Example 1**
 
