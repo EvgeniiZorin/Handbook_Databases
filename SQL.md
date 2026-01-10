@@ -1595,6 +1595,8 @@ FROM temp2
 ### COALESCE
 
 > Basically null-value handling.
+>
+> NOTE: the order of arguments in COALESCE is very important - it returns the FIRST non-null value, therefore, you can thus set priority - the first argument has a higher priority than the second argument, where the latter is used only if the former is absent.
 
 Return the first non-null value in a list of columns. If all the values in the list of columns are NULL, then the function returns NULL
 
