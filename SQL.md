@@ -737,6 +737,47 @@ SET birth_date = DATE_ADD(birth_date, INTERVAL '9-11' YEAR_MONTH)
 WHERE emp_id = 123;
 ```
 
+**DATE_SUB**
+
+Subtract specified interval from the passed date argument.
+
+```sql
+-- Subtract 10 days from a date
+SELECT DATE_SUB('2017-06-15', INTERVAL 10 DAY);
+```
+
+**FORMAT_DATE**
+
+Format date in a specified format:
+```sql
+WITH temp0 AS (
+  select '2025-01-01' rundate 
+  union all select '2025-02-01' rundate
+),
+
+temp1 AS (
+  select CAST(rundate AS DATE) rundate 
+  from temp0
+)
+
+select
+  rundate, 
+  format_date('Q%Q', rundate) AS quarter, 
+  format_date('%Y', rundate) AS year
+FROM temp1
+-- [{
+--   "rundate": "2025-01-01",
+--   "quarter": "Q1",
+--   "year": "2025"
+-- }, {
+--   "rundate": "2025-02-01",
+--   "quarter": "Q1",
+--   "year": "2025"
+-- }]
+```
+
+
+
 **Other**
 ```sql
 -- Typecasting
