@@ -108,7 +108,7 @@
   - [Wide -\> long (unpivot)](#wide---long-unpivot)
     - [UNPIVOT](#unpivot)
     - [UNION ALL](#union-all)
-  - [Long -\> wide](#long---wide)
+  - [Long -\> wide (pivot)](#long---wide-pivot)
 - [Export query to CSV](#export-query-to-csv)
 - [Procedures](#procedures)
 - [Transaction](#transaction)
@@ -5275,7 +5275,7 @@ FROM wideClient
 ```
 
 
-## Long -> wide
+## Long -> wide (pivot)
 
 **Example 1**
 
@@ -5395,6 +5395,12 @@ PIVOT (MAX(xcount) for week IN (1, 2, 3))
 -- | - | - | - | - |
 -- | 101 | 138 | 282 | NULL |
 -- | 102 | 96 | 18 | NULL |
+```
+
+Another Example of pivot (can be used in BigQuery):
+
+```sql
+
 ```
 
 # Export query to CSV
