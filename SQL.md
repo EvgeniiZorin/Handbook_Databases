@@ -68,10 +68,14 @@
         - [Z-score](#z-score)
   - [FROM](#from)
   - [WHERE](#where)
+    - [EXISTS](#exists)
     - [Regular Expressions](#regular-expressions)
   - [ORDER BY](#order-by)
   - [OFFSET](#offset)
   - [LIMIT](#limit)
+- [Operations](#operations)
+  - [Null Handling](#null-handling)
+    - [COALESCE vs IFNULL](#coalesce-vs-ifnull)
 - [Types of tables](#types-of-tables)
   - [Subquery](#subquery)
     - [Types of correlation](#types-of-correlation)
@@ -104,6 +108,7 @@
   - [Self join](#self-join)
   - [Cross join](#cross-join)
   - [Natural join](#natural-join)
+  - [Regex join](#regex-join)
 - [Pivot](#pivot)
   - [Wide -\> long (unpivot)](#wide---long-unpivot)
     - [UNPIVOT](#unpivot)
@@ -844,6 +849,9 @@ SELECT DATEDIFF('2019-09-03 23:59:59', '2019-06-21 00:00:01') -- > 74
 SELECT DATEDIFF('2019-06-21', '2019-09-03') -- > -74
 -- in PostgreSQL, you just subtract
 SELECT '2025-09-20'::date - '2025-09-01'::date AS days_difference; -- -> 19 -- days
+-- in BigQuery, slight variation
+DATE_DIFF('2019-10-01', '2019-05-01', DAY)
+
 
 -- MySQL
 -- if you have date containing minutes, hours, etc. apart from the date itself, you can filter only based on year,month,day like this:
@@ -3494,6 +3502,43 @@ MOD(columnName, 2) <> 0
 MOD(columnName, 2) = 0
 ```
 
+### EXISTS
+
+The `EXISTS` operator is used to test for the existence of any record in a subquery; returns TRUE if the subquery returns one or more records. 
+
+Examples:
+
+The following SQL statement returns TRUE and lists the suppliers with a product price less than 20:
+
+```sql
+WITH Products AS (
+  SELECT 1 ProductID, 'Chais' ProductName, 1 SupplierID, 1 CategoryID, '10 boxes x 20 bags' Unit, 18 Price union all 
+  select 2, 'Chang', 1, 1, '24 - 12 oz bottles', 19 union all 
+  select 3, 'Aniseed Syrup', 1, 2, '12 - 550 ml bottles', 10 union all
+  select 4, "Chef Anton's Cajun Seasoning", 2, 2, "48 - 6 oz jars", 22 union all 
+  select 5, "Chef Anton's Gumbo Mix", 2, 2, "36 boxes", 21.35
+),
+
+Suppliers AS (
+  select 1 SupplierId, 'Exotic Liquid' SupplierName, 'Charlotte Cooper' ContactName union all 
+  select 2, 'New Orleans Cajun Delights', 'Shelley Burke'
+)
+
+-- Select suppliers with a product price less than 20
+SELECT SupplierName
+FROM Suppliers 
+WHERE EXISTS (
+  SELECT ProductName
+  FROM Products 
+  WHERE
+    Products.SupplierID = Suppliers.supplierID
+    AND Price < 20
+);
+-- [{
+--   "SupplierName": "Exotic Liquid"
+-- }]
+```
+
 ### Regular Expressions
 
 There are two ways of writing regular expressions in SQL:
@@ -3590,7 +3635,9 @@ FROM employee;
 
 **REGEXP**
 
-> MySQL: `REGEXP` ; PostgreSQL: `~`
+> MySQL: `REGEXP` 
+> PostgreSQL: `~`
+> BigQuery: `REGEXP_CONTAINS`
 
 ```sql
 SELECT * FROM table1 WHERE name ~ '^Grandfather.+|.+parents.+'
@@ -3708,6 +3755,37 @@ OFFSET 2
 ## LIMIT
 
 show n first rows.
+
+# Operations
+
+## Null Handling
+
+### COALESCE vs IFNULL
+
+The main difference between the two is that `IFNULL` function takes two arguments and returns the first one if it's not `NULL` or the second if the first one is `NULL`.
+
+`COALESCE` function can take two or more parameters and returns the first non-`NULL` parameter, or `NULL` if all parameters are null, for example:
+
+```sql
+-- Source - https://stackoverflow.com/a/18528590
+-- Posted by Aleks G, modified by community. See post 'Timeline' for change history
+-- Retrieved 2026-01-19, License - CC BY-SA 4.0
+
+SELECT IFNULL('some value', 'some other value');
+-> returns 'some value'
+
+SELECT IFNULL(NULL,'some other value');
+-> returns 'some other value'
+
+SELECT COALESCE(NULL, 'some other value');
+-> returns 'some other value' - equivalent of the IFNULL function
+
+SELECT COALESCE(NULL, 'some value', 'some other value');
+-> returns 'some value'
+
+SELECT COALESCE(NULL, NULL, NULL, NULL, 'first non-null value');
+-> returns 'first non-null value'
+```
 
 # Types of tables
 
@@ -5191,6 +5269,43 @@ SELECT
   c.first_name, c.last_name, date(r.rental_date)
 FROM customer c
 NATURAL JOIN rental r
+```
+
+## Regex join
+
+```sql
+WITH temp1 AS (
+  SELECT 1 id, 'hello we are opening our stores' textvalue union all
+  select 20 id, 'this product is vegetarian' union all 
+  select 30 id, 'this product is not suitable for vegetarians at all' union all 
+  select 4 id, 'this product contains cannabis in itself.' union all
+  select 40 id, 'the product has cannabis oil in its ingredients list.'
+),
+keywords AS (
+  SELECT 'vegetarian' keyword union all 
+  select 'cannabis oil' 
+)
+
+select *
+from temp1 AS tp
+INNER JOIN keywords AS kw 
+  ON REGEXP_CONTAINS(
+    LOWER(tp.textvalue),
+    LOWER(kw.keyword)
+  )
+-- [{
+--   "id": "20",
+--   "textvalue": "this product is vegetarian",
+--   "keyword": "vegetarian"
+-- }, {
+--   "id": "3",
+--   "textvalue": "this product is not suitable for vegetarians at all",
+--   "keyword": "vegetarian"
+-- }, {
+--   "id": "40",
+--   "textvalue": "the product has cannabis oil in its ingredients list.",
+--   "keyword": "cannabis oil"
+-- }]
 ```
 
 # Pivot
