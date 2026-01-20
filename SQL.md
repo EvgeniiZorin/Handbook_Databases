@@ -20,6 +20,7 @@
   - [Temporal](#temporal)
   - [NULL](#null)
   - [Type casting](#type-casting)
+  - [Array](#array)
   - [Array \> column etc.](#array--column-etc)
 - [Operators](#operators)
   - [Logical](#logical)
@@ -813,7 +814,7 @@ SELECT DAYNAME('2019-09-18') -- > Wednesday
 - EXTRACT can be used in SELECT and WHERE
 - PostgreSQL, MySQL
 ```sql
--- EXTRACT: Extracting fields: DAY, DOW, MONTH, YEAR, CENTURY
+-- EXTRACT: Extracting fields: DAY, DOW, WEEK, MONTH, YEAR, CENTURY
 -- EXTRACT can be used in SELECT and WHERE
 -- PostgreSQL
 EXTRACT (YEAR FROM NOW())
@@ -958,6 +959,19 @@ Complex data types:
 ```sql
 -- List - usually used within a WHERE _ IN <list> clause
 ('Value1', 'Value2', 'Value3')
+```
+
+## Array
+
+BigQuery has two array indexing styles:
+- `OFFSET(n)` - zero-based
+- `ORDINAL(n)` - one-based.
+
+Examples:
+
+```sql
+array[ORDINAL(2)] -- take the element at index 1
+array[OFFSET(2)] -- take the element at index 2
 ```
 
 ## Array > column etc.
@@ -3136,6 +3150,8 @@ FROM some_table
 GROUP BY id
 ```
 
+> If you don't specify the separator, it will default to `,`: `STRING_AGG(column1)`
+
 Concatenate all rows in column "countryname" into one cell, delimited by `, `
 ```sql
 SELECT 
@@ -3223,16 +3239,25 @@ group_concat(last_name ORDER BY first_name SEPARATOR ', ')
 
 #### Quantile
 
-- `APPROX_QUANTILES`: 
-  - BigQuery = Aggregate functions
-- `PERCENTILE_DISC`: 
-  - Calculate percentiles, taking the value that exists in the dataset; so if there is an even number of data points, it takes the lower middle value
-  - BigQuery = window function 
-  - PostgreSQL = aggregate function
-- `PERCENTILE_CONT`:
-  - Find true quantiles: if there's an even number of data points, takes the average of the middle two values
-  - BigQuery = window function
-  - PostgreSQL = aggregate function
+`APPROX_QUANTILES`: 
+- BigQuery = Aggregate functions
+
+```sql
+APPROX_QUANTILES([DISTINCT] expression, number [{IGNORE|RESPECT} NULLS])
+```
+- `expression`: the column or expression containing numeric data for which to calculate quantiles;
+- `number`: an integer representing the number of quantiles to divide the data into, e.g. `4` for quartiles, `100` for percentiles;
+- `IGNORE NULLS` or `RESPECT NULLS`: optional clauses to control null handling. By default, it's ignore nulls;
+
+`PERCENTILE_DISC`: 
+- Calculate percentiles, taking the value that exists in the dataset; so if there is an even number of data points, it takes the lower middle value
+- BigQuery = window function 
+- PostgreSQL = aggregate function
+
+`PERCENTILE_CONT`:
+- Find true quantiles: if there's an even number of data points, takes the average of the middle two values
+- BigQuery = window function
+- PostgreSQL = aggregate function
 
 
 **BigQuery**
