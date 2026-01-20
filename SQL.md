@@ -2168,8 +2168,8 @@ SELECT
   id,
   feature_split_2
 FROM 
-  temp2,
-  UNNEST(feature_split) AS feature_split_2
+  temp1,
+  UNNEST(feature) AS feature_split_2
 
 -- [{
 --   "id": "0",
@@ -3708,6 +3708,138 @@ WHERE CONTAINS_SUBSTR(country_name, 'rus')
 -- will find rows which in column `country_name` have 'Cyprus', 'Belarus', 'Russia'
 ```
 
+**REGEXP_EXTRACT_ALL**
+
+> Works for BigQuery
+
+Example 1:
+
+```sql
+with temp1 AS (
+  select 1 id, 'we are having a vegetarian snack that is also bio based as usual' search_string union all 
+  select 2, 'suitable for vegetarians yes' union all 
+  select 3, 'not suitable for anyone' union all 
+  select 4, 'this product is bio-based yes' union all 
+  select 5, 'the product is bio, yet based on artificial materials'
+)
+
+-- returns nested results if multiple matches
+SELECT 
+  id,
+  REGEXP_EXTRACT_ALL(
+    LOWER(search_string),
+    'vegetarian|bio.based'
+  ) AS found_matches
+FROM temp1
+-- [{
+--   "id": "1",
+--   "found_matches": ["vegetarian", "bio based"]
+-- }, {
+--   "id": "2",
+--   "found_matches": ["vegetarian"]
+-- }, {
+--   "id": "3",
+--   "found_matches": []
+-- }, {
+--   "id": "4",
+--   "found_matches": ["bio-based"]
+-- }, {
+--   "id": "5",
+--   "found_matches": []
+-- }]
+```
+
+Example 2:
+
+```sql
+with temp1 AS (
+  select 1 id, 'we are having a vegetarian snack that is also bio based as usual' search_string union all 
+  select 2, 'suitable for vegetarians yes' union all 
+  select 3, 'not suitable for anyone' union all 
+  select 4, 'this product is bio-based yes' union all 
+  select 5, 'the product is bio, yet based on artificial materials'
+),
+
+keyword_match AS (
+  SELECT 
+    id,
+    REGEXP_EXTRACT_ALL(
+      LOWER(search_string),
+      'vegetarian|bio.based'
+    ) AS found_matches
+  FROM temp1
+)
+
+SELECT DISTINCT
+  found_matches_unnested AS keywords,
+  id 
+FROM keyword_match 
+CROSS JOIN UNNEST(found_matches) AS found_matches_unnested
+  
+-- [{
+--   "keywords": "vegetarian",
+--   "id": "1"
+-- }, {
+--   "keywords": "bio based",
+--   "id": "1"
+-- }, {
+--   "keywords": "vegetarian",
+--   "id": "2"
+-- }, {
+--   "keywords": "bio-based",
+--   "id": "4"
+-- }]
+```
+
+Example 3 - like example 2 but without cross join:
+
+```sql
+with temp1 AS (
+  select 1 id, 'we are having a vegetarian snack that is also bio based as usual' search_string union all 
+  select 2, 'suitable for vegetarians yes' union all 
+  select 3, 'not suitable for anyone' union all 
+  select 4, 'this product is bio-based yes' union all 
+  select 5, 'the product is bio, yet based on artificial materials'
+),
+
+keyword_matches AS (
+  SELECT 
+    id,
+    REGEXP_EXTRACT_ALL(
+      LOWER(search_string),
+      'vegetarian|bio.based'
+    ) AS found_matches
+  FROM temp1
+)
+
+-- SELECT DISTINCT
+--   found_matches_unnested AS keywords,
+--   id 
+-- FROM keyword_match 
+-- CROSS JOIN UNNEST(found_matches) AS found_matches_unnested
+
+SELECT
+  id,
+  found_matches_unnested
+FROM 
+  keyword_matches, 
+  UNNEST(found_matches) AS found_matches_unnested
+
+-- [{
+--   "id": "1",
+--   "found_matches_unnested": "vegetarian"
+-- }, {
+--   "id": "1",
+--   "found_matches_unnested": "bio based"
+-- }, {
+--   "id": "2",
+--   "found_matches_unnested": "vegetarian"
+-- }, {
+--   "id": "4",
+--   "found_matches_unnested": "bio-based"
+-- }]
+```
+
 
 ## ORDER BY
 
@@ -5186,10 +5318,22 @@ WHERE a1.address < a2.address;
 ```
 
 ## Cross join
-
+ 
 Cartesian product (a.k.a. cross join) is when you join two tables without specifying how to join them, which generates every permutation of the two tables. 
 
 > This join type is used rarely
+
+You can write `CROSS JOIN` in two ways:
+```sql
+-- method 1
+SELECT *
+FROM table1
+CROSS JOIN table2
+
+-- method 2
+SELECT *
+FROM table1, table2
+```
 
 For example, in this case you join two tables without specifying a condition:
 - `SELECT COUNT(*) FROM customer` - $599$ rows
