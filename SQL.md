@@ -115,6 +115,8 @@
     - [UNPIVOT](#unpivot)
     - [UNION ALL](#union-all)
   - [Long -\> wide (pivot)](#long---wide-pivot)
+    - [Manual](#manual)
+    - [Automatic](#automatic)
 - [Export query to CSV](#export-query-to-csv)
 - [Procedures](#procedures)
 - [Transaction](#transaction)
@@ -3824,7 +3826,7 @@ Different types of tables:
 
 ## Subquery
 
-> a.k.a. subquery, nested query, inner query
+> a.k.a. nested query, inner query
 
 - Subqueries are embedded within another SQL query (called the *containing statement*) and are used when the result of one query depends on that of the other; 
 - Are powerful tools for performing complex data manipulations that require one or more intermediary steps
@@ -5417,6 +5419,10 @@ FROM wideClient
 
 ## Long -> wide (pivot)
 
+### Manual
+
+Here you have to specify names of columns used for pivot.
+
 **Example 1**
 
 ```txt
@@ -5540,7 +5546,58 @@ PIVOT (MAX(xcount) for week IN (1, 2, 3))
 Another Example of pivot (can be used in BigQuery):
 
 ```sql
+SELECT
+  id,
+  STRING_AGG(DISTINCT(IF(feature = "Iron", textvalue, NULL))) AS text_values_for_iron,
+  STRING_AGG(DISTINCT(IF(feature = "Wood", textvalue, NULL))) AS text_values_for_wood,
+  ... -- can repeat for many many classes
+FROM table1
+GROUP BY 1
+```
 
+### Automatic
+
+```sql
+WITH temp1 AS (
+  SELECT 1 id, 2020 year, 100 price, 'gbp' unit union all 
+  SELECT 1 id, 2020 year, 1000 price, 'gbp' unit union all
+  select 1 id, 2021 year, 105 price, 'gbp' unit union all 
+  select 1 id, 2022 year, 115 price, 'gbp' unit union all 
+  SELECT 2 id, 2020 year, 200 price, 'gbp' unit union all 
+  select 2 id, 2021 year, 205 price, 'gbp' unit union all 
+  select 2 id, 2022 year, 215 price, 'gbp' unit union all 
+  SELECT 3 id, 2020 year, 300 price, 'gbp' unit union all 
+  select 3 id, 2021 year, 305 price, 'gbp' unit union all 
+  select 3 id, 2022 year, 315 price, 'gbp' unit 
+)
+
+SELECT * 
+FROM temp1
+Pivot(MAX(price) AS price
+FOR YEAR IN (2020, 2021, 2022, 2023))
+
+-- [{
+--   "id": "1",
+--   "unit": "gbp",
+--   "price_2020": "1000",
+--   "price_2021": "105",
+--   "price_2022": "115",
+--   "price_2023": null
+-- }, {
+--   "id": "2",
+--   "unit": "gbp",
+--   "price_2020": "200",
+--   "price_2021": "205",
+--   "price_2022": "215",
+--   "price_2023": null
+-- }, {
+--   "id": "3",
+--   "unit": "gbp",
+--   "price_2020": "300",
+--   "price_2021": "305",
+--   "price_2022": "315",
+--   "price_2023": null
+-- }]
 ```
 
 # Export query to CSV
