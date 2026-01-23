@@ -77,6 +77,7 @@
 - [Operations](#operations)
   - [Null Handling](#null-handling)
     - [COALESCE vs IFNULL](#coalesce-vs-ifnull)
+  - [Temp functions](#temp-functions)
 - [Types of tables](#types-of-tables)
   - [Subquery](#subquery)
     - [Types of correlation](#types-of-correlation)
@@ -535,6 +536,29 @@ SELECT CONCAT(
 ) AS name
 ```
 
+**Concatenation**
+
+```sql
+SELECT 'a' || field_string || 'b'
+```
+
+**Slicing a string**
+
+> Index slicing a string
+> Note that index begins with 1 here.
+
+```sql
+WITH temp1 AS (
+  SELECT 'hello there' textvalue
+)
+
+SELECT SUBSTRING(textvalue, 5, 3)
+FROM temp1
+-- [{
+--   "f0_": "o t"
+-- }]
+```
+
 ### REPLACE
 
 Basic form:
@@ -595,6 +619,14 @@ FROM temp1
 
 > Note 1: 
 > The numeric data types can be defined as `unsigned`, meaning that they are greater than or equal to zero.
+
+Some useful functions for doing math in SQL:
+```sql
+-- Power of a number
+-- Works in PostgreSQL, MySQL, BigQuery
+POW(base, exponent)
+POWER(2, 3) -- 2^3
+```
 
 ```sql
 -- | `POW(2, 3)` | Power; in this example, 2^3. Works in PostgreSQL, MySQL. |
@@ -950,11 +982,15 @@ SELECT
 -- or
 round( SUM(rating::dec / position::dec)::dec / COUNT(rating)::dec, 2) AS quality
 
+-- or
+DATE('2025-01-05')
+
 -- another way
 SELECT 
   CAST(sss2.id AS STRING),
   CAST(age AS varchar),
   CAST('123' AS SIGNED INTEGER)
+  CAST('2025-01-05' AS date)
 ```
 
 Complex data types:
@@ -3944,6 +3980,66 @@ SELECT COALESCE(NULL, 'some value', 'some other value');
 
 SELECT COALESCE(NULL, NULL, NULL, NULL, 'first non-null value');
 -> returns 'first non-null value'
+```
+
+## Temp functions
+
+Let's consider a simple example:
+
+```sql
+WITH temp1 AS (
+  SELECT 'hello_20250501-and then the rest' textvalue union all 
+  select 'asdfdd20250601asdfk'
+),
+
+temp2 AS (
+  SELECT
+    textvalue,
+    CAST(SUBSTRING(textvalue, 7, 4) || '-' || SUBSTRING(textvalue, 11, 2) || '-' || SUBSTRING(textvalue, 13, 2) AS DATE) AS extracted_date
+  FROM temp1
+)
+
+SELECT
+  textvalue, 
+  extracted_date,
+  EXTRACT(YEAR FROM extracted_date) AS year,
+  EXTRACT(MONTH FROM extracted_date) AS month,
+  EXTRACT(DAY FROM extracted_date) AS day
+FROM temp2
+```
+
+You could have written that super-long string operation as a temporary function. Please note that now there are two queries / transactions below:
+
+```sql
+CREATE TEMP FUNCTION extract_Custom_Date(x string) AS ((
+  SELECT
+    CAST(
+      SUBSTRING(x, 7, 4) || '-' ||
+      SUBSTRING(x, 11, 2) || '-' ||
+      SUBSTRING(x, 13, 2)
+    AS DATE)
+));
+
+WITH temp1 AS (
+  SELECT 'hello_20250501-and then the rest' textvalue union all 
+  select 'asdfdd20250601asdfk'
+),
+
+temp2 AS (
+  SELECT
+    textvalue,
+    extract_Custom_Date(textvalue) AS extracted_date
+  FROM temp1
+)
+
+SELECT
+  textvalue, 
+  extracted_date,
+  EXTRACT(YEAR FROM extracted_date) AS year,
+  EXTRACT(MONTH FROM extracted_date) AS month,
+  EXTRACT(DAY FROM extracted_date) AS day
+FROM temp2
+
 ```
 
 # Types of tables
