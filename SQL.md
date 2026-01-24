@@ -5558,20 +5558,83 @@ from temp1 AS tp
 INNER JOIN keywords AS kw 
   ON REGEXP_CONTAINS(
     LOWER(tp.textvalue),
-    LOWER(kw.keyword)
+    LOWER(
+      CONCAT('\\b', kw.keyword, '\\b')
+    )
   )
+
+-- note that it doesn't match "vegetarians" in sentence id 30 because
+-- it is matching keywords surrounded by the word boundary \b
+
 -- [{
 --   "id": "20",
 --   "textvalue": "this product is vegetarian",
 --   "keyword": "vegetarian"
 -- }, {
---   "id": "3",
---   "textvalue": "this product is not suitable for vegetarians at all",
---   "keyword": "vegetarian"
--- }, {
 --   "id": "40",
 --   "textvalue": "the product has cannabis oil in its ingredients list.",
 --   "keyword": "cannabis oil"
+-- }]
+```
+
+You can also create custom logic for joining, for example:
+- Regex join based on inclusion keywords;
+- However, if a exclusion keyword is also matched for the same item for the same match_group, then exclude that matched match_group for that item
+
+```sql
+WITH temp1 AS (
+  SELECT 1  id, 'hello we are opening our stores' textvalue union all
+  select 20 id, 'this product is vegetarian' union all 
+  select 3  id, 'this product is not suitable for vegetarians at all' union all 
+  select 4  id, 'this product contains cannabis in itself.' union all
+  select 40 id, 'the product has cannabis oil in its ingredients list.' union all 
+  select 5  id, 'this product is not vegetarian as it contains meat'
+),
+keywords AS (
+  SELECT 'DIET' match_group, 'vegetarian' keyword, 'include' match_type union all 
+  select 'DIET' match_group, 'cannabis oil',       'include' union all 
+  select 'DIET' match_group, 'meat',               'exclude'
+)
+
+SELECT
+  temp1.id,
+  temp1.textvalue,
+  k.match_group,
+  ARRAY_AGG(DISTINCT k.keyword ORDER BY k.keyword) AS keywords_matches
+FROM temp1
+INNER JOIN keywords AS k
+  ON REGEXP_CONTAINS(
+    LOWER(temp1.textvalue),
+    LOWER(CONCAT('\\b', k.keyword, '\\b'))
+  )
+WHERE
+  k.match_type = 'include'
+  AND NOT EXISTS (
+    SELECT 1
+    FROM keywords AS k_exc
+    WHERE
+      k_exc.match_type = 'exclude'
+      AND k_exc.match_group = k.match_group
+      AND REGEXP_CONTAINS(
+        LOWER(temp1.textvalue),
+        LOWER(CONCAT('\\b', k_exc.keyword, '\\b'))
+      )
+  )
+GROUP BY 1, 2, 3
+-- in this example below, inclusion keyword matched id 5 on vegetarian, 
+-- however, it also matched on exclusion keyword "meat" for the same match_group, therefore, 
+-- we excluded that row from being in the match_group
+
+-- [{
+--   "id": "20",
+--   "textvalue": "this product is vegetarian",
+--   "match_group": "DIET",
+--   "keywords_matches": ["vegetarian"]
+-- }, {
+--   "id": "40",
+--   "textvalue": "the product has cannabis oil in its ingredients list.",
+--   "match_group": "DIET",
+--   "keywords_matches": ["cannabis oil"]
 -- }]
 ```
 
