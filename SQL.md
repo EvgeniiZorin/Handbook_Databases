@@ -3695,7 +3695,6 @@ FROM employee;
 -- Andy      |true         |
 ```
 
-
 **REGEXP**
 
 > MySQL: `REGEXP` 
@@ -3873,6 +3872,33 @@ FROM
 -- }, {
 --   "id": "4",
 --   "found_matches_unnested": "bio-based"
+-- }]
+```
+
+Note that this function only returns non-overlapping matches, for example, using this function to extract `ana` from `banana` returns only one substring, not two. Also, if one keyword is a subset of another, then one of them won't work unless you use `\\b`, but even then some edge cases won't work as expected - see the example below:
+
+```sql
+with temp1 AS (
+  select 'this is a chemical free product' search_string
+),
+temp2 AS (
+    SELECT
+        search_string, 
+        regexp_extract_all(
+            LOWER(search_string),
+            "\\bfree\\b|\\bchemical.free\\b"
+            ) AS p_arr
+    FROM temp1
+)
+select * 
+from temp2
+
+-- notice how it only matched "chemical free" and not just the keyword "free";
+-- ideally, you would want both to be matched.
+
+-- [{
+--   "search_string": "this is a chemical free product",
+--   "p_arr": ["chemical free"]
 -- }]
 ```
 
