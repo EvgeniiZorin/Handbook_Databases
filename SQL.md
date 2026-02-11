@@ -47,6 +47,7 @@
     - [QUOTE](#quote)
     - [SPLIT\_PART](#split_part)
     - [SUBSTRING](#substring)
+    - [LEFT](#left)
     - [Row array-like, SPLIT](#row-array-like-split)
     - [Window functions](#window-functions)
       - [RANK](#rank)
@@ -2147,6 +2148,16 @@ Using a negative start_position (in some dialects like MySQL): a negative start_
 ```sql
 SELECT SUBSTRING('Hello, World!', -6); -- Result: 'World!'
 ```
+
+### LEFT
+
+Extract `n` characters from a string, starting from left:
+
+```sql
+SELECT LEFT('whatever', 3) AS ExtractString; -- output is `wha`
+
+```
+
 
 ### Row array-like, SPLIT
 
