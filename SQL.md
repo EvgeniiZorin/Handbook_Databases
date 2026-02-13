@@ -112,6 +112,7 @@
   - [Cross join](#cross-join)
   - [Natural join](#natural-join)
   - [Regex join](#regex-join)
+- [MATCH INTO](#match-into)
 - [Pivot](#pivot)
   - [Wide -\> long (unpivot)](#wide---long-unpivot)
     - [UNPIVOT](#unpivot)
@@ -5674,6 +5675,73 @@ GROUP BY 1, 2, 3
 --   "keywords_matches": ["cannabis oil"]
 -- }]
 ```
+
+# MATCH INTO
+
+General syntax:
+
+```sql
+MERGE INTO TargetTable AS T
+USING SourceTable AS S
+    ON (T.ID = S.ID) -- Condition to match rows
+
+WHEN MATCHED THEN
+    UPDATE SET T.Name = S.Name -- Action if rows match
+
+WHEN NOT MATCHED [ BY TARGET ] THEN
+    INSERT (ID, Name) VALUES (S.ID, S.Name) -- Action if no match in target
+
+[ WHEN NOT MATCHED BY SOURCE THEN
+    DELETE -- Action if no match in source (optional, use with caution)
+]; -- Semicolon is required in SQL Server
+```
+
+Here is an example. For some reason, you can't do `MERGE` with two CTEs, so I had to create some tables:
+
+```sql
+CREATE TABLE `info_table` (
+  id INT64,
+  name STRING,
+  type STRING,
+  char_name STRING,
+  class STRING
+);
+
+INSERT INTO `info_table` (id, name, type, char_name, class)
+VALUES 
+  (1, 'abc',  'normal', 'jerry', 'mage'),
+  (2, 'abcd', 'normal', 'tom',   'warrior'),
+  (3, 'dak',  'match',  'kerry', 'druid');
+
+CREATE TABLE `info_table_override` (
+  id INT64,
+  name STRING,
+  class STRING
+);
+
+INSERT INTO `info_table_override` (id, name, class)
+VALUES 
+  (1, 'abc', 'UPDATED MAGE'),
+  (2, 'abcd', 'UPDATED WARRIOR');
+
+MERGE `info_table` AS it
+USING `info_table_override` AS ito
+ON it.id = ito.id
+AND it.name = ito.name
+WHEN MATCHED THEN
+  UPDATE SET
+    it.class = ito.class,
+    it.type = 'override';
+
+-- as a result, you get an updated table in `info_table` like this
+-- id name  type     char_name class
+-- -----------------------------------------------
+-- 2	 abcd	 override tom       UPDATED WARRIOR
+-- 1	 abc   override jerry     UPDATED MAGE
+-- 3	 dak   match    kerry     druid
+```
+
+
 
 # Pivot
 
