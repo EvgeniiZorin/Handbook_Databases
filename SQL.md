@@ -62,6 +62,7 @@
       - [MIN/MAX](#minmax)
       - [AVG](#avg)
       - [GROUP BY](#group-by)
+        - [ALL](#all)
         - [WHERE vs HAVING](#where-vs-having)
       - [STRING\_AGG](#string_agg)
       - [Quantile](#quantile)
@@ -3066,6 +3067,39 @@ SELECT super_id, COUNT(DISTINCT(emp_id)) FROM employee GROUP BY super_id;
 - `GROUP BY column1 HAVING COUNT(*) > 5` only group those values whose count is > 5
 - `select major_id, count(*) from students group by major_id;` count unique values in column 'major_id'
 - `select major_id, min(gpa) from students group by major_id;` view min value in each group within column major_id
+
+##### ALL
+
+The `GROUP BY ALL` clause is a SQL shorthand notation that automatically groups the results by all non-aggregated columns present in the SELECT statement. This feature is a non-standard extension supported by some modern data platforms like Snowflake, Databricks, **BigQuery**, and ClickHouse, but not universally available in traditional relational databases like MySQL or Oracle. 
+
+Example:
+```sql
+with temp1 AS (
+  select 1 id, 'meat' category, 15 price union all 
+  select 2 id, 'meat' category, 6 price union all 
+  select 3 id, 'veggies' category, 10 price union all 
+  select 4 id, 'veggies' category, 2 price union all 
+  select 5 id, 'other' category, 10 price  
+)
+
+select
+  category,
+  sum(price)
+FROM temp1 
+group by all
+
+-- output:
+-- [{
+--   "category": "meat",
+--   "f0_": "21"
+-- }, {
+--   "category": "veggies",
+--   "f0_": "12"
+-- }, {
+--   "category": "other",
+--   "f0_": "10"
+-- }]
+```
 
 ##### WHERE vs HAVING
 
