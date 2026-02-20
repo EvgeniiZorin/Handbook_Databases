@@ -3314,6 +3314,12 @@ group by id
 -- }]
 ```
 
+You can also sort values within the `STRING_AGG` expression:
+
+```sql
+STRING_AGG(DISTINCT column1, ', ' ORDER BY column1)
+```
+
 
 Example of GROUP_CONCAT (MySQL):
 ```sql
