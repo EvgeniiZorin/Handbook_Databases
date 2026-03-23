@@ -78,7 +78,9 @@ SQL is a hybrid language that contains 4 languages at once - DDL, DML, DCL, DQL
 
 ## DDL
 
-Data Definition Language, shortly termed DDL, is a subset of SQL commands that define the structure or schema of the database; commands used to modify or alter the structure of the database. 
+> DDL, Data Definition Language, schema statements
+
+DDL is a subset of SQL commands that define the structure or schema of the database; commands used to modify or alter the structure of the database. 
 
 Commands:
 | Command | Explanation |
@@ -164,7 +166,9 @@ UPDATE table1 SET full_name = first_name || ' ' || last_name;
 
 ## DML
 
-Data Manipulation Language, shortly termed DML, is an element in SQL language that deals with managing and manipulating data in the database. DML commands are SQL commands that perform operations like storing data in database tables, modifying and deleting existing rows, retrieving data, or updating data.
+> DML, Data Manipulation Language, data statements
+
+DML is an element in SQL language that deals with managing and manipulating data in the database. DML commands are SQL commands that perform operations like storing data in database tables, modifying and deleting existing rows, retrieving data, or updating data.
 
 Commands:
 | Command | Explanation |
@@ -226,7 +230,9 @@ Data Control Language, shortly termed DCL, is comprised of those commands in SQL
 
 ## TCL
 
-Transaction Control Language:
+> TCL, Transaction Control Language, transaction statements
+
+TCL:
 - COMMIT
 - ROLLBACK
 - SAVEPOINT

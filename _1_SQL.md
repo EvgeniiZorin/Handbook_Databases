@@ -3912,7 +3912,9 @@ CREATE TABLE customer (
 )ENGINE=InnoDB DEFAULT CHARSET=utf8;
 ```
 
-## Primary key
+## Keys
+
+### Primary key
 
 Primary key:
 - Serves as a **unique identifier** for each record in a table;
@@ -3922,6 +3924,10 @@ Primary key:
   - Are indexed automatically.
   - If you manually tried inserting a row with a primary key that already exists in the table, it would lead to an error, as no duplicate primary keys are allowed;
   - By definition, primary key has two constraints - NOT NULL and UNIQUE;
+
+Primary key types:
+- Natural key: derived from existing meaningful column data, e.g. product code, sku code;
+- Surrogate key: artificially generated meaningless unique row identified (e.g. auto-incrementing integer)
 
 An example of a column `person_id` that is a primary key:
 ```txt
@@ -4001,7 +4007,7 @@ Then drop contraint:
 ALTER TABLE characters DROP CONSTRAINT characters_pkey;
 ```
 
-## Composite primary key 
+Primary key can be a **composite primary key** if it consists of multiple columns.
 
 **Upon creation of the table**
 ```sql
@@ -4020,10 +4026,10 @@ CREATE TABLE table1(
 ALTER TABLE table_name ADD PRIMARY KEY(column1, column2); 
 ```
 
-## Foreign key
+### Foreign key
 
 A foreign key:
-- Field in a table that references the primary key of another table
+- Field in a table that **references the primary key of another table** to connect different tables through joins.
 - Makes a connection between two tables via their joint column. 
 - Enforce data integrity, making sure the data confirms to some rules when it is added to the DB. More specifically, it *restricts one or more columns to contain only values found in another table's primary key columns.*; thus it prevents *orphaned rows* - rows that no longer point to valid primary key (e.g. changing a customer's ID in the `customer` table without changing the same customer ID in the `rental` table);
 - It is NOT necessary to have a foreign key constraint in place in order to join two tables
