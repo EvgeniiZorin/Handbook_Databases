@@ -562,6 +562,7 @@ CREATE TEMPORARY TABLE temp1
   first_name VARCHAR(45),
   last_name VARCHAR(45)
 );
+
 INSERT INTO temp1
 SELECT actor_id, first_name, last_name
 FROM table1
@@ -569,6 +570,8 @@ WHERE last_name LIKE '%J';
 ```
 
 ## Views
+
+> Views; kind of like virtual tables
 
 A view is a mechanism for querying data; a query that is stored in the data dictionary.
 - A view is created by assigning a name to a SELECT statement and then storing the query for future use;
@@ -584,6 +587,8 @@ Uses and advantages:
 - Hiding Complexity:
   - Views can hide the complexity of data
   - E.g. you can have a view with tons of subqueries, joins, etc. but they are hidden from the end user
+- Convenience:
+  - There is no additional data created or generated or stored when you create a view - the server simply saves the select statement for future use
 
 
 
