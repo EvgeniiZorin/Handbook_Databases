@@ -231,6 +231,17 @@ Features of `SAFE_DIVIDE`:
 
 ## Set 
 
+You perform a set operation by placing a set operator between two select statements:
+
+```sql
+SELECT 1 num, 'abc' str
+UNION 
+select 9 num, 'xyz' str;
+```
+
+When performing set operations on two data sets, the following guidelines must apply:
+- Both datasets must have the same number of columns;
+- The data types of each column across the two data sets must be the same, or compatible.
 
 | Operator | Explanation |
 | - | - |
@@ -313,6 +324,51 @@ FROM (
 UNION can also be used to generate synthetic data. See `Types of tables/Subquery/Generate temporary data`
 
 ### EXCEPT
+
+```sql
+WITH set_a AS (
+  SELECT 10 actor_id union all select 11 union all 
+  select 12 union all select 10 union all select 10
+),
+
+set_b AS (
+  select 10 actor_id union all select 10 
+)
+
+select * from set_a
+except 
+select * from set_b
+
+/*
+actor_id
+11
+12
+*/
+```
+
+```sql
+WITH set_a AS (
+  SELECT 10 actor_id union all select 11 union all 
+  select 12 union all select 10 union all select 10
+),
+
+set_b AS (
+  select 10 actor_id union all select 10 
+)
+
+select * from set_a
+except all
+select * from set_b
+
+/*
+The result now includes a 10, because for 3 occurrences of 10 in set_a, there are only 2 occurrences of 10 in set_b:
+
+actor_id
+10
+11
+12
+*/
+```
 
 ### INTERSECT
 
@@ -1127,6 +1183,8 @@ JOIN is a command for linking rows from two or more tables based on a column com
 - Common joins: `INNER`, `LEFT`
 - Less common: `FULL OUTER`
 - Joins you should use very rarely: `RIGHT`, `CROSS`
+- By default, writing `JOIN` defaults to `INNER JOIN`
+
 
 | Type | Explanation |
 | - | - |
@@ -1206,6 +1264,7 @@ Table `course`:
 |         2 |          1|
 |         3 |         10|
 
+> Notice that the join order doesn't matter, since SQL is a nonprocedural language
 
 ## ON...AND vs ON...WHERE
 
@@ -1289,6 +1348,8 @@ GROUP BY p.PROD_CAT
 ```
 
 ## ON vs USING
+
+> Subclause `ON`
 
 There are two clauses for joining - ON and USING:
 
@@ -1374,6 +1435,16 @@ inner join of these tables:
 | 1 | A | C |
 | 1 | C | A |
 | 1 | C | C |
+```
+
+An unusual (older) way to write an inner join:
+```sql
+SELECT
+  c.first_name,
+  c.last_name,
+  a.address
+FROM customer c, address a
+WHERE c.address_id = a.address_id
 ```
 
 ## Left (outer) join
