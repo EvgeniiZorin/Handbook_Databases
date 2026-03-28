@@ -975,6 +975,7 @@ group by all
   - The HAVING clause was added to SQL to filter the results of the GROUP BY clause. 
   - The HAVING clause is used in combination with the GROUP BY clause in a SELECT statement to filter rows based on specified conditions after the data is grouped and aggregated. It operates on the result of the grouping operation and filters the aggregated data.
 
+
 **Here is a thorough example:**
 ```sql
 SELECT * 
