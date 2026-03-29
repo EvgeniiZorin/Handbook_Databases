@@ -789,6 +789,127 @@ group by all
 -- }]
 ```
 
+##### WHERE vs HAVING
+
+**WHERE vs HAVING clause**:
+- WHERE is used for filtering rows BEFORE any grouping or aggregation. 
+  - You cannot filter in your WHERE statements based on aggregate functions, as they haven't been generated yet. Therefore, WHERE does not work with aggregated results;
+- HAVING is used for filtering rows AFTER any grouping or aggregation.
+  - The HAVING clause was added to SQL to filter the results of the GROUP BY clause. 
+  - The HAVING clause is used in combination with the GROUP BY clause in a SELECT statement to filter rows based on specified conditions after the data is grouped and aggregated. It operates on the result of the grouping operation and filters the aggregated data.
+
+
+**Here is a thorough example:**
+```sql
+SELECT * 
+FROM client;
+-- client_id|branch_id|
+-- ---------+---------+
+--       400|        2|
+--       401|        2|
+--       402|        3|
+--       403|        3|
+--       404|        2|
+--       405|        3|
+--       406|        2|
+
+/*
+For example, in the query below, you can query BEFORE grouping, 
+but you cannot query aggregate functions. For instance, this is a simple query condition
+*/
+WITH client AS (
+	SELECT 400 client_id, 2 branch_id UNION ALL SELECT 401 client_id, 2 branch_id UNION ALL SELECT 402 client_id, 3 branch_id UNION ALL SELECT 403 client_id, 3 branch_id UNION ALL SELECT 404 client_id, 2 branch_id UNION ALL SELECT 405 client_id, 3 branch_id UNION ALL SELECT 406 client_id, 2 branch_id
+)
+SELECT 
+	branch_id,
+	COUNT(*) AS clients_per_branch
+FROM client
+WHERE client_id <> 405 -- however, you CANNOT write `WHERE COUNT(*) = 4`
+GROUP BY branch_id;
+-- branch_id|clients_per_branch|
+-- ---------+------------------+
+--         3|                 2|
+--         2|                 4|
+
+/*
+If you wanted, however, to filter by the results of the count aggregate function, 
+you would have to include an extra CTE, as you cannot filter using WHERE keyword 
+the result of an aggregate function:
+*/
+WITH client AS (
+	SELECT 400 client_id, 2 branch_id UNION ALL SELECT 401 client_id, 2 branch_id UNION ALL SELECT 402 client_id, 3 branch_id UNION ALL SELECT 403 client_id, 3 branch_id UNION ALL SELECT 404 client_id, 2 branch_id UNION ALL SELECT 405 client_id, 3 branch_id UNION ALL SELECT 406 client_id, 2 branch_id
+), 
+temp1 AS (
+	SELECT 
+	branch_id,
+	COUNT(*) AS clients_per_branch
+	FROM client
+	WHERE client_id <> 405
+	GROUP BY branch_id
+)
+SELECT 
+	*
+FROM temp1
+WHERE clients_per_branch = 4
+-- branch_id|clients_per_branch|
+-- ---------+------------------+
+--         2|                 4|
+
+/*
+Nevertheless, you can use HAVING statement to filter the result
+of an aggregate function like COUNT:
+*/
+WITH client AS (
+	SELECT 400 client_id, 2 branch_id UNION ALL SELECT 401 client_id, 2 branch_id UNION ALL SELECT 402 client_id, 3 branch_id UNION ALL SELECT 403 client_id, 3 branch_id UNION ALL SELECT 404 client_id, 2 branch_id UNION ALL SELECT 405 client_id, 3 branch_id UNION ALL SELECT 406 client_id, 2 branch_id
+)
+SELECT 
+	branch_id,
+	COUNT(*) AS clients_per_branch
+FROM client 
+GROUP BY branch_id
+HAVING COUNT(*) = 4;
+-- branch_id|clients_per_branch|
+-- ---------+------------------+
+--         2|                 4|
+```
+
+If you have both a WHERE clause and a HAVING clause in your query, WHERE will execute first.
+
+In order to use HAVING, you also need:
+- A GROUP BY clause
+- An aggregation in your SELECT section (SUM, MIN, MAX, etc.)
+
+Some more examples of using the `HAVING` statement:
+```sql
+-- Example 1
+SELECT 
+  p.name,
+  p.surname,
+  COUNT(*)
+FROM person p
+INNER JOIN transactions t
+ON p.id = t.person_id
+GROUP BY 
+  name, 
+  surname
+HAVING COUNT(*) >= 40
+
+
+-- Example 2
+SELECT column1, aggregate_function(column2)
+FROM table
+GROUP BY column1
+HAVING aggregated_condition;
+-- Find out which departments have a total salary payout greater than 50,000
+SELECT 
+  department_id,
+  COUNT(*) AS number_of_employees, -- also can be `COUNT(employee_id) AS number_of_employees` 
+  SUM(salary) as total_salary
+FROM employees
+GROUP BY department_id
+HAVING SUM(salary) > 50000;
+```
+
 
 #### STRING_AGG
 
