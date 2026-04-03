@@ -1242,6 +1242,32 @@ CROSS JOIN
 ORDER BY a
 ;
 
+-- +-----+
+-- | a   |
+-- +-----+
+-- |   0 |
+-- |   1 |
+-- |   2 |
+-- |   3 |
+-- |   4 |
+-- |   5 |
+-- |   6 |
+-- |   7 |
+-- |   8 |
+-- |   9 |
+-- |  10 |
+-- |  11 |
+-- |  12 |
+-- |  13 |
+-- ...
+-- | 395 |
+-- | 396 |
+-- | 397 |
+-- | 398 |
+-- | 399 |
+-- +-----+
+
+
 -- Generate a row for every day in the year 2020
 -- MySQL
 -- This approach automatically includes the extra leap day (February 29)
@@ -1286,18 +1312,95 @@ CROSS JOIN
 WHERE DATE_ADD('2020-01-01', INTERVAL(ones.num + tens.num + hundreds.num) DAY) < '2021-01-01'
 ORDER BY dt
 ;
+
+-- Alternatively, can write it like this:
+WITH ones AS (
+	SELECT 0 num UNION ALL SELECT 1 num UNION ALL SELECT 2 num UNION ALL SELECT 3 num UNION ALL SELECT 4 num UNION ALL SELECT 5 num UNION ALL 
+  SELECT 6 num UNION ALL SELECT 7 num UNION ALL SELECT 8 num UNION ALL SELECT 9 num 
+),
+
+tens AS (
+	SELECT 0 num UNION ALL SELECT 10 num UNION ALL
+	SELECT 20 num UNION ALL	SELECT 30 num UNION ALL	SELECT 40 num UNION ALL	SELECT 50 num UNION ALL	
+  SELECT 60 num UNION ALL	SELECT 70 num UNION ALL	SELECT 80 num UNION ALL
+	SELECT 90 num 
+),
+
+hundreds AS (
+	SELECT 0 num UNION ALL
+	SELECT 100 num UNION ALL
+	SELECT 200 num UNION ALL
+	SELECT 300 num 
+)
+
+SELECT 
+	DATE_ADD(
+		'2020-01-01', 
+		INTERVAL (ones.num + tens.num + hundreds.num) DAY
+	  ) AS dt
+FROM ones
+CROSS JOIN tens
+CROSS JOIN hundreds
+WHERE 
+  DATE_ADD(
+    '2020-01-01', 
+    INTERVAL(ones.num + tens.num + hundreds.num) DAY
+    ) < '2021-01-01'
+ORDER BY dt
+;
+
+-- +------------+
+-- | dt         |
+-- +------------+
+-- | 2020-01-01 |
+-- | 2020-01-02 |
+-- | 2020-01-03 |
+-- | 2020-01-04 |
+-- | 2020-01-05 |
+-- | 2020-01-06 |
+-- | 2020-01-07 |
+-- | 2020-01-08 |
+-- | 2020-01-09 |
+-- | 2020-01-10 |
+-- | 2020-01-11 |
+-- | 2020-01-12 |
+-- | 2020-01-13 |
+-- | 2020-01-14 |
+-- | 2020-01-15 |
+-- | 2020-01-16 |
+-- | 2020-01-17 |
+-- | 2020-01-18 |
+-- | 2020-01-19 |
+-- | 2020-01-20 |
+-- | 2020-01-21 |
+-- | 2020-01-22 |
+-- | 2020-01-23 |
+-- | 2020-01-24 |
+-- | 2020-01-25 |
+-- | 2020-01-26 |
+-- | 2020-01-27 |
+-- | 2020-01-28 |
+-- | 2020-01-29 |
+-- | 2020-01-30 |
+-- | 2020-01-31 |
+-- | 2020-02-01 |
+-- | 2020-02-02 |
+-- | 2020-02-03 |
+-- ...
+-- | 2020-12-22 |
+-- | 2020-12-23 |
+-- | 2020-12-24 |
+-- | 2020-12-25 |
+-- | 2020-12-26 |
+-- | 2020-12-27 |
+-- | 2020-12-28 |
+-- | 2020-12-29 |
+-- | 2020-12-30 |
+-- | 2020-12-31 |
+-- +------------+
 ```
 
-Can also write like this: 
-```sql
-WITH transactions AS (
-  SELECT 1 AS user_id, 100 AS amount UNION ALL
-  SELECT 1, 150 UNION ALL
-  SELECT 1, 200
-)
-SELECT *
-FROM transactions
-```
+
 
 # Index
 

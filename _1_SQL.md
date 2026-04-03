@@ -964,9 +964,53 @@ SELECT * FROM person LEFT JOIN car ON car.id = person.car_id WHERE car.* IS NULL
 > FROM Orders o
 > RIGHT JOIN Customers c ON o.CustomerId = c.CustomerId
 
+An example of a three-way left outer join:
+```sql
+WITH film AS (
+  SELECT 1 film_id, 'ROCKY' title union all 
+  select 2 film_id, 'JAWS' title union all 
+  select 3, 'SPEED'
+),
+
+inventory AS (
+  select 1 film_id, 10 inventory_id union all 
+  select 1 film_id, 11 inventory_id union all 
+  select 2, 12
+),
+
+rental AS (
+  select 10 inventory_id, '2025-01-01' rental_date union all 
+  select 10, '2025-05-01' union all 
+  select 11, '2025-02-01'
+)
+
+select
+  f.film_id,
+  f.title,
+  i.inventory_id,
+  r.rental_date
+FROM film f
+LEFT JOIN inventory i 
+  ON f.film_id = i.film_id 
+LEFT JOIN rental r 
+  ON i.inventory_id = r.inventory_id 
+
+-- +---------+-------+--------------+-------------+
+-- | film_id | title | inventory_id | rental_date |
+-- +---------+-------+--------------+-------------+
+-- |       1 | ROCKY |           10 | 2025-01-01  |
+-- |       1 | ROCKY |           10 | 2025-05-01  |
+-- |       1 | ROCKY |           11 | 2025-02-01  |
+-- |       2 | JAWS  |           12 | NULL        |
+-- |       3 | SPEED |         NULL | NULL        |
+-- +---------+-------+--------------+-------------+
+```
+
 ## Right (outer) join
 
 All rows from the second / right table + the rows that match the rows from the second table .
+
+> Right joins are much more rare than left joins and are not supported in every database server, so it's preferable to use left joins.
 
 <img src="Media/right_outer_join.png" alt="right (outer) join" width="300">
 
