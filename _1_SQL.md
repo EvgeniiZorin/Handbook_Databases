@@ -206,6 +206,58 @@ CASE
 END AS alias;
 ```
 
+Use cases:
+- in pivot (see the pivot section)
+- checking for existence
+
+  Example 1:
+  ```sql
+  -- check whether an actor appeared in at least one G-rated film, boolean column for this check
+  SELECT
+    a.first_name,
+    a.last_name,
+    CASE
+      -- correlated subquery for the WHEN EXIST statement
+      WHEN EXISTS (SELECT 1 FROM film_actor fa
+                  INNER JOIN film f ON fa.film_id = f.film_id 
+                  WHERE fa.actor_id = a.actor_id AND f.rating = 'G')
+        THEN 'Y'
+      ELSE 'N' 
+      END AS g_actor
+  FROM actor a
+
+  -- | first_name | last_name | g_actor | 
+  -- | - | - | - |
+  -- | Jack | Jones | Y |
+  -- | Jill | Valentine | N |
+  ```
+
+  Example 2:
+  ```sql
+  -- case expression to count the number of copies in inventory for each film and then returns one of the statements
+  SELECT
+    f.title,
+    CASE (SELECT COUNT(*) FROM inventory i WHERE i.film_id = f.film_id)
+      WHEN 0 THEN 'Out of stock'
+      WHEN 1 THEN 'Scarse'
+      WHEN 2 THEN 'Scarse'
+      ELSE 'Common'
+    END AS film_availability
+  FROM film f 
+  ```
+- Division by zero errors (alternatives - safe divide)
+
+  ```sql
+  SELECT SUM(p.amount) / CASE WHEN COUNT(p.amount) = 0 THEN 1 ELSE COUNT(p.amount) END AS avg_payment
+  FROM payments AS p
+  ```
+- conditional updates
+- handling null values (alternatives - COALESCE function)
+
+  ```sql
+  CASE WHEN value1 IS NULL THEN 'Unknown' ELSE value1
+  ```
+
 ### in select
 
 Here is an example where we create a new field that will detail if a student passed or failed, based on their scores:
@@ -263,9 +315,9 @@ CASE WHEN a.address IS NULL THEN 'unknown' ELSE a.address END address
 UPDATE customer
 SET active = 
   CASE
-    WHEN 90 <= (SELECT datediff(now(), max(rental_date))
-                FROM rental r
-                WHERE r.customer_id = customer.customer_id) 
+    WHEN (SELECT datediff(now(), max(rental_date))
+          FROM rental r
+          WHERE r.customer_id = customer.customer_id) >= 90
     THEN 0
     ELSE 1
     END
@@ -1797,7 +1849,7 @@ DROP PROCEDURE proc_1;
 
 A transaction is $N \ge 1$ queries to DB that either compelete successfully all together or are not completed at all (property of *atomicity*).
 
-A SQL transaction is a sequence of database operations that behave as a single unit of work. It ensures that multiple operations are executed in an atomic and consistent manner, which is crucial for maintaining database integrity. SQL transactions adhere to a set of principles known as ACID.
+A SQL transaction is a sequence of $N \ge 1$ database operations / queries to DB that behave as a single unit of work. It ensures that multiple operations are executed in an atomic and consistent manner, which is crucial for maintaining database integrity. SQL transactions adhere to a set of principles known as ACID.
 
 Primary statements used for managing SQL transactions:
 - BEGIN TRANSACTION / START TRANSACTION
@@ -1879,7 +1931,7 @@ COMMIT;
 
 SQL transactions are crucial in various real-world scenarios that require multiple database operations to occur atomically and consistently. **Real-life examples**:
 - **E-commerce**: When processing an order that includes billing, shipping, and updating the inventory, it is essential to execute these actions as a single transaction to ensure data consistency and avoid potential double bookings, incorrect inventory updates, or incomplete order processing.
-- **Banking and financial systems**: Managing accounts, deposits, withdrawals, and transfers require transactions for ensuring data integrity and consistency while updating account balances and maintaining audit trails of all transactions.
+- **Banking and financial systems**: Managing accounts, deposits, withdrawals, and transfers require transactions for ensuring data integrity and consistency while updating account balances and maintaining audit trails of all transactions. For example, it would be a bad idea if you could withdraw 500 usd from your account, but it would fail at a later stage and would never get transfer to another account.
 - **Reservation systems**: For booking tickets or accommodations, the availability of the seats or rooms must be checked, confirmed, and updated in the system. Transactions are necessary for this process to prevent overbooking or incorrect reservations.
 - **User registration and authentication**: While creating user accounts, it is vital to ensure that the account information is saved securely to the correct tables and without duplicates. Transactions can ensure atomicity and isolation of account data operations.
 
@@ -1920,8 +1972,17 @@ COMMIT;
 Locks are the mechanism the database server uses to control simultaneous use of data resources. 
 
 Two locking strategies:
-- Database writers request and receive from the server a write lock to modify data, *and database readers must request and receive from the server a read lock to query data*; One write lock is given out at a time for each table (or portion) and read requests are blocked until the write 
-- **Versioning approach:** database writers request and receive from the server a write lock to modify data, *but readers do not need any type of lock to query data*. Instead, the server ensures that a reader sees a consistent view of the data from the time their query begins until their query has finished. 
+- **write lock** + **read lock**: 
+  - Database writers request and receive from the server a write lock to modify data, *and database readers must request and receive from the server a read lock to query data*; 
+  - One write lock is given out at a time for each table (or portion) and read requests are blocked until the write lock is released
+- **Versioning approach** (**write lock**, NO **read lock**) 
+  - Database writers request and receive from the server a write lock to modify data, *but readers do not need any type of lock to query data*. 
+  - Instead, the server ensures that a reader sees a consistent view of the data from the time their query begins until their query has finished. 
+
+Lock granularities:
+- Table locks: keep multiple users from modifying data in the same table simultaneously
+- Page locks: keep multiple users from modifying data on the same page of a table (segment of memory generally in the range of 2 KB to 16 KB) simulaneously
+- Row locks: keep multiple users from modifying the same row in a table simultaneously
 
 ## auto-commit vs manual commit
 
