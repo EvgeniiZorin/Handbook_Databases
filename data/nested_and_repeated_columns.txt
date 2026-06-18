@@ -1,0 +1,2 @@
+{"orderId":"1","storeLocation":"Newyork","orderAmount":"1450","customerId":"C01","products":[{"productid":"1234","productCategory":"Cosmetics","productName":"Shampoo","productPrice":"140"},{"productid":"421","productCategory":"Kitchen","productName":"Grinder","productPrice":"240"}]}
+{"orderId":"2","storeLocation":"Newyork","orderAmount":"1250","customerId":"C034","products":[{"productid":"34P","productCategory":"Furniture","productName":"Table","productPrice":"140"},{"productid":"42A","productCategory":"Furniture","productName":"Chair","productPrice":"240"}]}
