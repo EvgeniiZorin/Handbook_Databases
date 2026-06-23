@@ -55,3 +55,20 @@ line_position = alone
 ; indented_joins = true
 indented_on_contents = true
 ```
+
+You can also have a `.sqlfluffignore` with which files / directories to ignore:
+
+[documentation](https://docs.sqlfluff.com/en/stable/configuration/ignoring_configuration.html)
+
+```sqlfluff
+# Comments start with a hash.
+
+# Ignore anything in the "temp" path
+/temp/
+
+# Ignore anything called "testing.sql"
+testing.sql
+
+# Ignore any ".tsql" files
+*.tsql
+```
